@@ -1,0 +1,14 @@
+GitSU SUPERUSER Enterprise Pro
+Copyright 2026 Denislav Pasev / PasevSU-DEV
+https://pasevsu.github.io/
+
+This project is distributed under the Apache License, Version 2.0.
+See LICENSE for the full license terms.
+
+PasevSU-DEV is an independent software development organization led by
+Denislav Pasev. Project descriptions and voluntary cybersecurity activity
+are statements supplied by the project owner and are not institutional
+endorsements.
+
+Third-party components retain their own copyrights and licenses.
+The Apache-2.0 license for GitSU does not relicense third-party software.

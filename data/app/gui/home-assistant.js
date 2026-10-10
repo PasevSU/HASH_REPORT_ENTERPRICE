@@ -1,0 +1,30 @@
+"use strict";
+const fs=require('node:fs'),path=require('node:path');
+const TYPES=['integration','plugin','theme'];
+function within(root,rel){const base=path.resolve(root),p=path.resolve(base,rel);if(p!==base&&!p.startsWith(base+path.sep))throw Error('Unsafe path');return p;}
+function file(root,rel){const p=within(root,rel);try{const st=fs.lstatSync(p);if(st.isSymbolicLink())return {status:'unsafe',reason:'Symbolic link'};if(!st.isFile())return {status:'invalid',reason:'Not a regular file'};return {status:'present',path:rel};}catch(e){if(e.code==='ENOENT')return {status:'missing',path:rel};throw e}}
+function readJSON(root,rel,issues){const f=file(root,rel);if(f.status!=='present'){issues.push({severity:'error',file:rel,reason:f.status});return null}try{return JSON.parse(fs.readFileSync(within(root,rel),'utf8'))}catch(e){issues.push({severity:'error',file:rel,reason:'Invalid JSON: '+e.message});return null}}
+function detect(root){if(fs.existsSync(within(root,'custom_components')))return 'integration';if(fs.existsSync(within(root,'www')))return 'plugin';if(fs.existsSync(within(root,'themes')))return 'theme';return 'unknown'}
+function validate(root,type='auto'){
+ root=path.resolve(root);if(!fs.statSync(root).isDirectory())throw Error('Not a directory');if(type==='auto')type=detect(root);if(!TYPES.includes(type))return {type:'unknown',valid:false,issues:[{severity:'error',reason:'Choose integration, plugin or theme'}],checks:[]};
+ const issues=[],checks=[];const check=rel=>{const f=file(root,rel);checks.push(f);if(f.status!=='present')issues.push({severity:'error',file:rel,reason:f.status});return f.status==='present'};
+ const hacs=file(root,'hacs.json');if(hacs.status==='present'){const h=readJSON(root,'hacs.json',issues);if(h&&(!h.name||typeof h.name!=='string'))issues.push({severity:'warning',file:'hacs.json',reason:'Missing name'});}else issues.push({severity:'warning',file:'hacs.json',reason:'Recommended for HACS metadata'});
+ if(type==='integration'){
+ const components=within(root,'custom_components');if(!fs.existsSync(components))issues.push({severity:'error',reason:'custom_components/ missing'});
+ else for(const item of fs.readdirSync(components,{withFileTypes:true}).filter(x=>x.isDirectory())){
+  if(!/^[a-z][a-z0-9_]*$/.test(item.name)){issues.push({severity:'error',reason:'Invalid integration domain: '+item.name});continue}
+  const prefix='custom_components/'+item.name+'/',manifest=prefix+'manifest.json';check(prefix+'__init__.py');const m=readJSON(root,manifest,issues);checks.push(file(root,manifest));if(m){for(const key of ['domain','name','version','documentation','codeowners','requirements'])if(!(key in m))issues.push({severity:'error',file:manifest,reason:'Missing '+key});if(m.domain!==item.name)issues.push({severity:'error',file:manifest,reason:'Domain mismatch'});if(m.requirements&&!Array.isArray(m.requirements))issues.push({severity:'error',file:manifest,reason:'requirements must be array'});if(m.codeowners&&!Array.isArray(m.codeowners))issues.push({severity:'error',file:manifest,reason:'codeowners must be array'});if(m.config_flow===true)check(prefix+'config_flow.py');}
+  const translations=within(root,prefix+'translations');if(fs.existsSync(translations))for(const lang of fs.readdirSync(translations).filter(x=>x.endsWith('.json')))readJSON(root,prefix+'translations/'+lang,issues);
+ }
+ if(fs.existsSync(components)&&!fs.readdirSync(components,{withFileTypes:true}).some(x=>x.isDirectory()))issues.push({severity:'error',reason:'No integration domain directory'});
+ }else if(type==='plugin'){
+  const www=within(root,'www');if(!fs.existsSync(www)||!fs.readdirSync(www,{recursive:true}).some(x=>/\.js$/i.test(x)))issues.push({severity:'error',reason:'www/ must contain a JavaScript frontend file'});
+ }else if(type==='theme'){
+  const themes=within(root,'themes');if(!fs.existsSync(themes)||!fs.readdirSync(themes,{recursive:true}).some(x=>/\.ya?ml$/i.test(x)))issues.push({severity:'error',reason:'themes/ must contain YAML'});
+ }
+ const gitignore=file(root,'.gitignore');if(gitignore.status!=='present')issues.push({severity:'warning',file:'.gitignore',reason:'Recommended'});
+ return {type,valid:!issues.some(x=>x.severity==='error'),issues,checks,root,checkedAt:new Date().toISOString(),scope:'Static structural validation only; not a Home Assistant runtime or HACS submission test'};
+}
+function scaffoldPlan(root,domain){if(!/^[a-z][a-z0-9_]*$/.test(domain))throw Error('Domain must be lowercase snake_case');const files={};files[`custom_components/${domain}/__init__.py`]='"""'+domain+' integration package."""\n';files[`custom_components/${domain}/manifest.json`]=JSON.stringify({domain,name:domain.replace(/_/g,' '),version:'0.1.0',documentation:'https://github.com/OWNER/REPO',codeowners:[],requirements:[],iot_class:'local_push'},null,2)+'\n';files['hacs.json']=JSON.stringify({name:domain.replace(/_/g,' '),render_readme:true},null,2)+'\n';files['.gitignore']='__pycache__/\n*.pyc\n.env\n';const collisions=[];for(const rel of Object.keys(files)){const p=within(root,rel);let cursor=path.dirname(p);while(cursor!==path.resolve(root)&&cursor.startsWith(path.resolve(root)+path.sep)){if(fs.existsSync(cursor)&&fs.lstatSync(cursor).isSymbolicLink())throw Error('Symlink parent: '+cursor);cursor=path.dirname(cursor)}if(fs.existsSync(p))collisions.push(rel)}return {root:path.resolve(root),domain,files,collisions,warning:'Template only. Replace OWNER/REPO, codeowners and implement actual integration before release.'}}
+function scaffoldApply(root,domain){const plan=scaffoldPlan(root,domain);if(plan.collisions.length)throw Error('Existing files: '+plan.collisions.join(', '));const written=[];try{for(const [rel,content] of Object.entries(plan.files)){const p=within(root,rel);fs.mkdirSync(path.dirname(p),{recursive:true});fs.writeFileSync(p,content,{flag:'wx'});written.push(p)}return {created:written.map(x=>path.relative(root,x)),validation:validate(root,'integration'),warning:plan.warning}}catch(e){for(const p of written)try{fs.unlinkSync(p)}catch{}throw e}}
+module.exports={validate,scaffoldPlan,scaffoldApply};

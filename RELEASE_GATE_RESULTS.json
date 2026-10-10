@@ -1,0 +1,62 @@
+{
+  "product": "GitSU SUPERUSER",
+  "candidate": "0.42.0",
+  "release_status": "BLOCKED",
+  "checks": [
+    {
+      "check": "JavaScript syntax",
+      "status": "PASS",
+      "detail": "\n> gitsu@0.42.0 check\n> node --check gui/main.js && node --check gui/core.js && node --check gui/health.js && node --check gui/preload.js && node --check gui/renderer.js && node --check gui/lifecycle.js && node --check gui/orchestrator.js && node --check gui/job-journal.js && node --check gui/operation-manager.js && node --check gui/resource-controller.js && node --check gui/performance-monitor.js && node --check gui/system-monitor.js && node --check gui/watch-policy.js && node --check gui/task-telemetry.js && node --check gui/recovery-policy.js && node --check gui/github-auth.js && node --check gui/workflow.js && node --check gui/repository-trust.js && node --check gui/repository-diagnostics.js && node --check gui/auto-sync-manager.js && node --check gui/repo-create.js && node --check scripts/ha-git-sync.mjs && node --check gui/connect.js && node --check gui/connect-dialog.js && node --check gui/workspace-tabs.js && node --check gui/repo-lock.js && node --check gui/sync-panel.js && node --check gui/git-view.js && node --check gui/changes-panel.js\n\n"
+    },
+    {
+      "check": "Node test suite",
+      "status": "BLOCKED",
+      "detail": "ecovered\n  ---\n  duration_ms: 4855.7775\n  ...\n# Subtest: OperationManager runs inside the lock\nok 40 - OperationManager runs inside the lock\n  ---\n  duration_ms: 4667.8119\n  ...\n# Subtest: nonexistent repository returns blocked without throwing\nok 41 - nonexistent repository returns blocked without throwing\n  ---\n  duration_ms: 56.8499\n  ...\n# Subtest: git repository preflight distinguishes missing origin and gh authentication\nok 42 - git repository preflight distinguishes missing origin and gh authentication\n  ---\n  duration_ms: 7793.533\n  ...\n# Subtest: probe recognizes ordinary git repository without changing global config\nok 43 - probe recognizes ordinary git repository without changing global config\n  ---\n  duration_ms: 2889.5659\n  ...\n# Subtest: probe does not trust an invalid directory\nok 44 - probe does not trust an invalid directory\n  ---\n  duration_ms: 0.4758\n  ...\n# Subtest: lease: leader pushes, follower fast-forwards, takeover after leader stops\nok 45 - lease: leader pushes, follower fast-forwards, takeover after leader stops\n  ---\n  duration_ms: 39490.8859\n  ...\n1..45\n# tests 45\n# suites 0\n# pass 43\n# fail 2\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 53527.7822\n"
+    },
+    {
+      "check": "Package completeness",
+      "status": "PASS",
+      "detail": "Required core files exist"
+    },
+    {
+      "check": "Windows Electron GUI end-to-end",
+      "status": "BLOCKED",
+      "detail": "Independent execution evidence not supplied"
+    },
+    {
+      "check": "Offline portable runtime",
+      "status": "BLOCKED",
+      "detail": "Independent execution evidence not supplied"
+    },
+    {
+      "check": "Real GitHub PAT + push",
+      "status": "BLOCKED",
+      "detail": "Independent execution evidence not supplied"
+    },
+    {
+      "check": "Home Assistant / HACS installation and update",
+      "status": "BLOCKED",
+      "detail": "Independent execution evidence not supplied"
+    },
+    {
+      "check": "NAS/UNC stress and locked-file tests",
+      "status": "BLOCKED",
+      "detail": "Independent execution evidence not supplied"
+    },
+    {
+      "check": "Crash/power-loss recovery across restart",
+      "status": "BLOCKED",
+      "detail": "Independent execution evidence not supplied"
+    },
+    {
+      "check": "Watcher auto-commit/push end-to-end",
+      "status": "BLOCKED",
+      "detail": "Independent execution evidence not supplied"
+    },
+    {
+      "check": "Dependency license compliance audit",
+      "status": "BLOCKED",
+      "detail": "Independent execution evidence not supplied"
+    }
+  ]
+}

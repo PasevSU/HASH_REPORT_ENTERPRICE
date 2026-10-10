@@ -4,3 +4,10 @@ node_modules/
 !.env.example
 dist/
 *.log
+
+# Generated runtime / cache artifacts (do not commit)
+__pycache__/
+*.pyc
+data/cache/
+data/logs/
+data/user-data/

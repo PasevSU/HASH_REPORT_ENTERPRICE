@@ -1,0 +1,12 @@
+package:
+  id: 18-repo-manager
+  runtime: node
+dependencies:
+  enabled: true
+  packageManager: auto
+  includeDevDependencies: true
+  installMode: install
+settings:
+  defaultVisibility: private
+  requireApplyForRemoteChanges: true
+  allowForcePush: false

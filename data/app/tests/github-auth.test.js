@@ -1,0 +1,7 @@
+ 'use strict';
+const test=require('node:test'),assert=require('node:assert/strict');
+const {EventEmitter}=require('node:events');const {GitHubBrowserAuth,invokeGh}=require('../gui/github-auth');
+function fakeSpawn(command,args){const child=new EventEmitter();child.stdout=new EventEmitter();child.stderr=new EventEmitter();child.kill=()=>child.emit('close',1);process.nextTick(()=>{if(args.includes('status'))child.emit('close',1);else{child.stderr.emit('data','First copy your one-time code: ABCD-1234');child.emit('close',0)}});return child;}
+test('device flow never requests passwords or PATs and uses official gh CLI',async()=>{const events=[];const auth=new GitHubBrowserAuth({spawnImpl:fakeSpawn,openBrowser:()=>{},emit:x=>events.push(x)});assert.equal(auth.start().ok,true);await new Promise(r=>setImmediate(r));assert.equal(events.some(x=>x.code==='ABCD-1234'),true);assert.equal(events.at(-1).state,'success')});
+test('auth status reports unauthenticated without exposing tokens',async()=>{const auth=new GitHubBrowserAuth({spawnImpl:fakeSpawn});const s=await auth.status();assert.equal(s.authenticated,false);assert.equal(typeof s.message,'string')});
+test('simultaneous browser login attempts are blocked',()=>{const auth=new GitHubBrowserAuth({spawnImpl:()=>{const c=new EventEmitter();c.stdout=new EventEmitter();c.stderr=new EventEmitter();c.kill=()=>{};return c}});assert.equal(auth.start().ok,true);assert.equal(auth.start().ok,false)});

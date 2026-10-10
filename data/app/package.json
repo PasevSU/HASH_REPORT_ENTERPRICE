@@ -1,0 +1,67 @@
+{
+  "name": "gitsu",
+  "version": "0.43.4",
+  "private": true,
+  "main": "gui/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/*.test.js",
+    "check": "node --check gui/main.js && node --check gui/core.js && node --check gui/health.js && node --check gui/preload.js && node --check gui/renderer.js && node --check gui/lifecycle.js && node --check gui/orchestrator.js && node --check gui/job-journal.js && node --check gui/operation-manager.js && node --check gui/resource-controller.js && node --check gui/performance-monitor.js && node --check gui/system-monitor.js && node --check gui/watch-policy.js && node --check gui/task-telemetry.js && node --check gui/recovery-policy.js && node --check gui/github-auth.js && node --check gui/workflow.js && node --check gui/repository-trust.js && node --check gui/repository-diagnostics.js && node --check gui/auto-sync-manager.js && node --check gui/repo-create.js && node --check scripts/ha-git-sync.mjs && node --check gui/connect.js && node --check gui/connect-dialog.js && node --check gui/workspace-tabs.js && node --check gui/repo-lock.js && node --check gui/sync-panel.js && node --check gui/git-view.js && node --check gui/changes-panel.js && node --check gui/git-trust.js && node --check gui/sensitive.js && node --check gui/ssh.js && node --check gui/ssh-panel.js && node --check gui/ops-groups.js gui/guard.js && node --check lib/gitops.js && node --check lib/gitignore.js && node --check gui/github-panel.js && node --check gui/watcher-panel.js && node --check gui/rules-panel.js",
+    "pack:win": "electron-builder --win dir --x64"
+  },
+  "devDependencies": {
+    "electron": "^35.7.5",
+    "electron-builder": "^26.0.12"
+  },
+  "productName": "GitSU SUPERUSER Enterprise Pro",
+  "description": "GitSU SUPERUSER enterprise Git operations by PasevSU-DEV",
+  "build": {
+    "appId": "dev.pasevsu.gitsu",
+    "productName": "GitSU SUPERUSER Enterprise Pro",
+    "asar": true,
+    "asarUnpack": ["scripts/**/*"],
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "gui/**/*",
+      "cli.js",
+      "lib/**/*",
+      "configuration.yaml",
+      "package.json",
+      "!**/tests/**",
+      "!**/*.md",
+      "LICENSE",
+      "NOTICE",
+      "scripts/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "gui/assets/gitsu-icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "GitSU Enterprise Pro",
+      "artifactName": "GitSU-Setup-${version}-${arch}.${ext}"
+    },
+    "executableName": "GitSU",
+    "extraMetadata": {
+      "name": "gitsu"
+    },
+    "portable": {
+      "artifactName": "GitSU-Portable-${version}-${arch}.${ext}"
+    }
+  },
+  "license": "Apache-2.0"
+}
+
