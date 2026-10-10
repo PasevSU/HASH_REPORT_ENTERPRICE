@@ -37,8 +37,9 @@ bBrowse.onclick=async()=>{const d=await api.pickFolder();if(d){dirInput.value=d;
 bStart.onclick=async()=>{const dir=dirInput.value.trim()||sel();if(!dir)return say(L().pick,'error');const branch=branchInput.value.trim()||'main';const apply=autoRadio.checked;if(apply&&!(await gsConfirm(L().confirmAuto.replace('{0}',nameOf(dir)).replace('{1}',branch))))return;bStart.disabled=true;try{await api.autoSyncStart({dir,branch,apply});say('','success');await renderJobs()}catch(e){say(e.message,'error')}finally{bStart.disabled=false}};
 bStop.onclick=async()=>{const d=sel();if(!d)return say(L().pick,'error');try{await api.autoSyncStop(d);await renderJobs()}catch(e){say(e.message,'error')}};
 bStopAll.onclick=async()=>{for(const j of await api.autoSyncStatus()){try{await api.autoSyncStop(j.dir)}catch(e){say(e.message,'error')}}await renderJobs()};
-api.on('auto-sync-state',renderJobs);api.on('auto-sync-log',x=>say(`${nameOf(x.dir)} [${x.kind}]: ${x.message}`,x.kind==='error'?'error':'review'));
-setInterval(renderJobs,15000);
-$('language-select')?.addEventListener('change',()=>setTimeout(labels,0));
-labels();renderJobs();
+api.on('auto-sync-state',()=>{if(window.GitSUPanels?.sectionVisible('watchers'))renderJobs()});api.on('auto-sync-log',x=>say(`${nameOf(x.dir)} [${x.kind}]: ${x.message}`,x.kind==='error'?'error':'review'));
+setInterval(()=>{if(window.GitSUPanels?.sectionVisible('watchers'))renderJobs()},15000);
+$('language-select')?.addEventListener('change',()=>setTimeout(()=>{if(window.GitSUPanels?.sectionVisible('watchers'))labels()},0));
+function refresh(){labels()}
+window.GitSUPanels.hook('watchers',()=>window.GitSUPanels.sectionVisible('watchers'),refresh);
 })();

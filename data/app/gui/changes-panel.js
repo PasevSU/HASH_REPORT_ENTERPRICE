@@ -2,8 +2,8 @@
 'use strict';
 // Changes (stage / diff / commit) and History (log / commit details) tabs.
 const $=id=>document.getElementById(id),api=window.repoAPI;
-const T={bg:{ch:'Промени',hi:'История',stage:'Добави (stage)',unstage:'Махни (unstage)',all:'Всички',msg:'Съобщение за commit',commit:'Commit',pushSel:'Commit + качи избраните',needMsg:'Въведете съобщение за commit.',staged:'В индекса',changes:'Промени',untracked:'Нови',none:'Няма промени.',pick:'Изберете репозитори.',more:'Още',refresh:'Обнови',nostaged:'Няма добавени файлове.',empty:'Няма commit-и.',conflict:'КОНФЛИКТ',done:'Commit',select:'Изберете файл за diff.',selAll:'Избери всички',ignore:'Игнорирай',ignored:'Добавено в .gitignore',already:'Вече е игнориран',showIgn:'Покажи игнорирани',hideIgn:'Скрий игнорирани',allIgnored:'Всички промени са игнорирани.'},
- de:{ch:'Änderungen',hi:'Verlauf',stage:'Stagen',unstage:'Unstagen',all:'Alle',msg:'Commit-Nachricht',commit:'Commit',pushSel:'Commit + Push (Auswahl)',needMsg:'Commit-Nachricht eingeben.',staged:'Im Index',changes:'Änderungen',untracked:'Neu',none:'Keine Änderungen.',pick:'Repository wählen.',more:'Mehr',refresh:'Aktualisieren',nostaged:'Keine Dateien gestaged.',empty:'Keine Commits.',conflict:'KONFLIKT',done:'Commit',select:'Datei für Diff wählen.',selAll:'Alle auswählen',ignore:'Ignorieren',ignored:'Zu .gitignore hinzugefügt',already:'Bereits ignoriert',showIgn:'Ignorierte anzeigen',hideIgn:'Ignorierte ausblenden',allIgnored:'Alle Änderungen sind ignoriert.'}};
+const T={bg:{ch:'Промени',hi:'История',stage:'Добави (stage)',unstage:'Махни (unstage)',all:'Всички',msg:'Съобщение за commit',commit:'Commit',pushSel:'Commit + качи избраните',needMsg:'Въведете съобщение за commit.',staged:'В индекса',modified:'Променени',deleted:'Изтрити',stagedDeleted:'Изтрити в индекса',untracked:'Нови',none:'Няма промени.',pick:'Изберете репозитори.',more:'Още',refresh:'Обнови',nostaged:'Няма добавени файлове.',empty:'Няма commit-и.',conflict:'КОНФЛИКТ',done:'Commit',select:'Изберете файл за diff.',selAll:'Избери всички',ignore:'Игнорирай',ignored:'Добавено в .gitignore',already:'Вече е игнориран',showIgn:'Покажи игнорирани',hideIgn:'Скрий игнорирани',allIgnored:'Всички промени са игнорирани.'},
+ de:{ch:'Änderungen',hi:'Verlauf',stage:'Stagen',unstage:'Unstagen',all:'Alle',msg:'Commit-Nachricht',commit:'Commit',pushSel:'Commit + Push (Auswahl)',needMsg:'Commit-Nachricht eingeben.',staged:'Im Index',modified:'Geändert',deleted:'Gelöscht',stagedDeleted:'Gelöscht im Index',untracked:'Neu',none:'Keine Änderungen.',pick:'Repository wählen.',more:'Mehr',refresh:'Aktualisieren',nostaged:'Keine Dateien gestaged.',empty:'Keine Commits.',conflict:'KONFLIKT',done:'Commit',select:'Datei für Diff wählen.',selAll:'Alle auswählen',ignore:'Ignorieren',ignored:'Zu .gitignore hinzugefügt',already:'Bereits ignoriert',showIgn:'Ignorierte anzeigen',hideIgn:'Ignorierte ausblenden',allIgnored:'Alle Änderungen sind ignoriert.'}};
 const L=()=>T[$('language-select')?.value]||T.bg;
 const sel=()=>typeof selected!=='undefined'?selected:null;
 const el=(tag,props={},...kids)=>{const e=document.createElement(tag);Object.assign(e,props);e.append(...kids);return e};
@@ -18,12 +18,12 @@ const chList=el('div',{className:'gv-list'}),chDiff=el('pre',{className:'log-pre
 const bStage=el('button',{type:'button',className:'outline'}),bUn=el('button',{type:'button',className:'outline'}),bAll=el('button',{type:'button',className:'outline'});
 const msgLabel=el('label',{htmlFor:'gv-msg'}),msg=el('input',{id:'gv-msg',maxLength:500}),bCommit=el('button',{type:'button',className:'primary'}),bPushSel=el('button',{type:'button',className:'primary'}),out=el('p',{className:'hint'});
 const chSec=el('section',{className:'panel'},chHead,el('div',{className:'action-row'},bStage,bUn,bAll),chList,chDiff,msgLabel,el('div',{className:'action-row'},msg,bCommit,bPushSel),out);
-chSec.dataset.section='changes-view';
+chSec.dataset.section='changes-view';chSec.hidden=true;
 
 // ---- History ----
 const hiTitle=el('h2'),hiList=el('div',{className:'gv-list'}),hiShow=el('pre',{className:'log-preview gv-diff'}),bMore=el('button',{type:'button',className:'outline'}),hiRefresh=el('button',{type:'button',className:'outline'});
 const hiSec=el('section',{className:'panel'},el('div',{className:'section-head'},el('div',{},el('div',{className:'eyebrow'},'COMMIT LOG'),hiTitle),hiRefresh),hiList,el('div',{className:'action-row'},bMore),hiShow);
-hiSec.dataset.section='history-view';
+hiSec.dataset.section='history-view';hiSec.hidden=true;
 sectionBefore.before(chSec);
 document.querySelector('[data-section="activity"]')?.before(hiSec);
 
@@ -64,7 +64,7 @@ async function loadChanges(){
   chTitle.textContent=`${L().ch} · ${s.branch||'—'}${s.ahead?` ↑${s.ahead}`:''}${s.behind?` ↓${s.behind}`:''}`;
   ignoredCount=s.files.filter(f=>f.ignored).length;const vis=f=>!(hideIgnored&&f.ignored);
   const staged=s.files.filter(f=>f.index&&!f.untracked&&vis(f)),work=s.files.filter(f=>f.worktree&&!f.untracked&&vis(f)),untr=s.files.filter(f=>f.untracked&&vis(f));
-  const parts=[group(L().staged,staged,true),group(L().changes,work,false),group(L().untracked,untr,false)].filter(Boolean);
+  const parts=[group(L().staged,staged.filter(f=>f.index!=='D'),true),group(L().stagedDeleted,staged.filter(f=>f.index==='D'),true),group(L().modified,work.filter(f=>f.worktree!=='D'),false),group(L().deleted,work.filter(f=>f.worktree==='D'),false),group(L().untracked,untr,false)].filter(Boolean);
   if(!parts.length)chList.textContent=s.files.length?L().allIgnored:L().none;else chList.append(...parts);
   applyHide();
  }catch(e){fail(e)}
@@ -125,7 +125,7 @@ function sync(){
 new MutationObserver(sync).observe(chSec,{attributes:true,attributeFilter:['class','hidden']});
 new MutationObserver(sync).observe(hiSec,{attributes:true,attributeFilter:['class','hidden']});
 api.on('repo',info=>{if(info?.dir===sel()&&!chSec.hidden)loadChanges()});
-$('language-select')?.addEventListener('change',()=>setTimeout(()=>{labels();loadChanges();loadLog(true)},0));
+$('language-select')?.addEventListener('change',()=>setTimeout(()=>{labels();if(!chSec.hidden)loadChanges();if(!hiSec.hidden)loadLog(true)},0));
 labels();
 })();
 

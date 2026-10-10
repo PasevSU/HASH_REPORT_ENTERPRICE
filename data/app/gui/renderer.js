@@ -8,7 +8,7 @@ function translateStatic(){
  const root=document.body;
  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
  const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
- for(const n of nodes){if(n.parentElement?.closest('script,style,pre,code,#repo-rows,#overview,#job-history,#health-status,#log,#copyresult,#github-panel,#watcher-panel,#rules-panel,#connections-panel,#settings-panel'))continue;
+ for(const n of nodes){if(n.parentElement?.closest('script,style,pre,code,#repo-rows,#overview,#job-history,#health-status,#log,#copyresult,#github-panel,#watcher-panel,#rules-panel,#connections-panel,#settings-panel,#dashboard-panel,#repositories-panel,#repository-panel,#sync-panel,#system-panel,#activity-panel,#about-panel'))continue;
    if(n._gitsuOriginal===undefined)n._gitsuOriginal=n.nodeValue;
    const original=n._gitsuOriginal;const key=original.trim();if(!key)continue;
    if(window.GITSU_I18N?.bg?.[key])n.nodeValue=original.replace(key,t(key));
@@ -21,51 +21,64 @@ function translateStatic(){
  document.documentElement.lang=currentLanguage;
  document.title='GitSU SUPERUSER Enterprise Pro · '+(currentLanguage==='bg'?'Български':'Deutsch');
 }
-function changeLanguage(lang){if(!LANGUAGES.includes(lang))return;currentLanguage=lang;localStorage.setItem('gitsu.language',lang);translateStatic();updateBreadcrumb();renderRepos();if(selected&&repoData.has(selected))show(repoData.get(selected));renderJobs(jobs);if(lastHealth)renderHealth(lastHealth);if(lastResources)renderResources(lastResources);}
+function changeLanguage(lang){
+ if(!LANGUAGES.includes(lang))return;
+ currentLanguage=lang;localStorage.setItem('gitsu.language',lang);
+ translateStatic();updateBreadcrumb();
+ GitSUUI.emit('repoCount',folders.length);
+ GitSUUI.emit('repos');
+ if(selected&&repoData.has(selected))GitSUUI.emit('overview',repoData.get(selected));
+ GitSUUI.emit('jobs',jobs);
+ if(lastHealth)GitSUUI.emit('health',lastHealth);
+ if(lastResources)GitSUUI.emit('resources',lastResources);
+}
 let lastHealth=null,lastResources=null;
 
-let selected=null,folders=[],repoData=new Map(),copyPlan=null,jobs=[];
+let selected=null,folders=[],repoData=new Map(),jobs=[];
 const nameOf=dir=>String(dir).split(/[\\/]/).filter(Boolean).at(-1)||dir;
-function log(x){const el=$('log');el.textContent+=(el.textContent?'\n':'')+(typeof x==='string'?x:JSON.stringify(x,null,2));if(el.textContent.length>40000)el.textContent=el.textContent.slice(-30000);el.scrollTop=el.scrollHeight;}
+function log(x){const el=$('log');if(!el)return;el.textContent+=(el.textContent?'\n':'')+(typeof x==='string'?x:JSON.stringify(x,null,2));if(el.textContent.length>40000)el.textContent=el.textContent.slice(-30000);el.scrollTop=el.scrollHeight;}
 function chip(label,kind=''){const e=document.createElement('span');e.className='chip '+kind;e.textContent=label;return e;}
-function textCell(tr,main,sub){const td=document.createElement('td'),strong=document.createElement('strong');strong.textContent=main||'—';td.append(strong);if(sub){const small=document.createElement('small');small.textContent=sub;td.append(small);}tr.append(td);return td;}
-function renderRepos(){const term=$('search').value.trim().toLowerCase(),filter=$('repo-filter').value;const rows=folders.filter(dir=>{const r=repoData.get(dir);if(term&&!`${dir} ${r?.branch||''} ${r?.remote||''}`.toLowerCase().includes(term))return false;if(filter==='dirty')return !!r?.dirty;if(filter==='clean')return !!r?.isRepo&&!r.dirty;if(filter==='uninitialized')return !!r&&!r.isRepo;return true;});$('metric-repos').textContent=folders.length;$('repo-count').textContent=folders.length+' '+t('registered');$('table-count').textContent=rows.length;const body=$('repo-rows');body.replaceChildren();if(!rows.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=5;td.className='empty';td.textContent=folders.length?t('No repositories match the current filter.'):t('No repositories registered. Add a local folder to begin.');tr.append(td);body.append(tr);return;}
-for(const dir of rows){const r=repoData.get(dir),tr=document.createElement('tr');if(selected===dir)tr.className='selected';tr.tabIndex=0;tr.onclick=()=>selectRepo(dir);tr.onkeydown=e=>{if(e.key==='Enter')selectRepo(dir)};textCell(tr,nameOf(dir),dir);textCell(tr,r?.branch||'—');const status=document.createElement('td');status.append(chip(!r?t('CHECKING'):!r.isRepo?t('NO GIT'):r.dirty?t('MODIFIED'):t('CLEAN'),!r?'':!r.isRepo?'bad':r.dirty?'warn':'good'));tr.append(status);textCell(tr,r?.remote?nameOf(r.remote):t('Not linked'));const actions=document.createElement('td'),b=document.createElement('button');b.className='outline';b.textContent='↻';b.title=t('Refresh repository');b.onclick=async e=>{e.stopPropagation();await refreshOne(dir)};actions.append(b);const rmf=document.createElement('button');rmf.className='outline';rmf.textContent='🗑';rmf.title=t('Remove folder');rmf.onclick=async e=>{e.stopPropagation();if(!(await gsConfirm(`Remove ${nameOf(dir)} from GitSU? Files stay on disk.`)))return;try{folders=await api.remove(dir);repoData.delete(dir);if(selected===dir){selected=null;const rb=document.querySelector('[data-view="rules"]');if(rb)rb.hidden=false;}renderRepos();updateBreadcrumb();log(`Removed ${nameOf(dir)}`)}catch(err){log(err.message)}};actions.append(' ',rmf);if(r&&!r.remote&&window.GitSUConnect){const up=document.createElement('button');up.className='outline';up.textContent='⇪';up.title=currentLanguage==='de'?'Mit GitHub verbinden / hochladen':'Свържи с GitHub / качи';up.onclick=e=>{e.stopPropagation();window.GitSUConnect.open(null,{dir})};actions.append(' ',up)}if(r?.remote){const gear=document.createElement('button');gear.className='outline';gear.textContent='⚙';gear.title=t('Manage remote');gear.onclick=e=>{e.stopPropagation();selectRepo(dir);view('repositories')};actions.append(' ',gear);const rm=document.createElement('button');rm.className='outline';rm.textContent='✕';rm.title=t('Remove remote');rm.onclick=async e=>{e.stopPropagation();if(!(await gsConfirm(`Remove remote from ${nameOf(dir)}?`)))return;try{await api.remoteRemove(dir);await refreshOne(dir)}catch(err){log(err.message)}};actions.append(' ',rm)}tr.append(actions);body.append(tr);}}
-function detail(k,v,wide=false){const e=document.createElement('div');e.className='detail'+(wide?' wide':'');const a=document.createElement('span'),b=document.createElement('strong');a.textContent=k;b.textContent=v===undefined||v===null||v===''?'—':String(v);e.append(a,b);return e;}
-function syncControls(info){const box=document.createElement('div');box.className='action-row remote-controls';const inp=document.createElement('input');inp.type='text';inp.placeholder=t('Commit message');const btn=document.createElement('button');btn.type='button';btn.className='primary';btn.textContent=t('Sync');const gate=()=>{btn.disabled=!!info.dirty&&!inp.value.trim()};inp.oninput=gate;btn.onclick=async()=>{btn.disabled=true;try{const r=await api.repoSync({dir:info.dir,message:inp.value.trim(),apply:true});log(`Sync ${nameOf(info.dir)}: pulled=${r.pulled} pushed=${r.pushed} ahead=${r.ahead??'—'} behind=${r.behind??'—'}`);await refreshOne(info.dir)}catch(e){log(e.message)}finally{gate()}};gate();box.append(inp,btn);return box;}
-function remoteControls(info){const box=document.createElement('div');box.className='action-row remote-controls';const inp=document.createElement('input');inp.type='text';inp.value=info.remote||'';inp.placeholder=t('Enter new remote URL');const save=document.createElement('button');save.type='button';save.className='primary';save.textContent=t('Save');const chg=document.createElement('button');chg.type='button';chg.className='outline';chg.textContent=t('Change remote');const rm=document.createElement('button');rm.type='button';rm.className='outline';rm.textContent=t('Remove remote');inp.hidden=true;save.hidden=true;chg.onclick=()=>{const open=inp.hidden;inp.hidden=!open;save.hidden=open;if(!inp.hidden)inp.focus()};save.onclick=async()=>{const url=inp.value.trim();if(!url)return log(t('Enter new remote URL'));if(!(await gsConfirm(`Change remote for ${nameOf(info.dir)} to ${url}?`)))return;try{const r=await api.remoteSetUrl({dir:info.dir,url});log(`Remote ${r.name}: ${r.from||'—'} → ${r.to}`);await refreshOne(info.dir)}catch(e){log(e.message)}};rm.onclick=async()=>{if(!(await gsConfirm(`Remove remote from ${nameOf(info.dir)}?`)))return;try{const r=await api.remoteRemove(info.dir);log(`Removed remote ${r.name} (${r.url})`);await refreshOne(info.dir)}catch(e){log(e.message)}};box.append(chg,inp,save,rm);return box;}
-function show(info){if(!info||!info.dir)return;repoData.set(info.dir,info);if(!folders.includes(info.dir))folders.push(info.dir);selected=info.dir;updateBreadcrumb();$('breadcrumb').textContent=nameOf(info.dir);$('repo-badge').replaceWith(Object.assign(chip(info.isRepo?(info.dirty?t('MODIFIED'):t('CLEAN')):t('NO GIT'),info.isRepo?(info.dirty?'warn':'good'):'bad'),{id:'repo-badge'}));const kids=[detail(t('Directory'),info.dir,true),detail(t('Branch'),info.branch),detail(t('Working tree'),info.dirty?t('Modified'):t('Clean')),detail(t('Origin'),info.remote,true),detail(t('Local branches'),(info.branches||[]).join(', ')),detail(t('Remote references'),(info.remotes||[]).length),detail('.gitignore',info.files?.gitignore?t('Present'):t('Missing')),detail('.gitattributes',info.files?.gitattributes?t('Present'):t('Missing'))];if(info.isRepo&&info.remote){kids.push(remoteControls(info));kids.push(syncControls(info));}$('overview').replaceChildren(...kids);renderRepos();if(info.isRepo&&info.remote){api.remoteStatus(info.dir).then(x=>log(`Remote ${nameOf(info.dir)}: ahead=${x.ahead??t('unknown')} behind=${x.behind??t('unknown')} review=${x.requiresReview}`)).catch(e=>log('Remote check: '+e.message));}}
-async function selectRepo(dir){try{show(await api.refresh(dir))}catch(e){log('Refresh: '+e.message)}}async function refreshOne(dir){try{const r=await api.refresh(dir);repoData.set(dir,r);if(dir===selected)show(r);else renderRepos();}catch(e){log(e.message)}}
-function renderJobs(data){if(!Array.isArray(data))return;jobs=data;$('job-count').textContent=jobs.length;const el=$('job-history');el.replaceChildren();if(!jobs.length){el.textContent=t('No recorded operations.');return;}for(const j of [...jobs].reverse().slice(0,25)){const row=document.createElement('div'),title=document.createElement('strong'),state=document.createElement('span'),sub=document.createElement('small');row.className='job';title.textContent=(j.kind||t('Operation'))+' · '+nameOf(j.dir||'');state.className='job-state '+(j.status||'');state.textContent=j.status||t('unknown');sub.textContent=[j.updatedAt,j.reason].filter(Boolean).join(' · ');row.append(title,state,sub);el.append(row);}}
 function percent(x){return Number.isFinite(x)?Math.max(0,Math.min(100,x*100)).toFixed(1)+'%':'—'}
-function renderResources(m){if(!m)return;lastResources=m;const cpu=percent(m.systemCpu??m.cpu),ram=percent(m.free);$('metric-cpu').textContent=cpu;$('metric-ram').textContent=ram;$('cpu-label').textContent=cpu;$('ram-label').textContent=ram;$('cpu-bar').style.width=cpu==='—'?'0%':cpu;$('ram-bar').style.width=ram==='—'?'0%':ram;$('metric-active').textContent=String(m.active??0);$('metric-queue').textContent=String(m.queued??0)+' '+t('queued');$('metric-mode').textContent=m.mode||t('unknown');$('lag').textContent=Number.isFinite(m.eventLoopLagMs)?m.eventLoopLagMs.toFixed(1)+' ms':'—';$('io').textContent=Number.isFinite(m.ioOpsPerSecond)?Math.round(m.ioOpsPerSecond)+' ops/s':'—';$('concurrency').textContent=String(m.concurrency??1);$('controller-badge').replaceWith(Object.assign(chip((m.mode||t('unknown')).toUpperCase(),m.mode==='normal'?'good':'warn'),{id:'controller-badge'}));$('connection').textContent=m.mode==='throttled'?t('THROTTLED'):t('ACTIVE');$('performance-status').textContent=m.error?'Controller error: '+m.error:'Local CPU, memory and process I/O measurements. Network throughput is not measured.';}
-function renderHealth(h){lastHealth=h;const el=$('health-status');el.replaceChildren();for(const [key,value] of Object.entries(h||{})){if(!value||typeof value!=='object'||!('available' in value))continue;const row=document.createElement('div'),label=document.createElement('span'),status=document.createElement('b');label.textContent=key.toUpperCase();status.textContent=value.available?t('AVAILABLE'):t('UNAVAILABLE');status.className=value.available?'':'off';row.append(label,status);el.append(row);}}
+// Lightweight in-page event hub: panels subscribe; core emits on data/language changes.
+window.GitSUUI=(function(){const m=new Map();return {on:(ev,fn)=>{if(!m.has(ev))m.set(ev,[]);m.get(ev).push(fn);},emit:(ev,data)=>{for(const fn of m.get(ev)||[])try{fn(data)}catch(e){log(e&&e.message||e)}}}})();
+
+function show(info){
+ if(!info||!info.dir)return;
+ repoData.set(info.dir,info);
+ if(!folders.includes(info.dir))folders.push(info.dir);
+ selected=info.dir;
+ updateBreadcrumb();
+ GitSUUI.emit('overview',info);
+ GitSUUI.emit('repos');
+}
+async function selectRepo(dir){try{show(await api.refresh(dir))}catch(e){log('Refresh: '+e.message)}}
+async function refreshOne(dir){try{const r=await api.refresh(dir);repoData.set(dir,r);if(dir===selected)show(r);else GitSUUI.emit('repos')}catch(e){log(e.message)}}
 
 // Persistent global breadcrumb (#5): folder + branch + status, visible on every view.
 function updateBreadcrumb(){const info=selected?repoData.get(selected):null;$('crumb-folder').textContent=selected?nameOf(selected):(currentLanguage==='de'?'Kein Repository ausgewählt':'Няма избрано репозитори');const br=$('crumb-branch');br.textContent=info?.branch||(currentLanguage==='de'?'kein Branch':'без клон');br.className='chip'+(info?.branch?' blue':'');const st=$('crumb-status');st.textContent=info?(info.isRepo?(info.dirty?t('MODIFIED'):t('CLEAN')):t('NO GIT')):(currentLanguage==='de'?'nicht ausgewählt':'не е избран');st.className='chip '+(!info?'':info.isRepo?(info.dirty?'warn':'good'):'bad');$('crumb-path').textContent=selected||'';}
 
 // Left-nav panel switcher: each logical function is its own panel.
-const VIEW_SECTIONS={dashboard:['dashboard'],repositories:['repository','changes-view','history-view','github','ssh','connections','watchers','rules','releases','sync'],connections:['connections'],github:['github','ssh'],watchers:['watchers'],rules:['rules'],sync:['sync'],system:['system'],settings:['settings'],activity:['activity']};
-function view(name){if(!VIEW_SECTIONS[name])name='dashboard';for(const b of document.querySelectorAll('[data-view]'))b.classList.toggle('active',b.dataset.view===name);const show=new Set(VIEW_SECTIONS[name]);for(const s of document.querySelectorAll('[data-section]'))s.hidden=!show.has(s.dataset.section);window.GitSURepoTabs?.apply(name);}
+const VIEW_SECTIONS={dashboard:['dashboard','repo-table'],repositories:['repository','repo-table','changes-view','history-view','github','ssh','connections','watchers','rules','releases','details','sync'],connections:['connections'],github:['github','ssh'],watchers:['watchers'],rules:['rules'],releases:['releases'],sync:['sync'],system:['system'],settings:['settings'],activity:['activity']};
+function view(name){if(!VIEW_SECTIONS[name])name='dashboard';for(const b of document.querySelectorAll('[data-view]'))b.classList.toggle('active',b.dataset.view===name);const show=new Set(VIEW_SECTIONS[name]);for(const s of document.querySelectorAll('[data-section]'))s.hidden=!show.has(s.dataset.section);window.GitSURepoTabs?.apply(name);window.GitSUPanels?.enter();}
 window.view=view;
+// Enterprise lazy-panel manager: panels register a {visible,run} hook; enter() runs only the visible
+// ones so hidden panels never build/render/fetch and their background work stays suspended.
+window.GitSUPanels=(function(){const hooks=[];const sectionVisible=s=>{const el=document.querySelector('[data-section="'+s+'"]');return !!el&&!el.hidden};return {sectionVisible,hook:(id,visible,run)=>hooks.push({id,visible,run}),enter:()=>{for(const h of hooks){if(h.visible()){try{h.run()}catch(e){log(e&&e.message||e)}}}}}})();
 
-api.on('state',s=>{folders=Array.isArray(s.folders)?s.folders:[];renderRepos();Promise.allSettled(folders.map(refreshOne));});api.on('repo',info=>{repoData.set(info.dir,info);if(!folders.includes(info.dir))folders.push(info.dir);if(!selected||selected===info.dir)show(info);else renderRepos()});api.on('error',log);api.on('log',log);api.on('resources',renderResources);api.on('jobs',renderJobs);api.on('health',renderHealth);
-$('search').oninput=renderRepos;$('repo-filter').onchange=renderRepos;$('refresh-all').onclick=()=>Promise.allSettled(folders.map(refreshOne));$('clear-log').onclick=()=>{$('log').textContent=''};$('add').onclick=async()=>{try{const i=await api.add();if(i)show(i)}catch(e){log(e.message)}};
+api.on('state',s=>{folders=Array.isArray(s.folders)?s.folders:[];GitSUUI.emit('repoCount',folders.length);GitSUUI.emit('repos');Promise.allSettled(folders.map(refreshOne));});
+api.on('repo',info=>{repoData.set(info.dir,info);if(!folders.includes(info.dir))folders.push(info.dir);if(!selected||selected===info.dir)show(info);else GitSUUI.emit('repos')});
+api.on('error',log);api.on('log',log);
+api.on('resources',m=>{lastResources=m;GitSUUI.emit('resources',m)});
+api.on('jobs',d=>{if(Array.isArray(d))jobs=d;GitSUUI.emit('jobs',jobs)});
+api.on('health',h=>{lastHealth=h;GitSUUI.emit('health',h)});
 
-// Upload gating (#2): single upload action, disabled until a commit message is present.
-function uploadGate(){const on=$('message').value.trim().length>0;$('push').disabled=!on;$('upload-hint').textContent=on?'':t('Upload requires a commit message.');}
-$('message').oninput=uploadGate;
-$('push').onclick=async()=>{if(!selected)return log(t('Select a repository first.'));const message=$('message').value.trim();if(!message)return uploadGate();if(!(await gsConfirm(`Upload ${nameOf(selected)}? This stages, commits and pushes in one operation.`)))return;try{log(await api.operation({dir:selected,action:'push',apply:true,message}));$('message').value='';uploadGate();await refreshOne(selected)}catch(e){log(e.message)}};
-$('pull').onclick=async()=>{if(!selected)return log(t('Select a repository first.'));if(!(await gsConfirm(`Pull / update ${nameOf(selected)}? This fetches and merges remote changes.`)))return;try{log(await api.operation({dir:selected,action:'update',apply:true}));await refreshOne(selected)}catch(e){log(e.message)}};
-
-$('plan').onclick=async()=>{if(!selected)return log(t('Select a repository first.'));try{copyPlan=await api.copyPlan({from:selected,to:$('target').value});$('copyresult').textContent=JSON.stringify(copyPlan.changes,null,2);$('applycopy').disabled=!copyPlan.changes.some(x=>x.type==='copy')}catch(e){log(e.message)}};
-$('applycopy').onclick=async()=>{if(!copyPlan||!(await gsConfirm(`Copy files into ${copyPlan.dst}?`)))return;try{log(await api.copyApply(copyPlan));copyPlan=null;$('applycopy').disabled=true}catch(e){log(e.message)}};
 for(const b of document.querySelectorAll('[data-view]'))b.onclick=()=>view(b.dataset.view);
 window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('search').focus()}});
 $('clock').textContent=t('LOCAL SESSION');
-api.jobsList().then(renderJobs).catch(e=>log(e.message));api.health().then(renderHealth).catch(e=>log(e.message));
+api.jobsList().then(d=>{if(Array.isArray(d))jobs=d;GitSUUI.emit('jobs',jobs)}).catch(e=>log(e.message));
+api.health().then(h=>{lastHealth=h;GitSUUI.emit('health',h)}).catch(e=>log(e.message));
 view('dashboard');
-$("language-select").value=currentLanguage;$("language-select").onchange=e=>changeLanguage(e.target.value);translateStatic();updateBreadcrumb();uploadGate();
+$("language-select").value=currentLanguage;$("language-select").onchange=e=>changeLanguage(e.target.value);translateStatic();updateBreadcrumb();
 
 // Local-only legal viewer: immutable bundled texts, no network request.
 const legalDocs={license:'legal/LICENSE.txt',notice:'legal/NOTICE.txt'};
@@ -78,11 +91,6 @@ async function showLegal(which){
  catch(err){area.textContent=(currentLanguage==='de'?'Dokument konnte nicht geladen werden: ':'Документът не може да бъде зареден: ')+err.message;}
  area.scrollTop=0;
 }
-$('show-license').addEventListener('click',()=>showLegal('license'));
 $('footer-license').addEventListener('click',()=>showLegal('license'));
-$('show-notice').addEventListener('click',()=>showLegal('notice'));
 $('legal-close').addEventListener('click',()=>$('legal-dialog').close());
 $('legal-dialog').addEventListener('click',e=>{if(e.target===$('legal-dialog'))e.target.close()});
-const aboutOrg={bg:'PasevSU-DEV е независима организация за софтуерна разработка, ръководена от Денислав Пасев. Работи по системни инструменти, Home Assistant интеграции и проекти за киберсигурност. По информация от разработчика, той участва доброволно в инициативата „NO TRUST“, насочена към уязвимости в критична инфраструктура. Това описание не означава институционално одобрение.',de:'PasevSU-DEV ist eine unabhängige Softwareentwicklungsorganisation unter Leitung von Denislav Pasev. Zu den Projekten gehören Systemwerkzeuge, Home-Assistant-Integrationen und Cybersicherheit. Nach Angaben des Entwicklers engagiert er sich freiwillig in der Initiative „NO TRUST“ zu Schwachstellen kritischer Infrastruktur. Diese Beschreibung stellt keine institutionelle Bestätigung dar.'};
-const originalChangeLanguage=changeLanguage;changeLanguage=function(lang){originalChangeLanguage(lang);$('about-organization').textContent=aboutOrg[lang]||aboutOrg.bg;};
-$('about-organization').textContent=aboutOrg[currentLanguage];

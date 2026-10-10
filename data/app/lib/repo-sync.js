@@ -11,10 +11,29 @@
 const path = require('node:path');
 const gitops = require('./gitops');
 
+function parseChanges(stdout) {
+  const changes = [];
+  const parts = String(stdout || '').split('\0').filter(Boolean);
+  for (let i = 0; i < parts.length; i++) {
+    const e = parts[i];
+    if (e.length < 4) continue;
+    const x = e[0], y = e[1];
+    let file = e.slice(3), status;
+    if (x === '?') status = '?';
+    else if (x === 'R' || x === 'C') { status = 'R'; file = parts[++i] || file; }
+    else if (y !== ' ') status = y;
+    else status = x;
+    changes.push({ path: file, status });
+  }
+  return changes;
+}
+
 async function localState(dir) {
   const root = path.resolve(dir);
   const branch = await gitops.currentBranch(root);
-  const dirty = (await gitops.runGit(root, ['status', '--porcelain', '--untracked-files=all'])).stdout.trim() !== '';
+  const st = await gitops.runGit(root, ['-c', 'core.quotepath=false', 'status', '--porcelain=v1', '-z', '--untracked-files=all']);
+  const changes = parseChanges(st.stdout);
+  const dirty = changes.length > 0;
   const remote = await gitops.resolveRemote(root);
   const upstream = await gitops.hasUpstream(root, branch);
   const headOk = (await gitops.runGit(root, ['rev-parse', '--verify', 'HEAD'])).ok;
@@ -23,6 +42,7 @@ async function localState(dir) {
     dir: root,
     branch,
     dirty,
+    changes,
     remote: remote ? remote.name : null,
     remoteUrl: remote ? remote.url : null,
     upstream,
@@ -36,6 +56,15 @@ async function divergence(dir) {
   return { ahead: m ? Number(m[1]) : null, behind: m ? Number(m[2]) : null, upstreamKnown: !!m };
 }
 
+async function lastPush(dir) {
+  try {
+    const r = await gitops.runGit(dir, ['log', '-1', '--format=%H%x00%h%x00%s%x00%an%x00%aI', '@{upstream}']);
+    if (!r.ok || !r.stdout.trim()) return null;
+    const [sha, short, message, author, date] = r.stdout.trim().split('\0');
+    return { sha: sha || null, short: short || null, message: message || '', author: author || '', date: date || null };
+  } catch { return null; }
+}
+
 async function status(dir, options = {}) {
   const s = await localState(dir);
   // Behind/ahead must be measured against a current remote-tracking ref, otherwise "behind"
@@ -46,7 +75,8 @@ async function status(dir, options = {}) {
   const d = (s.upstream && s.remote)
     ? await divergence(s.dir).catch(() => ({ ahead: null, behind: null, upstreamKnown: false }))
     : { ahead: null, behind: null, upstreamKnown: false };
-  return { ...s, ahead: d.ahead, behind: d.behind, upstreamKnown: d.upstreamKnown };
+  const lp = (s.upstream && s.remote) ? await lastPush(s.dir) : null;
+  return { ...s, ahead: d.ahead, behind: d.behind, upstreamKnown: d.upstreamKnown, lastPush: lp };
 }
 
 async function fetch(dir) {

@@ -6,17 +6,18 @@
 const $=id=>document.getElementById(id);
 const lang=()=>$('language-select')?.value==='de'?'de':'bg';
 const T={
- bg:{overview:'Преглед',changes:'Промени',history:'История',remote:'Remote',watchers:'Watchers',rules:'Правила',releases:'Релизи',sync:'Синхронизация',pick:'Изберете репозитори'},
- de:{overview:'Übersicht',changes:'Änderungen',history:'Verlauf',remote:'Remote',watchers:'Watcher',rules:'Regeln',releases:'Releases',sync:'Synchronisierung',pick:'Repository wählen'}
+ bg:{overview:'Преглед',changes:'Промени',history:'История',remote:'Remote',watchers:'Watchers',rules:'Правила',releases:'Релизи',details:'Детайли',sync:'Синхронизация',pick:'Изберете репозитори'},
+ de:{overview:'Übersicht',changes:'Änderungen',history:'Verlauf',remote:'Remote',watchers:'Watcher',rules:'Regeln',releases:'Releases',details:'Details',sync:'Synchronisierung',pick:'Repository wählen'}
 };
 const TABS=[
- {id:'overview',sec:['repository']},
+ {id:'overview',sec:['repository','repo-table']},
  {id:'changes',sec:['changes-view']},
  {id:'history',sec:['history-view']},
  {id:'remote',sec:['github','ssh','connections']},
  {id:'watchers',sec:['watchers']},
  {id:'rules',sec:['rules']},
  {id:'releases',sec:['releases']},
+ {id:'details',sec:['details']},
  {id:'sync',sec:['sync']}
 ];
 const KEY='gitsu.repoTab';
@@ -61,7 +62,7 @@ function apply(name){
  syncSwitcher();
 }
 
-function setTab(id){if(!TABS.some(t=>t.id===id))return;current=id;localStorage.setItem(KEY,id);apply()}
+function setTab(id){if(!TABS.some(t=>t.id===id))return;current=id;localStorage.setItem(KEY,id);apply();window.GitSUPanels?.enter()}
 
 // renderRepos() rebuilds #repo-rows on list/selection changes; mirror that into the picker.
 const rows=$('repo-rows');

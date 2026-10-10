@@ -75,7 +75,7 @@ async function renderStatus(dir,tdStatus){
 }
 let timer=null;function scheduleRender(){clearTimeout(timer);timer=setTimeout(render,120)}
 bRefresh.onclick=async()=>{for(const d of folders){try{await refreshOne(d)}catch(e){}}render()};
-api.on('state',scheduleRender);api.on('repo',scheduleRender);
-$('language-select')?.addEventListener('change',()=>setTimeout(render,0));
-render();
+api.on('state',()=>{if(window.GitSUPanels?.sectionVisible('connections'))scheduleRender()});api.on('repo',()=>{if(window.GitSUPanels?.sectionVisible('connections'))scheduleRender()});
+$('language-select')?.addEventListener('change',()=>setTimeout(()=>{if(window.GitSUPanels?.sectionVisible('connections'))render()},0));
+window.GitSUPanels.hook('connections',()=>window.GitSUPanels.sectionVisible('connections'),render);
 })();

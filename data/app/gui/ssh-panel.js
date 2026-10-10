@@ -20,7 +20,7 @@ const lN=el('label'),lE=el('label'),lP=el('label');
 const bGen=el('button',{type:'button',className:'primary'}),bTest=el('button',{type:'button',className:'outline'}),bUse=el('button',{type:'button',className:'outline'}),bUseHttps=el('button',{type:'button',className:'outline'}),bRef=el('button',{type:'button',className:'outline'});
 const list=el('div',{className:'ssh-list'}),h=el('h2');
 const sec=el('section',{className:'panel'},el('div',{className:'section-head'},el('div',{},el('div',{className:'eyebrow'},'SSH'),h),bRef),list,lN,name,lE,email,lP,pass,el('div',{className:'action-row'},bGen,bTest,bUse,bUseHttps),out);
-sec.dataset.section='ssh';main.appendChild(sec);
+sec.dataset.section='ssh';sec.hidden=true;main.appendChild(sec);
 
 const say=(t,type)=>{out.textContent=t;out.dataset.type=type||''};
 async function guard(f){try{say(L().wait);const r=await f();return r}catch(e){say(e.message,'error')}}
@@ -40,6 +40,7 @@ bGen.onclick=()=>guard(async()=>{const r=await api.sshGenerate({name:name.value.
 bTest.onclick=()=>guard(async()=>{const r=await api.sshTest();say(r.message,r.ok?'success':'error')});
 bUse.onclick=()=>guard(async()=>{const d=sel();if(!d)return say(L().pick,'error');const r=await api.sshUseForRepo(d);say(r.from+'\n→ '+r.to,'success')});
 bUseHttps.onclick=()=>guard(async()=>{const d=sel();if(!d)return say(L().pick,'error');const r=await api.sshUseHttps(d);say(r.from+'\n→ '+r.to,'success')});
-document.getElementById('language-select')?.addEventListener('change',()=>setTimeout(()=>{labels();render().catch(()=>{})},0));
-labels();render().catch(e=>say(e.message,'error'));
+document.getElementById('language-select')?.addEventListener('change',()=>setTimeout(()=>{if(window.GitSUPanels?.sectionVisible('ssh'))refresh()},0));
+function refresh(){labels();return render().catch(e=>say(e.message,'error'))}
+window.GitSUPanels.hook('ssh',()=>window.GitSUPanels.sectionVisible('ssh'),refresh);
 })();

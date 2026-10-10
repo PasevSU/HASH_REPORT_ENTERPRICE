@@ -24,7 +24,8 @@ const list=el('div',{className:'rules-list'});
 const globalBox=el('div',{className:'global-hint'});
 const out=el('div',{className:'workflow-result','aria-live':'polite'});
 host.append(el('section',{className:'panel'},el('div',{className:'section-head'},el('div',{},eyebrow,h),bRefresh),el('div',{className:'rules-layout'},el('div',{className:'rules-col'},rawLabel,raw),el('div',{className:'rules-col'},structLabel,list,globalBox)),el('div',{className:'action-row'},bSave),out));
-function setNav(hasRules){const btn=document.querySelector('[data-view="rules"]');if(btn)btn.hidden=hasRules;}
+function setNav(hasRules){const btn=document.querySelector('[data-view="rules"]');if(btn)btn.hidden=false;}
+async function syncNav(d){try{const r=await api.gitignoreLoad(d);setNav(!!r.exists)}catch{}}
 const say=(t,type)=>{out.textContent=t;out.dataset.type=type||''};
 function labelFor(key){return (meta.categories.find(c=>c.key===key)?.label||{})[lang()]||key}
 function placeholderFor(key){return (meta.categories.find(c=>c.key===key)?.placeholder||{})[lang()]||''}
@@ -68,7 +69,8 @@ function labels(){
 async function refresh(){const d=sel();if(!d){say(L().pick);return}say(L().wait);try{const r=await api.gitignoreLoad(d);baseCustom=(r.model&&r.model.custom)||[];raw.value=r.content||'';applyModel(r.model);setNav(!!r.exists);say('')}catch(e){say(e.message,'error')}}
 bSave.onclick=async()=>{const d=sel();if(!d)return say(L().pick,'error');bSave.disabled=true;try{await api.gitignoreSaveRaw({dir:d,content:raw.value});say(L().saved,'success')}catch(e){say(e.message,'error')}finally{bSave.disabled=false}};
 bRefresh.onclick=()=>refresh().catch(e=>say(e.message,'error'));
-api.on('repo',info=>{if(info?.dir===sel())refresh().catch(()=>{})});
-$('language-select')?.addEventListener('change',()=>setTimeout(()=>{labels();refresh()},0));
-(async function init(){try{await loadMeta();buildStructured();labels();await refresh()}catch(e){say(e.message,'error')}})();
+api.on('repo',info=>{if(info?.dir!==sel())return;syncNav(info.dir);if(window.GitSUPanels?.sectionVisible('rules'))refresh().catch(()=>{})});
+$('language-select')?.addEventListener('change',()=>setTimeout(()=>{if(window.GitSUPanels?.sectionVisible('rules')){labels();refresh()}},0));
+async function init(){try{await loadMeta();buildStructured();labels();await refresh()}catch(e){say(e.message,'error')}}
+window.GitSUPanels.hook('rules',()=>window.GitSUPanels.sectionVisible('rules'),init);
 })();
