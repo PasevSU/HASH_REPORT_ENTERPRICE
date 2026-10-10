@@ -65,7 +65,7 @@ async function renderStatus(dir,tdStatus){
  if(!r?.remote){tdStatus.textContent=(r&&r.isRepo)?L().notLinked:'—';return}
  tdStatus.textContent=L().checking;
  try{
-  const s=await api.remoteStatus(dir);
+  const s=await api.remoteStatus({dir,fetch:true});
   tdStatus.replaceChildren();
   if(!s.upstreamKnown){tdStatus.textContent=L().notLinked;return}
   const parts=[];if(s.ahead)parts.push(`${s.ahead} ${L().ahead}`);if(s.behind)parts.push(`${s.behind} ${L().behind}`);

@@ -126,4 +126,39 @@ test('link sets upstream when local branch differs from remote default', async (
   assert.equal(g(w, 'config', '--get', 'branch.master.merge'), 'refs/heads/main');
 });
 
+test('push syncs a tracked-file deletion to the remote', async () => {
+  const remote = bare('push-del');
+  const w = path.join(tmp, 'push-del');
+  fs.mkdirSync(w);
+  g(w, 'init', '-q', '-b', 'main');
+  g(w, 'remote', 'add', 'origin', remote);
+  fs.writeFileSync(path.join(w, 'keep.txt'), 'k');
+  fs.writeFileSync(path.join(w, 'gone.txt'), 'x');
+  g(w, 'add', '.');
+  g(w, 'commit', '-qm', 'i');
+  g(w, 'push', '-q', '-u', 'origin', 'main');
+  fs.unlinkSync(path.join(w, 'gone.txt'));
+  const r = await gitops.push(w, { apply: true, message: 'remove gone.txt' });
+  assert.equal(r.pushed, true);
+  const ls = g(tmp, '--git-dir=' + remote, 'ls-tree', '-r', '--name-only', 'main');
+  assert.equal(ls.split('\n').includes('gone.txt'), false, 'deleted file must be removed from remote');
+  assert.equal(ls.split('\n').includes('keep.txt'), true, 'untouched file must remain');
+});
+
+test('push blocks a newly-added sensitive file', async () => {
+  const remote = bare('push-sens');
+  const w = path.join(tmp, 'push-sens');
+  fs.mkdirSync(w);
+  g(w, 'init', '-q', '-b', 'main');
+  g(w, 'remote', 'add', 'origin', remote);
+  fs.writeFileSync(path.join(w, 'keep.txt'), 'k');
+  g(w, 'add', '.');
+  g(w, 'commit', '-qm', 'i');
+  g(w, 'push', '-q', '-u', 'origin', 'main');
+  fs.writeFileSync(path.join(w, '.env'), 'SECRET=1');
+  await assert.rejects(() => gitops.push(w, { apply: true, message: 'add secret' }), /Sensitive files staged/);
+  const ls = g(tmp, '--git-dir=' + remote, 'ls-tree', '-r', '--name-only', 'main');
+  assert.equal(ls.split('\n').includes('.env'), false, 'sensitive file must not be pushed');
+});
+
 test.after(() => fs.rmSync(tmp, { recursive: true, force: true }));

@@ -180,6 +180,11 @@ async function push(dir, options = {}) {
       throw new Error('A non-empty commit message is required when committing local changes.');
     }
     await stageAll(root);
+    const { bad } = await scanStagedSensitive(root);
+    if (bad.length) {
+      await runGit(root, ['reset', '-q']);
+      throw new Error('Sensitive files staged, aborted: ' + bad.join(', '));
+    }
     await commit(root, options.message);
   }
   if (!(await hasHead(root))) {

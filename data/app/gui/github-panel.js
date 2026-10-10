@@ -49,7 +49,7 @@ async function renderSelected(){
  const d=sel();if(!d){selInfo.textContent=L().notSelected;return}
  selInfo.textContent=L().checking;
  try{
-  const r=await api.remoteStatus(d);
+  const r=await api.remoteStatus({dir:d,fetch:true});
   const name=String(d).split(/[\\/]/).filter(Boolean).pop()||d;
   if(!r.upstreamKnown){selInfo.replaceChildren(el('p',{className:'hint',textContent:L().noUpstream}));return}
   const parts=[];

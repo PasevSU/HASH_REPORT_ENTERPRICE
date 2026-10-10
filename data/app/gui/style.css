@@ -36,6 +36,7 @@
 .repo-tabs{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin:14px 0 12px;border-bottom:1px solid #29425f}.repo-tab{background:none;border:0;border-bottom:2px solid transparent;color:#9db6d3;padding:10px 16px;cursor:pointer;font:inherit}.repo-tab:hover{color:#e4f0ff}.repo-tab.active{color:#56b7ff;border-bottom-color:#56b7ff;font-weight:600}.repo-tabs-title{margin-left:auto;color:#9db6d3;font-size:12px;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tab-off{display:none!important}.workspace.tabbed .legacy-operation:not(.tab-off):not([hidden]){display:block!important}
 .gv-list{display:grid;gap:4px;margin:8px 0;max-height:320px;overflow:auto}.gv-group{display:grid;gap:3px;margin-bottom:8px}.gv-row{display:flex;gap:8px;align-items:center;padding:4px 8px;border-radius:6px;cursor:pointer;overflow-wrap:anywhere}.gv-row:hover{background:#142a47}.gv-row code{min-width:1.4em;color:#56b7ff}.gv-conflict{border:1px solid #c0392b}.gv-diff{max-height:360px;overflow:auto;white-space:pre;font-size:12px}
 .repo-pick{font-weight:600;color:#4fc3ff;margin-right:10px;border-right:1px solid #29425f;padding-right:14px}
+#repo-switcher{max-width:260px;margin-left:auto;flex:none;padding:7px 10px;font-size:12px}
 
 body .workspace .main-column>[data-section].tab-off,body .workspace .main-column>[data-section][hidden]{display:none!important}
 .workspace.repo-focused .main-column>[data-section]:not(.tab-off):not([hidden]){display:block!important}
