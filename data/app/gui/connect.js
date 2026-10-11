@@ -96,8 +96,8 @@ async function plan(input,gh){
  throw Error('Unknown action');
 }
 
-async function apply(input,{ensureRules,gh}={}){
- const p=await plan(input,gh);
+async function apply(input,{ensureRules,gh,plan:prePlanned}={}){
+ const p=prePlanned||await plan(input,gh);
  const dir=p.dir;
  if(p.mode==='register')return {dir,mode:p.mode};
  if(p.mode==='local'){
@@ -117,8 +117,8 @@ async function apply(input,{ensureRules,gh}={}){
  try{
   await gitops.link(dir,p.url,{branch:p.defaultBranch||undefined});
  }catch(e){
-  await run('git',['remote','remove','origin'],{cwd:dir});
-  if(created)await fsp.rm(path.join(dir,'.git'),{recursive:true,force:true});
+  try{await run('git',['remote','remove','origin'],{cwd:dir})}catch(_){}
+  if(created){try{await fsp.rm(path.join(dir,'.git'),{recursive:true,force:true})}catch(_){}}
   throw e;
  }
  if(ensureRules)await ensureRules(dir);

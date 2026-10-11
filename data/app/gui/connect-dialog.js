@@ -82,7 +82,7 @@ function open(mode,preset){
  if(!dlg)build();labels();
  if(preset?.dir)$('cd-dir').value=preset.dir;
  if(preset?.repo)$('cd-repo').value=preset.repo;
- box('');state.done=false;state.reset=false;dlg.showModal();refresh().then(()=>{if(mode){const r=dlg.querySelector(`input[name="cd-action"][value="${mode}"]`);if(r){r.checked=true;$('cd-create').hidden=mode!=='create'}}});
+ box('');state.done=false;state.reset=false;dlg.showModal();refresh().then(()=>{if(mode){const r=dlg.querySelector(`input[name="cd-action"][value="${mode}"]`);if(r){r.checked=true;$('cd-create').hidden=mode!=='create';state.planned=false;check()}}});
 }
 window.GitSUConnect={open};
 
