@@ -61,7 +61,7 @@ const dirInput=el('input',{spellcheck:false,placeholder:'C:\\path\\to\\repo'}),b
 // — Documents generator —
 const nameInput=el('input',{spellcheck:false}),repoInput=el('input',{spellcheck:false}),docDescInput=el('textarea',{rows:2,spellcheck:false});
 const docHomepageInput=el('input',{spellcheck:false}),stackInput=el('input',{spellcheck:false});
-const licenseSelect=el('select',{},['Apache-2.0','MIT','GPL-3.0','BSD-3-Clause','Unlicense'].map(x=>el('option',{value:x,textContent:x})));
+const licenseSelect=el('select',{},...['Apache-2.0','MIT','GPL-3.0','BSD-3-Clause','Unlicense'].map(x=>el('option',{value:x,textContent:x})));
 const fileChecks={};
 const checksBox=el('div',{className:'action-row'});
 const bPreview=el('button',{type:'button',className:'outline'}),bWrite=el('button',{type:'button',className:'primary'});
