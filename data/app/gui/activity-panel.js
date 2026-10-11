@@ -5,7 +5,7 @@ const $=id=>document.getElementById(id);
 const host=document.getElementById('activity-panel');if(!host)return;
 const t=k=>window.GITSU_I18N?.[currentLanguage]?.[k]||k;
 const el=(tag,props={},...kids)=>{const e=document.createElement(tag);Object.assign(e,props);e.append(...kids);return e};
-host.innerHTML='<div class="section-head"><div><div class="eyebrow" id="a-eyebrow"></div><h2><span id="a-label"></span> <span id="job-count" class="count">0</span></h2></div><button id="clear-log" class="outline"></button><button id="clear-jobs" class="outline"></button></div><div id="job-history" class="job-history"></div><details><summary id="a-summary"></summary><pre id="log" aria-live="polite"></pre></details>';
+host.innerHTML='<div class="section-head"><div><div class="eyebrow" id="a-eyebrow"></div><h2><span id="a-label"></span> <span id="job-count" class="count">0</span></h2></div><div class="section-tools"><button id="clear-log" class="outline"></button><button id="clear-jobs" class="outline"></button></div></div><div id="job-history" class="job-history"></div><details><summary id="a-summary"></summary><pre id="log" aria-live="polite"></pre></details>';
 function labels(){
  $('a-eyebrow').textContent=t('AUDIT TRAIL');
  $('a-label').textContent=t('Operations & activity');
