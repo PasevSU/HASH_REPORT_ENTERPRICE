@@ -39,11 +39,11 @@ const T={
   ha:['Home Assistant','Prüfung und Gerüst der Integration']}
 };
 const sec=document.createElement('section');sec.className='panel start-panel';sec.dataset.section='start';
-const op=(name,tab='ops')=>()=>{window.view?.('repositories');window.GitSUTabs?.setTab(tab);window.GitSUWorkflow?.setOperation(name)};
+const nav=v=>()=>window.view?.(v);
 const GROUPS=[
  ['g1',[['connect',()=>window.GitSUConnect?.open(null,{}),'⇪'],['create',()=>window.GitSUConnect?.open('create',{}),'✚'],['clone',()=>window.GitSUConnect?.open('clone',{}),'⇩'],['add',()=>document.querySelector('[data-action="add"]')?.click(),'▣']]],
- ['g2',[['login',op('githubLogin'),'🔑'],['token',op('githubToken'),'🔐'],['ssh',()=>window.GitSUTabs?.setTab('ssh'),'🛡']]],
- ['g3',[['ops',()=>window.GitSUTabs?.setTab('ops'),'⚙'],['ha',op('haValidate'),'⌂']]]
+ ['g2',[['login',nav('github'),'🔑'],['token',nav('github'),'🔐'],['ssh',nav('github'),'🛡']]],
+ ['g3',[['ops',nav('github'),'⚙'],['ha',nav('settings'),'⌂']]]
 ];
 function render(){
  const t=T[lang()];sec.textContent='';
