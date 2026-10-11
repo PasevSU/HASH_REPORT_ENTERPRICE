@@ -16,6 +16,7 @@ class OperationManager {
   finally{this.active.delete(key);}
  }
  list(){return this.journal.list();}
+ clear(){this.journal.clear();this.onChange(this.journal.list());return this.journal.list()}
 }
 module.exports={OperationManager};
 

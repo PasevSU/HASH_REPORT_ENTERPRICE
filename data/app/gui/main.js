@@ -33,7 +33,7 @@ ipcMain.handle('remote:remove',async(_e,dir)=>{dir=registered(dir);const cur=awa
 ipcMain.handle('remote:set-url',async(_e,{dir,url,remote})=>{dir=registered(dir);url=String(url||'').trim();if(!url)throw Error('URL is required');const cur=await gitops.resolveRemote(dir);const name=remote||cur?.name||'origin';const before=cur?.url||'';const out=await gitops.runGit(dir,cur?['remote','set-url',name,url]:['remote','add',name,url]);if(!out.ok)throw Error(out.stderr||out.stdout||'git remote set-url failed');refresh(dir);return {name,from:before,to:url}});
 ipcMain.handle('copy-plan',(_e,{from,to})=>planCopy(registered(from),to));ipcMain.handle('copy-apply',async(_e,plan)=>{if(!plan||!Array.isArray(plan.changes))throw Error('Invalid plan');registered(plan.src);return applyCopy(plan)});
 ipcMain.handle('operation',async(_e,{dir,action,message,apply})=>{if(!state.folders.includes(dir))throw Error('Unregistered directory');const args=message&&action==='push'?['--message',message]:[];try{return await guard.guarded(action,{dir,apply:!!apply,message,needCommit:false},()=>operationManager.run({dir,action,args,apply:!!apply}))}finally{refresh(dir)}});
-ipcMain.handle('jobs:list',()=>operationManager.list());
+ipcMain.handle('jobs:list',()=>operationManager.list());ipcMain.handle('jobs:clear',()=>operationManager.clear());
 ipcMain.handle('watch-status',()=>lifecycle.status());
 
 // Read-only remote divergence check. Never fetch, pull or push without explicit approval.
