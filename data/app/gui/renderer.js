@@ -74,7 +74,6 @@ api.on('health',h=>{lastHealth=h;GitSUUI.emit('health',h)});
 
 for(const b of document.querySelectorAll('[data-view]'))b.onclick=()=>view(b.dataset.view);
 window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('search').focus()}});
-$('clock').textContent=t('LOCAL SESSION');
 api.jobsList().then(d=>{if(Array.isArray(d))jobs=d;GitSUUI.emit('jobs',jobs)}).catch(e=>log(e.message));
 api.health().then(h=>{lastHealth=h;GitSUUI.emit('health',h)}).catch(e=>log(e.message));
 view('dashboard');
