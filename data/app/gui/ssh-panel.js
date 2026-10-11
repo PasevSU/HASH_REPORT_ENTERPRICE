@@ -30,7 +30,7 @@ async function render(){
  if(!s.available){list.textContent=L().noSsh;return}
  if(!s.keys.length){list.textContent=L().none;return}
  for(const k of s.keys){
-  const copy=el('button',{type:'button',className:'outline',textContent:L().copy,onclick:async()=>{await navigator.clipboard.writeText(k.publicKey);say(L().copied+': '+k.name)}});
+  const copy=el('button',{type:'button',className:'outline',textContent:L().copy,onclick:async()=>{try{await navigator.clipboard.writeText(k.publicKey);say(L().copied+': '+k.name)}catch(e){say(L().copy+': '+(e?.message||e),'error')}}});
   const add=el('button',{type:'button',className:'outline',textContent:L().add,onclick:()=>guard(async()=>{const r=await api.sshAdd({name:k.name});say(r.message,'success')})});
   list.append(el('div',{className:'gv-row'},el('strong',{textContent:k.name}),el('code',{textContent:k.fingerprint||k.publicKey.slice(0,60)}),copy,add));
  }

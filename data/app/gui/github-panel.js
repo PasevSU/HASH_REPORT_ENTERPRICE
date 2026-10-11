@@ -24,7 +24,7 @@ const selHead=el('div',{className:'section-head'},el('div',{},el('div',{classNam
 const msgLbl=el('label',{htmlFor:'gh-msg'}),msg=el('input',{id:'gh-msg',placeholder:'Describe your changes'}),bActions=el('button',{type:'button',className:'primary'}),menu=el('div',{className:'gh-menu',hidden:true});
 let cur=null;
 const nm=d=>String(d).split(/[\\/]/).filter(Boolean).pop()||d;
-const bCopyUrl=(url,label)=>{const b=el('button',{type:'button',className:'outline',textContent:label,onclick:async()=>{await navigator.clipboard.writeText(url);say(L().copied+': '+url,'success')}});return b};
+const bCopyUrl=(url,label)=>{const b=el('button',{type:'button',className:'outline',textContent:label,onclick:async()=>{try{await navigator.clipboard.writeText(url);say(L().copied+': '+url,'success')}catch(e){say(L().copy+': '+(e?.message||e),'error')}}});return b};
 host.append(
  el('section',{className:'panel'},el('div',{className:'section-head'},el('div',{},eyebrow,h)),authBox,
   el('div',{className:'action-row'},bBrowser,bToken,bLogout),
