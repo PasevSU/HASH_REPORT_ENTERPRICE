@@ -50,7 +50,7 @@ async function get(dir) {
   );
   if (!r.ok) {
     const msg = (r.stderr || r.stdout || '').trim();
-    if (/not a git repository|could not resolve|no repository|does not exist/i.test(msg)) return null;
+    if (/not a git repository|could not resolve|no repository|does not exist|no git remote/i.test(msg)) return null;
     throw new Error(msg || 'gh repo view failed');
   }
   let x;
