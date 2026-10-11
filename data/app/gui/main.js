@@ -61,6 +61,18 @@ ipcMain.handle('github:auth-token',(_e,token)=>{memoClear('gh');return githubAut
 ipcMain.handle('github:account',()=>memo('gh|account',15000,async()=>{const st=await invokeGh(['auth','status','--hostname','github.com'],{timeoutMs:15000});const login=st.ok?await invokeGh(['api','user','-q','.login'],{timeoutMs:15000}):null;let method=null;if(st.ok){if(process.env.GITHUB_TOKEN)method='token';else if(/(ssh protocol|ssh\.git|configured to use ssh)/i.test(st.output||''))method='ssh';else method='browser'}return {authenticated:st.ok,cliAvailable:!String(st.error||'').includes('not installed'),username:login&&login.ok?String(login.output||'').trim():null,method,message:st.ok?('Authenticated as '+((login&&login.ok&&login.output)?String(login.output).trim():'GitHub account')):(st.error||st.output||'Not authenticated')}}));
 ipcMain.handle('github:repos',()=>memo('gh|repos',30000,async()=>{const r=await invokeGh(['repo','list','--limit','200','--json','nameWithOwner,sshUrl,url'],{timeoutMs:25000});if(!r.ok)return {ok:false,repos:[],error:r.error||r.output||'gh repo list failed'};let repos=[];try{repos=JSON.parse(r.output)}catch{return {ok:false,repos:[],error:'Could not parse gh repo list output'}}return {ok:true,repos:repos.map(x=>({name:x.nameWithOwner||'',https:x.url||'',ssh:x.sshUrl||''}))}}));
 ipcMain.handle('github:auth-logout',async()=>{const r=await invokeGh(['auth','logout','--hostname','github.com'],{timeoutMs:15000});memoClear('gh');return {ok:r.ok,message:r.ok?('Signed out of GitHub'):(r.error||r.output||'gh auth logout failed')}});
+ipcMain.handle('github:scopes',()=>memo('gh|scopes',15000,async()=>{
+ const r=await invokeGh(['api','-i','user'],{timeoutMs:20000});
+ if(!r.ok)return {ok:false,authenticated:false,scopes:[],permissions:{},tokenType:null,error:r.error||r.output||'gh api failed'};
+ const out=String(r.output||'');
+ const scopesHeader=(/^x-oauth-scopes:\s*(.*)$/im.exec(out)?.[1]||'').trim();
+ const permsHeader=(/^x-accepted-github-permissions:\s*(.*)$/im.exec(out)?.[1]||'').trim();
+ const tokenType=(/^x-github-token-type:\s*(.*)$/im.exec(out)?.[1]||'').trim()||null;
+ const scopes=scopesHeader?scopesHeader.split(',').map(s=>s.trim()).filter(Boolean):[];
+ const permissions={};
+ if(permsHeader)for(const pair of permsHeader.split(',')){const i=pair.indexOf('=');if(i>0)permissions[pair.slice(0,i).trim()]=pair.slice(i+1).trim();}
+ return {ok:true,authenticated:true,scopes,permissions,tokenType,error:null};
+}));
 
 // Per-repository Git trust requires explicit user confirmation in the workflow UI.
 const repositoryTrust=require('./repository-trust');
