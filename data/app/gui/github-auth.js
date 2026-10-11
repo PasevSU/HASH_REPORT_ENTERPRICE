@@ -6,7 +6,7 @@ function invokeGh(args,{spawnImpl=spawn,timeoutMs=15000}={}){
  return new Promise(resolve=>{let done=false,output='',child;
  const finish=r=>{if(done)return;done=true;clearTimeout(timer);resolve(r)};
  const timer=setTimeout(()=>{child?.kill();finish({ok:false,error:'GitHub CLI timeout'})},timeoutMs);
- try{child=spawn('gh',args,{shell:false,windowsHide:true,env:process.env,stdio:['ignore','pipe','pipe']});}
+ try{child=spawnImpl('gh',args,{shell:false,windowsHide:true,env:process.env,stdio:['ignore','pipe','pipe']});}
  catch(e){finish({ok:false,error:e.message});return}
  for(const stream of [child.stdout,child.stderr])stream?.on('data',d=>{output=(output+String(d)).slice(-12000)});
  child.on('error',e=>finish({ok:false,error:e.code==='ENOENT'?'GitHub CLI (gh) is not installed or not in PATH':e.message}));
