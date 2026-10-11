@@ -47,5 +47,6 @@ $('push').onclick=async()=>{if(!selected)return log(t('Select a repository first
 $('pull').onclick=async()=>{if(!selected)return log(t('Select a repository first.'));if(!(await gsConfirm(`Pull / update ${nameOf(selected)}? This fetches and merges remote changes.`)))return;try{log(await api.operation({dir:selected,action:'update',apply:true}));await refreshOne(selected)}catch(e){log(e.message)}};
 window.GitSUUI.on('overview',info=>{labels();renderOverview(info)});
 window.GitSUPanels.hook('repository',()=>window.GitSUPanels.sectionVisible('repository'),()=>{labels();renderOverview(selected&&repoData.has(selected)?repoData.get(selected):null)});
+$('language-select')?.addEventListener('change',()=>setTimeout(()=>{if(window.GitSUPanels?.sectionVisible('repository')){labels();renderOverview(selected&&repoData.has(selected)?repoData.get(selected):null)}},0));
 labels();renderOverview(selected&&repoData.has(selected)?repoData.get(selected):null);
 })();

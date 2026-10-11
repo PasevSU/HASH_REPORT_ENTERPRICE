@@ -39,5 +39,6 @@ function health(h){
 window.GitSUUI.on('resources',m=>{labels();resources(m)});
 window.GitSUUI.on('health',h=>health(h));
 window.GitSUPanels.hook('system',()=>window.GitSUPanels.sectionVisible('system'),()=>{labels();resources(lastResources);health(lastHealth)});
+$('language-select')?.addEventListener('change',()=>setTimeout(()=>{if(window.GitSUPanels?.sectionVisible('system')){labels();resources(lastResources);health(lastHealth)}},0));
 labels();resources(lastResources);health(lastHealth);
 })();
