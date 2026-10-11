@@ -17,7 +17,7 @@ class GitHubBrowserAuth extends EventEmitter{
  constructor({spawnImpl=spawn,openBrowser=()=>{},emit=()=>{}}={}){super();this.spawnImpl=spawnImpl;this.openBrowser=openBrowser;this.emitStatus=emit;this.child=null;this.busy=false;this.last='';}
  async status(){const r=await invokeGh(['auth','status','--hostname','github.com'],{spawnImpl:this.spawnImpl});return {authenticated:r.ok,cliAvailable:!r.error?.includes('not installed'),message:r.ok?'Authenticated with GitHub CLI':(r.error||'Not authenticated; use browser login'),busy:this.busy};}
  start(){if(this.busy)return {ok:false,error:'Authentication already in progress'};this.busy=true;this.last='';let child;
- try{child=this.spawnImpl('gh',['auth','login','--hostname','github.com','--web','--git-protocol','https'],{shell:false,windowsHide:true,env:process.env,stdio:['pipe','pipe','pipe']});this.child=child;}
+ try{child=this.spawnImpl('gh',['auth','login','--hostname','github.com','--git-protocol','https'],{shell:false,windowsHide:true,env:process.env,stdio:['ignore','pipe','pipe']});this.child=child;}
  catch(e){this.busy=false;return {ok:false,error:e.message}}
  this.emitStatus({state:'started',message:'Starting GitHub browser authentication…'});
  const onData=data=>{this.last=(this.last+String(data)).slice(-12000);const code=this.last.match(/(?:one.time code|code:)\s*([A-Z0-9]{4}-[A-Z0-9]{4})/i)?.[1];this.emitStatus({state:'waiting',message:'Open github.com/login/device and enter the displayed code.',code:code||null});};

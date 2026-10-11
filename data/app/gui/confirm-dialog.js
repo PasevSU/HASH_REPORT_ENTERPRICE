@@ -2,8 +2,8 @@
 'use strict';
 // In-page replacement for window.confirm: native dialogs steal keyboard focus on Windows/Electron,
 // after which no input field accepts typing until the window is re-activated.
-const lang=()=>document.getElementById('language-select')?.value==='de'?'de':'bg';
-const L={bg:['Потвърждение','Потвърди','Отказ'],de:['Bestätigung','Bestätigen','Abbrechen']};
+const lang=()=>{const v=document.getElementById('language-select')?.value;return v==='de'?'de':v==='en'?'en':'bg'};
+const L={en:['Confirmation','Confirm','Cancel'],bg:['Потвърждение','Потвърди','Отказ'],de:['Bestätigung','Bestätigen','Abbrechen']};
 let dlg;
 function build(){
  dlg=document.createElement('dialog');dlg.id='gs-confirm';dlg.className='legal-dialog gs-confirm';

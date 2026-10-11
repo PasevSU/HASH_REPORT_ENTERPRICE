@@ -2,6 +2,7 @@
 'use strict';
 // Tabbed workspace for the Repository view. Moves existing sections into tabs; no logic is changed.
 const D={
+ en:{start:'Start',overview:'Overview',ssh:'SSH',changes:'Changes',ops:'Operations',sync:'Sync',history:'History',settings:'Settings'},
  bg:{start:'Старт',overview:'Преглед',ssh:'SSH',changes:'Промени',ops:'Операции',sync:'Синхронизация',history:'История',settings:'Настройки'},
  de:{start:'Start',overview:'Übersicht',ssh:'SSH',changes:'Änderungen',ops:'Vorgänge',sync:'Synchronisierung',history:'Verlauf',settings:'Einstellungen'}
 };
@@ -31,11 +32,11 @@ const pick=document.createElement('button');pick.type='button';pick.className='r
 const repos=document.querySelector('[data-section="repositories"]');
 repos.insertAdjacentElement('afterend',bar);
 
-function labels(){pick.textContent=lang()==='de'?'☰ Repository wechseln':'☰ Смени репозитори';for(const b of bar.children)if(b.dataset.tab)b.textContent=D[lang()]?.[b.dataset.tab]||b.dataset.tab}
+function labels(){pick.textContent=lang()==='de'?'☰ Repository wechseln':lang()==='en'?'☰ Switch repository':'☰ Смени репозитори';for(const b of bar.children)if(b.dataset.tab)b.textContent=D[lang()]?.[b.dataset.tab]||b.dataset.tab}
 function name(){const n=document.getElementById('hub-name');title.textContent=n?n.textContent:''}
 function isRepoView(){return document.querySelector('[data-view="repositories"]')?.classList.contains('active')}
 
-function hasSelection(){const n=document.getElementById('hub-name')?.textContent||'';return n!==''&&!/^(Изберете репозитори|Repository auswählen)$/.test(n.trim())}
+function hasSelection(){const n=document.getElementById('hub-name')?.textContent||'';return n!==''&&!/^(Изберете репозитори|Repository auswählen|Select a repository)$/.test(n.trim())}
 let picking=true;
 function activeView(){return document.querySelector('[data-view].active')?.dataset.view}
 function apply(){

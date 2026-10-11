@@ -1,8 +1,8 @@
 'use strict';
 const $=id=>document.getElementById(id);const api=window.repoAPI;
 // Localized UI: language choice is saved locally; user data and paths are never translated.
-const LANGUAGES=['bg','de'];
-let currentLanguage=LANGUAGES.includes(localStorage.getItem('gitsu.language'))?localStorage.getItem('gitsu.language'):'bg';
+const LANGUAGES=['en','bg','de'];
+let currentLanguage=LANGUAGES.includes(localStorage.getItem('gitsu.language'))?localStorage.getItem('gitsu.language'):'en';
 const t=(key)=>window.GITSU_I18N?.[currentLanguage]?.[key]||key;
 function translateStatic(){
  const root=document.body;
@@ -13,13 +13,13 @@ function translateStatic(){
    const original=n._gitsuOriginal;const key=original.trim();if(!key)continue;
    if(window.GITSU_I18N?.bg?.[key])n.nodeValue=original.replace(key,t(key));
  }
- for(const el of document.querySelectorAll('[placeholder],[title]'))for(const a of ['placeholder','title']){
+ for(const el of document.querySelectorAll('[placeholder],[title],[aria-label]'))for(const a of ['placeholder','title','aria-label']){
    if(!el.hasAttribute(a))continue;const field='_gitsuOriginal'+a;
    if(el[field]===undefined)el[field]=el.getAttribute(a);
    if(window.GITSU_I18N?.bg?.[el[field]])el.setAttribute(a,t(el[field]));
  }
  document.documentElement.lang=currentLanguage;
- document.title='GitSU SUPERUSER Enterprise Pro · '+(currentLanguage==='bg'?'Български':'Deutsch');
+ document.title='GitSU SUPERUSER Enterprise Pro · '+(currentLanguage==='de'?'Deutsch':currentLanguage==='bg'?'Български':'English');
 }
 function changeLanguage(lang){
  if(!LANGUAGES.includes(lang))return;
@@ -55,7 +55,7 @@ async function selectRepo(dir){try{show(await api.refresh(dir))}catch(e){log('Re
 async function refreshOne(dir){try{const r=await api.refresh(dir);repoData.set(dir,r);if(dir===selected)show(r);else GitSUUI.emit('repos')}catch(e){log(e.message)}}
 
 // Persistent global breadcrumb (#5): folder + branch + status, visible on every view.
-function updateBreadcrumb(){const info=selected?repoData.get(selected):null;$('crumb-folder').textContent=selected?nameOf(selected):(currentLanguage==='de'?'Kein Repository ausgewählt':'Няма избрано репозитори');const br=$('crumb-branch');br.textContent=info?.branch||(currentLanguage==='de'?'kein Branch':'без клон');br.className='chip'+(info?.branch?' blue':'');const st=$('crumb-status');st.textContent=info?(info.isRepo?(info.dirty?t('MODIFIED'):t('CLEAN')):t('NO GIT')):(currentLanguage==='de'?'nicht ausgewählt':'не е избран');st.className='chip '+(!info?'':info.isRepo?(info.dirty?'warn':'good'):'bad');$('crumb-path').textContent=selected||'';}
+function updateBreadcrumb(){const info=selected?repoData.get(selected):null;$('crumb-folder').textContent=selected?nameOf(selected):t('No repository selected');const br=$('crumb-branch');br.textContent=info?.branch||t('no branch');br.className='chip'+(info?.branch?' blue':'');const st=$('crumb-status');st.textContent=info?(info.isRepo?(info.dirty?t('MODIFIED'):t('CLEAN')):t('NO GIT')):t('not selected');st.className='chip '+(!info?'':info.isRepo?(info.dirty?'warn':'good'):'bad');$('crumb-path').textContent=selected||'';}
 
 // Left-nav panel switcher: each logical function is its own panel.
 const VIEW_SECTIONS={dashboard:['dashboard','repo-table'],repositories:['repository','repo-table','changes-view','history-view','github','ssh','connections','watchers','rules','releases','details','sync'],connections:['connections'],github:['github','ssh'],watchers:['watchers'],rules:['rules'],releases:['releases'],sync:['sync'],system:['system'],settings:['settings'],activity:['activity']};
@@ -85,10 +85,10 @@ const legalDocs={license:'legal/LICENSE.txt',notice:'legal/NOTICE.txt'};
 async function showLegal(which){
  const dialog=$('legal-dialog');const area=$('legal-text');
  $('legal-title').textContent=which==='license'?'Apache License, Version 2.0':'NOTICE — PasevSU-DEV';
- area.textContent=currentLanguage==='de'?'Dokument wird geladen…':'Зареждане на документа…';
+ area.textContent=t('Loading document…');
  dialog.showModal();
  try{const response=await fetch(legalDocs[which]);if(!response.ok)throw Error('HTTP '+response.status);area.textContent=await response.text();}
- catch(err){area.textContent=(currentLanguage==='de'?'Dokument konnte nicht geladen werden: ':'Документът не може да бъде зареден: ')+err.message;}
+ catch(err){area.textContent=t('Could not load document: ')+err.message;}
  area.scrollTop=0;
 }
 $('footer-license').addEventListener('click',()=>showLegal('license'));

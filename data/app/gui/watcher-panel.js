@@ -3,10 +3,11 @@
 // Watcher creation/management panel (#4): build UI on the existing auto-sync backend.
 const $=id=>document.getElementById(id),api=window.repoAPI;if(!api?.autoSyncStatus)return;
 const host=document.getElementById('watcher-panel');if(!host)return;
-const lang=()=>$('language-select')?.value==='de'?'de':'bg';
+const lang=()=>{const v=$('language-select')?.value;return v==='de'?'de':v==='en'?'en':'bg'};
 const sel=()=>typeof selected!=='undefined'?selected:null;
 const nameOf=d=>String(d).split(/[\\/]/).filter(Boolean).pop()||d;
 const T={
+ en:{title:'Repository watchers',create:'Create watcher',manage:'Active watchers',folder:'Folder',branch:'Branch',mode:'Mode',dry:'Check only (dry run)',auto:'Automatic commit + push',lease:'Lease role',leaseHint:'Only one active writer can hold the lease on a branch.',start:'Start',stop:'Stop',stopAll:'Stop all',none:'No active watchers.',running:'active',state:'State',recent:'Recent events',pick:'Select a folder or repository.',invalid:'Invalid folder.',confirmAuto:'Enable automatic COMMIT + PUSH for {0} ({1})? Changes will be uploaded without further prompts.',wait:'Running…'},
  bg:{title:'Наблюдатели на репозитори',create:'Създай наблюдател',manage:'Активни наблюдатели',folder:'Папка',branch:'Клон',mode:'Режим',dry:'Само проверка (dry run)',auto:'Автоматичен commit + push',lease:'Роля на lease',leaseHint:'Само един активен писател може да държи lease на клон.',start:'Стартирай',stop:'Спри',stopAll:'Спри всички',none:'Няма активни наблюдатели.',running:'активен',state:'Състояние',recent:'Последни събития',pick:'Изберете папка или репозитори.',invalid:'Невалидна папка.',confirmAuto:'Включване на автоматичен COMMIT + PUSH за {0} ({1})? Промените ще се качват без допълнителни подкани.',wait:'Изпълнява се…'},
  de:{title:'Repository-Watcher',create:'Watcher erstellen',manage:'Aktive Watcher',folder:'Ordner',branch:'Branch',mode:'Modus',dry:'Nur Prüfung (dry run)',auto:'Automatisch commit + push',lease:'Lease-Rolle',leaseHint:'Nur ein aktiver Schreiber kann das Lease eines Branches halten.',start:'Starten',stop:'Stoppen',stopAll:'Alle stoppen',none:'Keine aktiven Watcher.',running:'aktiv',state:'Status',recent:'Letzte Ereignisse',pick:'Ordner oder Repository wählen.',invalid:'Ungültiger Ordner.',confirmAuto:'Automatischen COMMIT + PUSH für {0} ({1}) aktivieren? Änderungen werden ohne weitere Nachfragen hochgeladen.',wait:'Läuft…'}
 };

@@ -3,13 +3,13 @@
 // Splits the flat operation dropdown into labelled groups and adds a one-click group bar.
 const sel=document.getElementById('workflow-kind');if(!sel)return;
 const G=[
- ['account',{bg:'Акаунт',de:'Konto'},['githubToken','githubLogin']],
- ['create',{bg:'Ново репо',de:'Neues Repo'},['cloneRepo','newLocal','publishNew','remote']],
- ['sync',{bg:'Синхронизация',de:'Sync'},['push','update','copy','localUpdate']],
- ['maint',{bg:'Поддръжка',de:'Wartung'},['inspect','diagnostics','trust','rules','workflow','exportIndex']],
- ['ha',{bg:'Home Assistant',de:'Home Assistant'},['haValidate','haScaffold']]
+ ['account',{en:'Account',bg:'Акаунт',de:'Konto'},['githubToken','githubLogin']],
+ ['create',{en:'New repo',bg:'Ново репо',de:'Neues Repo'},['cloneRepo','newLocal','publishNew','remote']],
+ ['sync',{en:'Sync',bg:'Синхронизация',de:'Sync'},['push','update','copy','localUpdate']],
+ ['maint',{en:'Maintenance',bg:'Поддръжка',de:'Wartung'},['inspect','diagnostics','trust','rules','workflow','exportIndex']],
+ ['ha',{en:'Home Assistant',bg:'Home Assistant',de:'Home Assistant'},['haValidate','haScaffold']]
 ];
-const lang=()=>document.getElementById('language-select')?.value==='de'?'de':'bg';
+const lang=()=>{const v=document.getElementById('language-select')?.value;return v==='de'?'de':v==='en'?'en':'bg'};
 const opts=new Map([...sel.options].map(o=>[o.value,o]));
 const bar=document.createElement('div');bar.className='ops-groups';bar.setAttribute('role','tablist');
 const groups=[];

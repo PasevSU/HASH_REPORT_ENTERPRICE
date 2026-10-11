@@ -3,8 +3,10 @@
 // SSH panel (Settings → SSH tab): list keys, generate, publish to GitHub, test, switch repo to SSH.
 const api=window.repoAPI;if(!api?.sshStatus)return;
 const sel=()=>typeof selected!=='undefined'?selected:null;
-const lang=()=>document.getElementById('language-select')?.value==='de'?'de':'bg';
+const lang=()=>{const v=document.getElementById('language-select')?.value;return v==='de'?'de':v==='en'?'en':'bg'};
 const T={
+ en:{title:'SSH keys for GitHub',name:'Key name',email:'Email / comment',pass:'Key passphrase (optional)',gen:'Create key',test:'Test GitHub connection',refresh:'Refresh',
+  copy:'Copy',add:'Add to GitHub',use:'Use SSH for this repository',useHttps:'Switch back to HTTPS',none:'No keys in ~/.ssh.',noSsh:'OpenSSH (ssh-keygen) not found. Install "OpenSSH Client" from Windows → Optional features.',copied:'Copied',wait:'Running…',pick:'Select a repository to switch its remote to SSH.'},
  bg:{title:'SSH ключове за GitHub',name:'Име на ключа',email:'Email / коментар',pass:'Парола на ключа (по избор)',gen:'Създай ключ',test:'Тествай връзка с GitHub',refresh:'Обнови',
   copy:'Копирай',add:'Добави в GitHub',use:'Използвай SSH за това репо',useHttps:'Върни към HTTPS',none:'Няма ключове в ~/.ssh.',noSsh:'OpenSSH (ssh-keygen) не е намерен. Инсталирайте „OpenSSH Client“ от Windows → Optional features.',copied:'Копирано',wait:'Изпълнява се…',pick:'Изберете репозитори, за да превключите remote към SSH.'},
  de:{title:'SSH-Schlüssel für GitHub',name:'Schlüsselname',email:'E-Mail / Kommentar',pass:'Passphrase (optional)',gen:'Schlüssel erstellen',test:'GitHub-Verbindung testen',refresh:'Aktualisieren',

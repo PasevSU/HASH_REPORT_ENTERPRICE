@@ -6,10 +6,20 @@
 // via the preload bridge. No git/GitHub logic lives here.
 const $=id=>document.getElementById(id),api=window.repoAPI;if(!api?.repoDetails||!api?.docsMeta)return;
 const host=document.getElementById('repo-details-panel');if(!host)return;
-const lang=()=>$('language-select')?.value==='de'?'de':'bg';
+const lang=()=>{const v=$('language-select')?.value;return v==='de'?'de':v==='en'?'en':'bg'};
 const sel=()=>typeof selected!=='undefined'?selected:null;
 const nameOf=d=>String(d).split(/[\\/]/).filter(Boolean).pop()||d;
 const T={
+ en:{
+  title:'Repository details',details:'Repository details',docs:'Project documents',
+  fullName:'Full name',url:'URL',ssh:'SSH URL',visibility:'Visibility',private:'Private',public:'Public',internal:'Internal',
+  description:'Description',homepage:'Homepage',topics:'Topics (comma separated)',defaultBranch:'Default branch',
+  save:'Save details',saved:'Details saved.',notLinked:'Repository is not linked to GitHub.',pick:'Select a repository.',
+  name:'Project name',repoSlug:'owner/repo',license:'License',stack:'Stack (comma separated)',
+  preview:'Preview',write:'Write files',wrote:'Written files:',refresh:'Refresh',wait:'Running…',error:'Error',
+  docsHint:'Generates tailored README.md, CONTRIBUTING.md and SECURITY.md in the selected repository.',
+  dir:'Repository folder',browse:'Browse folder'
+ },
  bg:{
   title:'Репозитори детайли',details:'Детайли на репозиторито',docs:'Проектни документи',
   fullName:'Пълно име',url:'URL',ssh:'SSH URL',visibility:'Видимост',private:'Частно',public:'Публично',internal:'Вътрешно',

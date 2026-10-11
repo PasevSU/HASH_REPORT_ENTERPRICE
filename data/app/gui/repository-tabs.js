@@ -4,8 +4,9 @@
 // to every repository option and information panel (Overview / Changes / History /
 // Remote / Watchers / Rules / Sync). Reuses the existing panels; no logic is changed.
 const $=id=>document.getElementById(id);
-const lang=()=>$('language-select')?.value==='de'?'de':'bg';
+const lang=()=>{const v=$('language-select')?.value;return v==='de'?'de':v==='en'?'en':'bg'};
 const T={
+ en:{overview:'Overview',changes:'Changes',history:'History',remote:'Remote',watchers:'Watchers',rules:'Rules',releases:'Releases',details:'Details',sync:'Sync',pick:'Select a repository'},
  bg:{overview:'Преглед',changes:'Промени',history:'История',remote:'Remote',watchers:'Watchers',rules:'Правила',releases:'Релизи',details:'Детайли',sync:'Синхронизация',pick:'Изберете репозитори'},
  de:{overview:'Übersicht',changes:'Änderungen',history:'Verlauf',remote:'Remote',watchers:'Watcher',rules:'Regeln',releases:'Releases',details:'Details',sync:'Synchronisierung',pick:'Repository wählen'}
 };

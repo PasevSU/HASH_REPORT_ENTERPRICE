@@ -2,6 +2,10 @@
 'use strict';
 const $=id=>document.getElementById(id),api=window.repoAPI;
 const T={
+ en:{title:'Connect folder to repository',folder:'Folder',browse:'Browse…',repo:'Repository (optional)',repoHint:'owner/name or URL. Empty = new repository from the folder.',action:'Action',check:'Check',run:'Run',close:'Close',
+  vis:'Visibility',private:'Private',public:'Public',name:'New repository name',
+  a:{register:'Add to GitSU (folder is already a repository)',clone:'Clone into an empty folder',link:'Link folder with an existing repository',create:'Create a new GitHub repository from the folder and upload',local:'Local only: git init'},
+  none:'Select a folder.',nothing:'No actions possible.',steps:'Will run:',done:'Done',wait:'Running…',warn:'Warning'},
  bg:{title:'Свързване на папка с репозитори',folder:'Папка',browse:'Избери…',repo:'Репозитори (по избор)',repoHint:'owner/name или URL. Празно = ново репозитори от папката.',action:'Действие',check:'Провери',run:'Изпълни',close:'Затвори',
   vis:'Видимост',private:'Частно',public:'Публично',name:'Име на новото репо',
   a:{register:'Добави в GitSU (папката вече е репозитори)',clone:'Изтегли (clone) в празна папка',link:'Свържи папката със съществуващо репо',create:'Създай ново GitHub репо от папката и качи',local:'Само локално: git init'},

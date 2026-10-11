@@ -5,10 +5,11 @@
 // raw view is the source of truth when saving.
 const $=id=>document.getElementById(id),api=window.repoAPI;if(!api?.gitignoreLoad)return;
 const host=document.getElementById('rules-panel');if(!host)return;
-const lang=()=>$('language-select')?.value==='de'?'de':'bg';
+const lang=()=>{const v=$('language-select')?.value;return v==='de'?'de':v==='en'?'en':'bg'};
 const sel=()=>typeof selected!=='undefined'?selected:null;
 const el=(t,p={},...k)=>{const e=document.createElement(t);Object.assign(e,p);e.append(...k);return e};
 const T={
+ en:{title:'Ignore rules (.gitignore)',raw:'Free text (.gitignore)',structured:'Structured rules',save:'Save',refresh:'Refresh',pick:'Select a repository to edit .gitignore.',saved:'Saved.',wait:'Running…',presets:'Common cases'},
  bg:{title:'Правила за игнориране (.gitignore)',raw:'Свободен текст (.gitignore)',structured:'Структурирани правила',save:'Запиши',refresh:'Обнови',pick:'Избери репозитори, за да редактираш .gitignore.',saved:'Записано.',wait:'Изпълнява се…',presets:'Практически случаи'},
  de:{title:'Ignorierregeln (.gitignore)',raw:'Freitext (.gitignore)',structured:'Strukturierte Regeln',save:'Speichern',refresh:'Aktualisieren',pick:'Repository wählen, um .gitignore zu bearbeiten.',saved:'Gespeichert.',wait:'Läuft…',presets:'Praktische Fälle'}
 };

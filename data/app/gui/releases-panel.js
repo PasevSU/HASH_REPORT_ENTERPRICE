@@ -4,10 +4,11 @@
 // Thin UI over the lib/releases package (via the preload bridge). No git logic lives here.
 const $=id=>document.getElementById(id),api=window.repoAPI;if(!api?.releaseList)return;
 const host=document.getElementById('releases-panel');if(!host)return;
-const lang=()=>$('language-select')?.value==='de'?'de':'bg';
+const lang=()=>{const v=$('language-select')?.value;return v==='de'?'de':v==='en'?'en':'bg'};
 const sel=()=>typeof selected!=='undefined'?selected:null;
 const nameOf=d=>String(d).split(/[\\/]/).filter(Boolean).pop()||d;
 const T={
+ en:{title:'Repository releases',create:'Create release',manage:'Existing releases',tags:'Tags (local / remote)',tag:'Tag',name:'Name',notes:'Notes',target:'Target',prerelease:'Pre-release',draft:'Draft',submit:'Publish release',none:'No releases.',latest:'Latest release',noLatest:'No release yet.',local:'local',remote:'remote',noneTags:'No tags.',pick:'Select a repository.',delete:'Delete',confirm:'Delete release {0}?',wait:'Running…',error:'Error',refresh:'Refresh'},
  bg:{title:'Релизи на репозиторията',create:'Създай релиз',manage:'Съществуващи релизи',tags:'Тагове (local / remote)',tag:'Таг',name:'Име',notes:'Бележки (notes)',target:'Цел (target)',prerelease:'Pre-release',draft:'Draft',submit:'Публикувай релиз',none:'Няма релизи.',latest:'Последен релиз',noLatest:'Все още няма релиз.',local:'локални',remote:'отдалечени',noneTags:'Няма тагове.',pick:'Изберете репозитория.',delete:'Изтрий',confirm:'Изтриване на релиз {0}?',wait:'Изпълнява се…',error:'Грешка',refresh:'Обнови'},
  de:{title:'Repository-Releases',create:'Release erstellen',manage:'Vorhandene Releases',tags:'Tags (local / remote)',tag:'Tag',name:'Name',notes:'Notizen',target:'Ziel',prerelease:'Pre-release',draft:'Entwurf',submit:'Release veröffentlichen',none:'Keine Releases.',latest:'Neuestes Release',noLatest:'Noch kein Release.',local:'lokal',remote:'remote',noneTags:'Keine Tags.',pick:'Repository wählen.',delete:'Löschen',confirm:'Release {0} löschen?',wait:'Läuft…',error:'Fehler',refresh:'Aktualisieren'}
 };

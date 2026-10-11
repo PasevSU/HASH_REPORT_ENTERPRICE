@@ -2,8 +2,19 @@
 'use strict';
 // "Старт" launcher: every entry point that does not need a selected repository, in one place.
 const main=document.querySelector('.main-column');if(!main)return;
-const lang=()=>document.getElementById('language-select')?.value==='de'?'de':'bg';
+const lang=()=>{const v=document.getElementById('language-select')?.value;return v==='de'?'de':v==='en'?'en':'bg'};
 const T={
+ en:{title:'Start here',sub:'All actions work even without a selected repository.',
+  g1:'Repository',g2:'Account & access',g3:'More',
+  connect:['Connect / upload folder','Folder with files → new or existing GitHub repo'],
+  create:['New GitHub repo','Creates a repo and uploads the first commit'],
+  clone:['Clone repo','From GitHub, URL or NAS into a new folder'],
+  add:['Add local folder','Register an existing git repo'],
+  login:['Sign in to GitHub','Via browser (recommended)'],
+  token:['Sign in with token','Classic token with scope "repo"'],
+  ssh:['SSH keys','Create, test and add a key to GitHub'],
+  ops:['All operations','Grouped by task, with checks before and after'],
+  ha:['Home Assistant','Integration check and scaffold']},
  bg:{title:'Започнете оттук',sub:'Всички действия работят и без избрано репозитори.',
   g1:'Репозитори',g2:'Акаунт и достъп',g3:'Още',
   connect:['Свържи / качи папка','Папка с файлове → ново или съществуващо GitHub репо'],

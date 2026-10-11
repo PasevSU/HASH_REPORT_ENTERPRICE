@@ -3,9 +3,10 @@
 // Connections panel: every registered folder and its remote link, with per-row manage + sync.
 const $=id=>document.getElementById(id),api=window.repoAPI;
 const host=document.getElementById('connections-panel');if(!host)return;
-const lang=()=>$('language-select')?.value==='de'?'de':'bg';
+const lang=()=>{const v=$('language-select')?.value;return v==='de'?'de':v==='en'?'en':'bg'};
 const el=(t,p={},...k)=>{const e=document.createElement(t);Object.assign(e,p);e.append(...k);return e};
 const T={
+ en:{title:'Connections between repositories',refresh:'Refresh all',actions:'Actions',repo:'Registered folder',branch:'Branch',remote:'Remote URL',status:'Status',notLinked:'Not linked',connect:'Connect',change:'Change remote',remove:'Remove remote',push:'Push',pull:'Pull',inSync:'In sync',ahead:'ahead',behind:'behind',checking:'Checking…',needMsg:'Commit message',send:'Upload',empty:'No folders registered.'},
  bg:{title:'Връзки между репозиториите',refresh:'Обнови всички',actions:'Действия',repo:'Регистрирана папка',branch:'Клон',remote:'Отдалечен адрес',status:'Състояние',notLinked:'Не е свързан',connect:'Свържи',change:'Смени remote',remove:'Премахни remote',push:'Качи',pull:'Изтегли',inSync:'В синхрон',ahead:'напред',behind:'назад',checking:'Проверка…',needMsg:'Съобщение за качване',send:'Качи',empty:'Няма регистрирани папки.'},
  de:{title:'Verbindungen zwischen Repositories',refresh:'Alle aktualisieren',actions:'Aktionen',repo:'Registrierter Ordner',branch:'Branch',remote:'Remote-URL',status:'Status',notLinked:'Nicht verbunden',connect:'Verbinden',change:'Remote ändern',remove:'Remote entfernen',push:'Push',pull:'Pull',inSync:'Synchron',ahead:'voraus',behind:'zurück',checking:'Prüfe…',needMsg:'Commit-Nachricht',send:'Hochladen',empty:'Keine Ordner registriert.'}
 };

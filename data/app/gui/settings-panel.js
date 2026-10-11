@@ -4,9 +4,22 @@
 // (previously only reachable through the removed operation dropdown).
 const $=id=>document.getElementById(id),api=window.repoAPI;if(!api?.haValidate&&!api?.exportIndex&&!api?.trustProbe)return;
 const host=document.getElementById('settings-panel');if(!host)return;
-const lang=()=>$('language-select')?.value==='de'?'de':'bg';
+const lang=()=>{const v=$('language-select')?.value;return v==='de'?'de':v==='en'?'en':'bg'};
 const sel=()=>typeof selected!=='undefined'?selected:null;
 const T={
+ en:{
+  title:'Settings & advanced operations',
+  trust:'Trust repository',trustHint:'Checks Git ownership and adds the selected repository to global safe.directory.',
+  trustProbe:'Check ownership',trustApply:'Trust repository',
+  ha:'Home Assistant / HACS',haHint:'Structural validation and a starter package for integrations, plugins and themes.',
+  haValidate:'Validate',haType:'Type',haAuto:'auto',haIntegration:'integration',haPlugin:'plugin',haTheme:'theme',
+  haScaffold:'Create scaffold',haDomain:'Domain (snake_case)',
+  wf:'GitHub Workflow',wfHint:'Review and create .github/workflows/gitsu-validation.yml without overwriting.',
+  wfPlan:'Review',wfApply:'Create',
+  exportTitle:'Export',exportHint:'Writes the list of registered repositories (repositories.json).',
+  exportBtn:'Export repositories.json',
+  needRepo:'Select a repository first.',run:'Running…',cancelled:'Cancelled',ok:'Done'
+ },
  bg:{
   title:'Настройки и разширени операции',
   trust:'Доверяване на репозитори',trustHint:'Проверява Git собствеността и добавя избраното репозитори към global safe.directory.',
