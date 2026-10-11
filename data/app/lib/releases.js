@@ -47,7 +47,7 @@ async function ghMust(args, opts) {
 
 async function list(dir, { limit = 100 } = {}) {
   const r = await gh(
-    ['release', 'list', '--limit', String(limit), '--json', 'tagName,name,publishedAt,isDraft,isPrerelease,url'],
+    ['release', 'list', '--limit', String(limit), '--json', 'tagName,name,publishedAt,isDraft,isPrerelease'],
     { cwd: path.resolve(dir) }
   );
   if (!r.ok) throw new Error((r.stderr || r.stdout || 'gh release list failed').trim());
@@ -59,7 +59,7 @@ async function list(dir, { limit = 100 } = {}) {
     publishedAt: x.publishedAt,
     draft: !!x.isDraft,
     prerelease: !!x.isPrerelease,
-    url: x.url
+    url: null
   }));
 }
 
