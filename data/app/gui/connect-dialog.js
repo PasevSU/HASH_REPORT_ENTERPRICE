@@ -21,8 +21,8 @@ let dlg,state={info:null,planned:false,busy:false};
 function build(){
  dlg=document.createElement('dialog');dlg.id='connect-dialog';dlg.className='connect-dialog';
  dlg.innerHTML=`<div class="legal-header"><h2 data-k="title"></h2><button type="button" class="outline" data-k="close" id="cd-close"></button></div>
- <label data-k="folder"></label><div class="action-row"><input id="cd-dir" placeholder="C:\\... / \\\\NAS\\..."><button type="button" class="outline" id="cd-browse" data-k="browse"></button></div>
- <label data-k="repo"></label><input id="cd-repo" placeholder="owner/name · https://github.com/owner/name"><p class="hint" data-k="repoHint"></p>
+ <label data-k="folder"></label><div class="action-row"><input id="cd-dir" placeholder="C:\\path\\to\\repo"><button type="button" class="outline" id="cd-browse" data-k="browse"></button></div>
+ <label data-k="repo"></label><input id="cd-repo" placeholder="owner/name or https://github.com/owner/name"><p class="hint" data-k="repoHint"></p>
  <div id="cd-info" class="hint"></div>
  <label data-k="action"></label><div id="cd-actions" class="cd-actions"></div>
  <div id="cd-create" class="cd-create" hidden><div class="action-row"><input id="cd-name" aria-label="name"><select id="cd-vis"><option value="private"></option><option value="public"></option></select></div></div>
@@ -81,6 +81,7 @@ async function runIt(){
 function open(mode,preset){
  if(!dlg)build();labels();
  if(preset?.dir)$('cd-dir').value=preset.dir;
+ if(preset?.repo)$('cd-repo').value=preset.repo;
  box('');state.done=false;state.reset=false;dlg.showModal();refresh().then(()=>{if(mode){const r=dlg.querySelector(`input[name="cd-action"][value="${mode}"]`);if(r){r.checked=true;$('cd-create').hidden=mode!=='create'}}});
 }
 window.GitSUConnect={open};

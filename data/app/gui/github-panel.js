@@ -44,7 +44,7 @@ async function renderRepos(){
  const r=await api.ghListRepos();if(!r.ok){repoList.replaceChildren(el('p',{className:'hint',textContent:r.error||L().none}));return}
  if(!r.repos.length){repoList.replaceChildren(el('p',{className:'hint',textContent:L().none}));return}
  repoList.replaceChildren();
- for(const x of r.repos){repoList.append(el('div',{className:'gv-row gh-repo'},el('strong',{textContent:x.name}),el('code',{textContent:x.https}),bCopyUrl(x.https,'HTTPS'),bCopyUrl(x.ssh,'SSH')))}
+ for(const x of r.repos){repoList.append(el('div',{className:'gv-row gh-repo'},el('strong',{textContent:x.name}),el('code',{textContent:x.https}),bCopyUrl(x.https,'HTTPS'),bCopyUrl(x.ssh,'SSH'),el('button',{type:'button',className:'outline',textContent:'⇩ '+L().opLoad,onclick:()=>window.GitSUConnect.open('clone',{repo:x.https})})))}
 }
 async function renderSelected(){
  selInfo.replaceChildren();msgLbl.hidden=true;msg.hidden=true;bActions.disabled=true;
