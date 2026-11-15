@@ -369,6 +369,14 @@ API enforces two rules callers should expect: a generated report is never accept
 input (the evidence set must not grow with the program's own output), and
 `--embed-pdf` accepts exactly one PDF under the `single` / `single_pdf` profiles.
 
+Two version numbers appear in the output, and they move independently.
+`package.json` and `chronoseal/branding.py` carry the product version (5.6.0 in
+this release); `js/cli.mjs` exports `CLONE_VERSION` (1.0.0), the version of the
+JavaScript re-implementation, which `--version` prints and which is stamped into
+the `implementation: chronoseal-js-clone/1.0.0` field of every report the clone
+writes. A product release can ship the same clone, and the clone can be fixed
+without reissuing the product.
+
 As a package-manager source it also works - the name is `chronoseal-python-rfc3161-addon`
 (the root manifest is `private`, so it is not on npm, but `file:` and `github:` sources
 resolve). The example pins the release tag so the build is reproducible:
