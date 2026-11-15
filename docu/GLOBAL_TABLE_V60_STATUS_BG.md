@@ -1,0 +1,1 @@
+DEV v60: checksum appendix consumes CHECKSUM_APPENDIX_TABLE and TABLE_RELIEF from style/30_tables.js; no duplicate table design values in 96_page_identity.js. Digest wrapping is visual only. Release requires full qualification.

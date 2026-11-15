@@ -1,0 +1,13 @@
+/* GENERATED FROM pdf_object_rules.py: DO NOT EDIT */
+@page { size: A4; margin: 25mm 20mm 35mm 20mm; }
+html,body {color:#1a2733;font-size:9pt;line-height:12pt;}
+h1,h2,h3,.report-section-title {color:#293e50;page-break-after:avoid;}
+p,li,.legal-note {orphans:3;widows:3;overflow-wrap:anywhere;}
+table {width:100%;border-collapse:collapse;table-layout:fixed;}
+thead {display:table-header-group;}
+tr {page-break-inside:avoid;}
+th,td {vertical-align:top;padding:2.5pt;border-bottom:.25pt solid #d4dce4;overflow-wrap:anywhere;}
+th,th p,th span {background:#293e50;color:#ffffff!important;}
+.hash,.digest {font-family:monospace;font-size:6.5pt;overflow-wrap:anywhere;}
+.report-footer {font-size:6pt;color:#526579;}
+img,svg,.qr {max-width:100%;height:auto;}

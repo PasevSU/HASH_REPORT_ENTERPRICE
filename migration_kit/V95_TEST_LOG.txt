@@ -1,0 +1,9 @@
+Warning: RFC 3161 chain/CRL/OCSP validation module unavailable: No module named 'rfc3161_validation'
+Warning: SQLite evidence database module unavailable: No module named 'evidence_database'
+✓ Registered Unicode font: DejaVuSans.ttf
+
+..............................................................................................................
+----------------------------------------------------------------------
+Ran 110 tests in 9.916s
+
+OK

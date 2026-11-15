@@ -1,0 +1,9 @@
+ChronoSeal v5.4.0-rc1
+Mandatory final-reopen checks added:
+- parse physical /DSS /Certs references
+- extract certificate streams from final PDF
+- X.509 parse each certificate
+- compare SHA-256 against expected START/STOP LTV inventory
+- BLOCK if any expected certificate is absent
+- record subject/issuer/serial/validity/CA/EKU/fingerprint/PDF object
+Visible pre-seal report wording no longer falsely reports a TSA network failure when ChronoSeal owns final stamping.

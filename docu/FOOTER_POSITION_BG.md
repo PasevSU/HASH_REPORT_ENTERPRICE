@@ -1,0 +1,1 @@
+Footer: 6 text hashes lower-left (last baseline 10pt); page number centered at 30pt aligned with Report ID; version right at 9pt. Appendix likewise. Apply before TSA signing. Targeted layout patch only.

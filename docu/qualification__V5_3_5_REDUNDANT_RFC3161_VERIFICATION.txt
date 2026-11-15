@@ -1,0 +1,27 @@
+ChronoSeal v5.3.5 RC - redundant RFC3161 verification stabilization
+
+Scope is limited to the RFC3161 verification failure observed in v5.3.4.
+
+Mandatory independent proof paths:
+1. pdf-rfc3161 timestampPdf request-bound validation gate before embed.
+2. Independent raw PDF structural proof: new /DocTimeStamp, /ETSI.RFC3161, /ByteRange and /Contents.
+3. Independent OpenSSL `ts -verify -token_in` against the exact PDF ByteRange bytes and configured trust material.
+4. Final close/reopen: token SHA-256 identity + OpenSSL verification repeated against physical final PDF.
+
+Corroborating path:
+- pdf-rfc3161 extractTimestamps + verifyTimestamp. Historical extractor zero/exception is WARN when mandatory independent proofs pass; it cannot create PASS by itself.
+
+Fail-closed invariants retained:
+- configured TSA certificate material must be present in returned LTV/DSS candidate material
+- PDF /DSS and /Certs are mandatory
+- START/STOP provider failover remains transactional
+- distinct STOP provider policy remains
+- SINGLE/COMBO and recursive semantics from v5.3.4 unchanged
+
+Regression/fault injection:
+- normal dual timestamp: PASS
+- library extractor returns zero: redundant paths PASS, extractor WARN
+- library extractor throws: redundant paths PASS, extractor WARN
+- missing DocTimeStamp PDF structure: BLOCKED
+- missing configured certificate material: BLOCKED
+- full suite under virtual display: 45/45 PASS

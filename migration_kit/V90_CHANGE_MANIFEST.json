@@ -1,0 +1,18 @@
+{
+  "hash_report_generator/style/95_semantic_migration.js": {
+    "before_sha256": "7870c53fc90322871d915390b2f788987efa68c529773d4538021a187d184b8c",
+    "after_sha256": "89412c2d32776f1676a62a95ce6062a02b1af74c84290b4cf10811abe22b01a9"
+  },
+  "hash_report_generator/pdf_object_rules.py": {
+    "before_sha256": "da23c03420e1801ab0e5835e7fa401b1d4bb2e0a9c43aadd78aff0b084f03d7a",
+    "after_sha256": "a5b10d809f6ec7d885beb6a8060381efdffe40043acd81f2d7ad8c1a3e683bf6"
+  },
+  "hash_report_generator/hash_report_single.py": {
+    "before_sha256": "92a574d807b4aab85a265df31e5934622060e2ba17e16976271ece49cb0507eb",
+    "after_sha256": "96b8c730bd4995f5f69c0b79ec82b7b0528e690fe1147a10ced4d783420c4fc0"
+  },
+  "hash_report_generator/hash_report_combined.py": {
+    "before_sha256": "7d52b9ccc01737d5a6c50a8afeb7b1954bc84f9f3dab7cf37a2b003ebb9b3e87",
+    "after_sha256": "b6eb850766de524b6d738c11f36ac10ec8804c3e64c279d4df0eb7ecbce7740d"
+  }
+}

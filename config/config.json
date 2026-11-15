@@ -1,0 +1,243 @@
+{
+  "archive": {
+    "enabled": true,
+    "directory": "ChronoSeal_Archive",
+    "database": "ChronoSeal_Archive\\chronoseal_archive.sqlite3"
+  },
+  "tools": {
+    "node": "C:\\Program Files\\nodejs\\node.EXE",
+    "openssl": "C:\\Program Files\\OpenSSL-Win64\\bin\\openssl.exe"
+  },
+  "repair": {
+    "enabled": true,
+    "allow_network": false
+  },
+  "generator": {
+    "package_dir": "hash_report_generator",
+    "combined_script": "hash_report_combined.py",
+    "single_script": "hash_report_single.py",
+    "python": "python",
+    "output_glob": "*.pdf",
+    "search_roots": [],
+    "timeout_seconds": 0,
+    "idle_timeout_seconds": 900,
+    "allow_unreadable_files": false,
+    "follow_links": false,
+    "heartbeat_seconds": 30,
+    "filter_case_sensitive": false
+  },
+  "rfc3161": {
+    "mode": "DUAL-STAMP",
+    "hash_algorithm": "SHA-512",
+    "enable_ltv": true,
+    "strict_ess": true,
+    "require_distinct_providers": true,
+    "require_qualified_stop": true,
+    "trusted_list_validation": {
+      "lotl_file": "trust\\LOTL\\eu-lotl.xml",
+      "lotl_signer_certificate_file": "trust\\LOTL\\ojeu-c-2026-1944-lotl-signer.pem",
+      "lotl_signer_sha256": "E0A620FBB6747362BB933AC44169D676A553444716CF5F31605F12A22B8396B1",
+      "lotl_signer_sha256_source": "OJEU C/2026/1944, Annex, certificate 2; independently matched to the current LOTL signer",
+      "member_tsl_file": "trust\\LOTL\\tsl-bg.xml",
+      "member_tsl_url": "https://crc.bg/files/_en/TSL_BG.xml"
+    },
+    "start": [
+      {
+        "name": "FreeTSA",
+        "url": "https://freetsa.org/tsr",
+        "trust_root_files": [
+          "trust\\FreeTSA\\certificate-2.pem"
+        ],
+        "bootstrap": "official-download",
+        "official_certificate_urls": [
+          "https://freetsa.org/files/tsa.crt",
+          "https://freetsa.org/files/cacert.pem"
+        ],
+        "intermediate_certificate_files": [],
+        "embed_certificate_files": [
+          "trust\\FreeTSA\\certificate-1.pem"
+        ],
+        "trust_chain_validated": true,
+        "trust_chain_validation": "openssl verify -CAfile trust\\FreeTSA\\certificate-2.pem trust\\FreeTSA\\certificate-1.pem: OK"
+      }
+    ],
+    "stop": [
+      {
+        "name": "InfoNotary-QTSA",
+        "url": "http://ts.infonotary.com/tsa",
+        "trust_root_files": [
+          "trust\\InfoNotary\\qualified-root.pem"
+        ],
+        "intermediate_certificate_files": [
+          "trust\\InfoNotary\\qualified-timestamp-ca.pem"
+        ],
+        "embed_certificate_files": [],
+        "bootstrap": "official-provider-and-trusted-list",
+        "class": "eIDAS-qualified",
+        "qualified": true,
+        "auth": "none",
+        "service_access_confirmed": true,
+        "policy_oid": "1.3.6.1.4.1.22144.3.4.1",
+        "trusted_list_service_certificate_sha256": "A4527BA3CDB627494FAC2F58069B37969A3219CF9154B324314A5C97701BDFBF",
+        "trusted_list_service_certificate_file": "trust\\InfoNotary\\qualified-timestamp-ca.pem",
+        "trusted_list_service_name": "InfoNotary Qualified TimeStamping Service CA",
+        "trusted_list_service_status": "granted",
+        "trusted_list_source": "https://crc.bg/files/_en/TSL_BG.xml"
+      }
+    ],
+    "timeout_seconds": 3600,
+    "idle_timeout_seconds": 900
+  },
+  "evidence": {
+    "keep_tsr": true,
+    "keep_certificates": true,
+    "keep_validation_json": true
+  },
+  "provider_catalog": {
+    "FreeTSA": {
+      "url": "https://freetsa.org/tsr",
+      "class": "public-standard",
+      "auth": "none",
+      "hashes": [
+        "SHA-256",
+        "SHA-512"
+      ],
+      "bootstrap": "official-download",
+      "certificate_urls": [
+        "https://freetsa.org/files/tsa.crt",
+        "https://freetsa.org/files/cacert.pem"
+      ],
+      "notes": "Public RFC3161 service; official site documents SHA-512 examples and certificate files."
+    },
+    "DigiCert": {
+      "url": "https://timestamp.digicert.com",
+      "class": "commercial-public",
+      "auth": "none",
+      "bootstrap": "official-download",
+      "certificate_urls": [
+        "https://knowledge.digicert.com/content/dam/kb/attachments/time-stamp/DigiCertSHA512RSA4096TimestampResponder20261.cer",
+        "https://knowledge.digicert.com/content/dam/kb/attachments/time-stamp/DigiCertTrustedG4TimeStampingRSA4096SHA2562025CA1.pem",
+        "https://knowledge.digicert.com/content/dam/kb/attachments/time-stamp/DigiCertTrustedRootG4.cer"
+      ],
+      "notes": "RFC3161 endpoint and current chain published by DigiCert."
+    },
+    "QTSA-Free-Standard": {
+      "url": "https://ca.signfiles.com/TSAServer.aspx",
+      "class": "public-standard",
+      "auth": "none",
+      "bootstrap": "windows-chain",
+      "notes": "qtsa.eu free standard server; not the qualified paid service."
+    },
+    "B-Trust-QTSA": {
+      "url": "http://tsa.b-trust.org",
+      "class": "eIDAS-qualified",
+      "qualified": true,
+      "protocol": "rfc3161-raw",
+      "auth": "account",
+      "service_access_confirmed": false,
+      "trust_root_files": [],
+      "trusted_list_service_certificate_file": "trust\\B-Trust\\qualified-tsa-service.pem",
+      "hashes": [
+        "SHA-512"
+      ],
+      "policy_oid": "0.4.0.2023.1.1",
+      "trusted_list_service_certificate_sha256": "4AD9BA68275C5B730BD8786A383A549DDA747F09BDD0F1B708A9BA8DC42C384D",
+      "trusted_list_service_name": "B-Trust Qualified Time Stamp Authority",
+      "trusted_list_service_status": "granted",
+      "trusted_list_source": "https://crc.bg/files/_en/TSL_BG.xml",
+      "bootstrap": "manual-or-account",
+      "endpoint_source": "https://www.b-trust.bg/attachments/BtrustDocument/158/docs/B-Trust-QTSA-TPS-TP-v-2-1-EN.pdf",
+      "notes": "The public QTSA policy names http://tsa.b-trust.org as its service address. Confirm the RFC 3161 request path/protocol and contracted account access with B-Trust before live use. This address is HTTP; requests expose the submitted message imprint. The Trusted List service identity certificate is tracked separately from the CA trust chain and is never promoted to a CA trust anchor."
+    },
+    "InfoNotary-QTSA": {
+      "url": "http://ts.infonotary.com/tsa",
+      "class": "eIDAS-qualified",
+      "qualified": true,
+      "protocol": "rfc3161-raw",
+      "auth": "none",
+      "service_access_confirmed": true,
+      "trust_root_files": [
+        "trust\\InfoNotary\\qualified-root.pem"
+      ],
+      "intermediate_certificate_files": [
+        "trust\\InfoNotary\\qualified-timestamp-ca.pem"
+      ],
+      "trusted_list_service_certificate_file": "trust\\InfoNotary\\qualified-timestamp-ca.pem",
+      "policy_oid": "1.3.6.1.4.1.22144.3.4.1",
+      "trusted_list_service_certificate_sha256": "A4527BA3CDB627494FAC2F58069B37969A3219CF9154B324314A5C97701BDFBF",
+      "trusted_list_service_name": "InfoNotary Qualified TimeStamping Service CA",
+      "trusted_list_service_status": "granted",
+      "trusted_list_source": "https://crc.bg/files/_en/TSL_BG.xml",
+      "certificate_urls": [
+        "https://www.infonotary.com/files/qualified-root-ca.der",
+        "https://www.infonotary.com/files/qualified-timestamp-ca.der"
+      ],
+      "bootstrap": "official-provider-and-trusted-list",
+      "endpoint_source": "https://repository.infonotary.com/files/pubdoc/EN/InfoNotary_CP_QTS_en_v1.4.pdf",
+      "notes": "InfoNotary's qualified time-stamp policy specifies this RFC 3161 endpoint and policy OID. The configured root and service CA were downloaded from InfoNotary's public register and fingerprint-checked against the BG TSL identity. The LOTL is pinned to the certificate published in OJEU C/2026/1944 and the current BG TSL delegation validates. The service identity is an issuing CA, not the RFC 3161 signer leaf; final validation requires it in the signer chain, an explicit root and revocation evidence. Confirm the applicable service terms/access and HTTP message-imprint privacy risk before live use."
+    },
+    "Aloaha-CodeB-InHouse": {
+      "url": "https://phone.aloaha.com/csc/v2/signatures/tsa",
+      "url_template": "https://<tenant-host>/csc/v2/signatures/tsa",
+      "protocol": "rfc3161-raw",
+      "class": "tenant-internal-not-qualified",
+      "qualified": false,
+      "auth": "none",
+      "hashes": [
+        "SHA-256",
+        "SHA-384",
+        "SHA-512"
+      ],
+      "bootstrap": "manual-pin",
+      "ocsp_url_template": "https://<tenant-host>/csc/v2/ocsp",
+      "trust_model": "explicit-pinned-tenant-responder",
+      "evidence_level": "RFC3161 + tenant OCSP where configured",
+      "notes": "Native RFC3161 wire endpoint. Example host is documentation tenant only. Tenant responder is self-signed/non-qualified; explicit trust pinning is required."
+    },
+    "Aloaha-External-Proxy": {
+      "url_template": "https://<tenant-host>/csc/v2/signatures/timestamp",
+      "protocol": "aloaha-json-rfc3161-proxy",
+      "class": "proxy",
+      "qualified": false,
+      "auth": "bearer",
+      "hashes": [
+        "SHA-256"
+      ],
+      "adapter": "aloaha_timestamp_proxy",
+      "raw_rfc3161_compatible": false,
+      "upstream_default": "http://timestamp.sectigo.com/qualified",
+      "ocsp_url_template": "https://<tenant-host>/csc/v2/ocsp",
+      "notes": "JSON/Bearer proxy. Returns base64 DER TimeStampToken, not a raw TimeStampResp; never pass directly to pdf-rfc3161."
+    },
+    "Taxpool-ACCv": {
+      "url": "http://tss.accv.es:8318/tsa",
+      "class": "catalog-listed",
+      "bootstrap": "windows-chain"
+    },
+    "Taxpool-Izenpe": {
+      "url": "http://tsa.izenpe.com/",
+      "class": "catalog-listed",
+      "bootstrap": "windows-chain"
+    },
+    "Taxpool-Sectigo-Qualified": {
+      "url": "http://timestamp.sectigo.com/qualified",
+      "class": "catalog-listed",
+      "bootstrap": "windows-chain"
+    },
+    "Taxpool-Entrust": {
+      "url": "http://timestamp.entrust.net/TSS/RFC3161sha2TS",
+      "class": "catalog-listed",
+      "bootstrap": "windows-chain"
+    },
+    "Taxpool-GlobalSign-Advanced": {
+      "url": "http://rfc3161timestamp.globalsign.com/advanced",
+      "class": "catalog-listed",
+      "bootstrap": "windows-chain"
+    },
+    "Taxpool-SSLcom": {
+      "url": "http://ts.ssl.com",
+      "class": "catalog-listed",
+      "bootstrap": "windows-chain"
+    }
+  }
+}

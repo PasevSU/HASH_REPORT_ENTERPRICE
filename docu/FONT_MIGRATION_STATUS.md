@@ -1,0 +1,1 @@
+DEV v19: Font families, font paths and font policy moved to dynamically discovered style/25_font_families.json. Existing hardcoded font names in pdf_object_rules.py migrated. Remaining direct generator font references and end-to-end Unicode rendering NOT VERIFIED. RELEASE BLOCKED.

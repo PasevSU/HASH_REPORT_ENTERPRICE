@@ -1,0 +1,23 @@
+{
+  "input": "/mnt/data/RPT-20261008-143207765-6217D3B0_HASHREPORT_TYP_COMBO_2(1).pdf",
+  "pages": [
+    {
+      "page": 1,
+      "size_pt": [
+        595.2755737304688,
+        841.8897705078125
+      ],
+      "text_blocks": 55,
+      "outside_media_box": [],
+      "minimum_margin_mm": {
+        "left": 20,
+        "right": 20,
+        "top": 25,
+        "bottom": 20
+      },
+      "note": "Headers and footers may intentionally occupy reserved margin zones; inspect renders for visual defects."
+    }
+  ],
+  "status": "GEOMETRY_ONLY_PASS",
+  "limitations": "Cannot certify balanced columns, page breaks, table contrast, or signature validity."
+}

@@ -1,13 +1,69 @@
-node_modules/
+# ChronoSeal - upload restrictions.
+# A hash-report tool handles real case material, so anything that carries
+# evidence, credentials or bulk runtime state stays out of the repository.
+# See SECURITY.md; the same rules are enforced again by
+# .github/workflows/repo-guard.yml on every push.
+
+# --- Credentials and secrets -------------------------------------------------
 .env
 .env.*
 !.env.example
-dist/
-*.log
+*.key
+*.pem
+*.der
+*.p12
+*.pfx
+secrets.yml
+# Public CA / TSA certificates are deliberately published: they are public
+# material and are needed to verify a time-stamp independently.
+!trust/**/*.pem
 
-# Generated runtime / cache artifacts (do not commit)
+# --- Evidence databases and archives ----------------------------------------
+*.sqlite3
+*.sqlite
+*.db
+ChronoSeal_Archive/
+ChronoSeal_Evidence/
+qualification_logs/
+HASH_REPORT_ENTERPRICE*/
+
+# --- Generated reports and real case material -------------------------------
+RPT-*.pdf
+RPT-*_HASHREPORT_TYP_*.pdf
+2026_08_04 Ergänzungspflegschaft Nikolay Plamenov Petrov.pdf
+
+# --- Local environments and dependency payloads -----------------------------
+.chronoseal-venv/
+.venv/
+venv/
+node_modules/
+vendor/
 __pycache__/
 *.pyc
-data/cache/
-data/logs/
-data/user-data/
+
+# --- Build output, logs, caches, snapshots ----------------------------------
+build/
+dist/
+out/
+target/
+*.o
+*.exe
+*.log
+logs/
+.cache/
+.pytest_cache/
+tmp/
+*.bak
+*.7z
+*.zip
+*.tar
+*.gz
+
+# --- IDE / editor / operating system ----------------------------------------
+.vscode/
+.idea/
+*.swp
+*.sublime-project
+.DS_Store
+Thumbs.db
+desktop.ini

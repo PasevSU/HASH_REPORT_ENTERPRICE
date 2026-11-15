@@ -1,0 +1,16 @@
+ChronoSeal v5.3.8 RC - exact dual DocTimeStamp + transactional publication
+
+Release invariants:
+1. Exactly two RFC3161 PDF DocTimeStamp revisions are mandatory: START then STOP.
+2. START and STOP TimeStampToken SHA-256 fingerprints must differ.
+3. Final reopen must still contain exactly two /Type /DocTimeStamp and /ETSI.RFC3161 entries.
+4. /DSS and /Certs are mandatory.
+5. Every configured START/STOP TSA certificate must be represented in the returned LTV certificate inventory; the audit records per-stage certificate SHA-256 inventory and blocks an empty inventory.
+6. Generated reports are first copied to report-before-rfc3161.UNSEALED.pdf. The requested RPT final filename is removed before sealing and republished only after the bridge returns a PASS audit.
+7. Existing redundancy remains: pdf-rfc3161 request-bound validation, raw PDF structural/ByteRange parsing, OpenSSL RFC3161 verification, physical reopen verification, and library extractor as corroborating path.
+
+Qualification performed in clean working tree:
+- Python compile: PASS
+- Node syntax: PASS
+- unittest discovery under virtual X display: 50/50 PASS
+- Live external Windows TSA qualification: NOT VERIFIED in this environment; RC remains blocked from FINAL until user Windows run proves START+STOP+DSS/Certs end-to-end.

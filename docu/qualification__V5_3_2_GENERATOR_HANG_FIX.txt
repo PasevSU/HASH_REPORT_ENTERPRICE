@@ -1,0 +1,12 @@
+Scope: Windows 20% generator hang only.
+Changes:
+- ChronoSeal embedded generator runs with CHRONOSEAL_REPORT_ONLY=1; standalone generator behavior unchanged.
+- Generator child uses python.exe when launcher interpreter is pythonw.exe and sibling python.exe exists.
+- Generator child watchdog: 180 seconds by default.
+- Windows process-tree termination on cancellation/watchdog.
+- UTF-8 child environment retained.
+Validation:
+- full suite: 37/37 PASS under virtual Tk display
+- real integrated Pipeline.generate smoke: PASS, valid %PDF output, ~1.8 s in qualification environment
+- Python compile: PASS
+- Node bridge syntax: PASS

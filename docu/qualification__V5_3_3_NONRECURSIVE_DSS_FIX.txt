@@ -1,0 +1,6 @@
+ChronoSeal v5.3.3 RC
+Scope-limited fixes:
+1. Combined folder reports are non-recursive by default. --recursive is required for nested traversal.
+2. Final RFC3161 PDF must contain a PDF /DSS dictionary and /Certs entry. Configured TSA certificates remain fail-closed against LTV material.
+3. Raw validation artifacts remain in the external evidence package; certificates are not represented as PDF file attachments by ChronoSeal final stamping.
+Regression suite: 39 tests.

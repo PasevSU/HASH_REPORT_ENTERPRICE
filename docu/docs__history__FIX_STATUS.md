@@ -1,0 +1,1 @@
+v5.5.2 RC: source PDFs are copied as visual pages into a new unsigned PDF before START/STOP; original remains intact. Output is placed next to input, named *_COMBO_PDF.pdf or *_SINGLE_PDF.pdf. AcroForm annotations excluded. NOT QUALIFIED; verify Windows TSA flow and signature visual fidelity.

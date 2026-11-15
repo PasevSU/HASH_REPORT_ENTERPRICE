@@ -1,0 +1,21 @@
+{
+  "name": "chronoseal-python-rfc3161-addon",
+  "version": "5.5.1",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "test": "python -m unittest discover -s tests -v && python -m unittest discover -s hash_report_generator/tests",
+    "cli": "python chronoseal_cli.py",
+    "verify": "npm run check && npm run verify:vendor && npm run selfcheck && npm run doctor && npm test",
+    "selfcheck": "python -m chronoseal.selfheal",
+    "check": "node --check bridge/stamp.mjs",
+    "doctor": "node --input-type=module -e \"import('pdf-rfc3161').then(()=>console.log('pdf-rfc3161: OK')).catch(e=>{console.error(e);process.exit(1)})\"",
+    "verify:vendor": "node tests/vendor_integrity.mjs"
+  },
+  "dependencies": {
+    "pdf-rfc3161": "file:vendor/pdf-rfc3161"
+  }
+}

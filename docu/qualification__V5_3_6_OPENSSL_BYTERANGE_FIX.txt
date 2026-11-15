@@ -1,0 +1,10 @@
+ChronoSeal v5.3.6 RC - OpenSSL RFC3161 ByteRange verifier correction
+
+Observed on Windows/OpenSSL 4.0.2:
+  openssl ts -verify -token_in -in signed.bin -CAfile ca.pem
+  -> ts: Use -help for summary.
+
+Correct invocation:
+  openssl ts -verify -token_in -in token.tsr -data signed.bin -CAfile ca.pem
+
+The token and exact PDF ByteRange-selected data are written separately. Final-reopen verification reuses the same independent verifier. No GUI, report layout, SINGLE/COMBO, recursion or TSA topology changes.

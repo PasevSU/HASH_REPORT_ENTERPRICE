@@ -1,0 +1,1 @@
+All rule files are **.js** exporting a plain object with `module.exports = {...};`. The Python loader dynamically discovers `*.js`, evaluates via bounded Node VM, and validates mandatory sections. Node.js 18+ is required. JSON style rules are no longer loaded. Do not put I/O or runtime plugin code in these declarative rules.

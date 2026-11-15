@@ -1,5 +1,36 @@
-* text=auto
+# Normalise line endings; the product targets Windows but the sources are LF.
+* text=auto eol=lf
 *.bat text eol=crlf
+*.cmd text eol=crlf
 *.ps1 text eol=crlf
-*.png binary
+
+# Never diff or merge binary payloads.
 *.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.gif binary
+*.sqlite3 binary
+*.db binary
+*.zip binary
+*.7z binary
+*.der binary
+*.p12 binary
+*.pfx binary
+
+# Trust material stays byte-exact. A pinned SHA-256 over a certificate must not
+# change because a checkout rewrote its line endings, and a certificate is not
+# source code: no conversion, no merge, no diff.
+trust/** -text
+*.pem -text
+*.crt -text
+*.cer -text
+
+# Keep the repository language statistics honest.
+docu/** linguist-documentation
+tests/** linguist-test
+hash_report_generator/tests/** linguist-test
+trust/** linguist-vendored
+vendor/** linguist-vendored
+package-lock.json -diff linguist-generated

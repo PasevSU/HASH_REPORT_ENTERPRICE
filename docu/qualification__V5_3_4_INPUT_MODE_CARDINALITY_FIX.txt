@@ -1,0 +1,8 @@
+ChronoSeal v5.3.4 qualification scope
+
+- Input type controls report type: file=SINGLE, folder=COMBO.
+- Recursive is explicit and folder-only.
+- Output names: RPT-..._HASHREPORT_TYP_SINGLE.pdf / _COMBO.pdf.
+- RFC3161 cardinality accepts extractor duplicate views while requiring at least one newly extracted timestamp; final reopen/reverification remains mandatory.
+- Child stdout/stderr are drained during execution to prevent Windows pipe deadlock.
+- No PDF layout or TSA provider preset changes.

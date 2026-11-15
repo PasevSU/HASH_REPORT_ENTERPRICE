@@ -1,0 +1,32 @@
+§ 371 ZPO – Beweis durch Augenschein
+Einordnung: Elektronische Dateien können als Beweis durch Vorlage oder Übermittlung der Datei eingeführt werden.
+Amtliche Fundstelle: https://www.gesetze-im-internet.de/zpo/__371.html
+Kurzer Gesetzesauszug: „Ist ein elektronisches Dokument Gegenstand des Beweises, wird der Beweis durch Vorlegung oder Übermittlung der Datei angetreten.“
+
+§ 371a ZPO – Beweiskraft elektronischer Dokumente
+Einordnung: Sonderregeln gelten nur bei den gesetzlich vorgesehenen Signaturen und Voraussetzungen.
+Amtliche Fundstelle: https://www.gesetze-im-internet.de/zpo/__371a.html
+Kurzer Gesetzesauszug: „Die Vorschriften über die Beweiskraft privater Urkunden sind entsprechend anzuwenden auf private elektronische Dokumente“
+
+§ 130a ZPO – Elektronisches Dokument
+Einordnung: Vorgaben für elektronisch eingereichte Schriftsätze und weitere Verfahrensdokumente sind gesondert zu beachten.
+Amtliche Fundstelle: https://www.gesetze-im-internet.de/zpo/__130a.html
+Kurzer Gesetzesauszug: „Das elektronische Dokument muss für die Bearbeitung durch das Gericht geeignet sein.“
+
+Art. 25 eIDAS – Rechtswirkung elektronischer Signaturen
+Einordnung: Unterscheidung von einfachen, fortgeschrittenen und qualifizierten Signaturen; Zeitstempel sind nicht automatisch qualifizierte Signaturen.
+Amtliche Fundstelle: https://eur-lex.europa.eu/eli/reg/2014/910/oj?locale=de
+
+Art. 41 eIDAS – Rechtswirkung elektronischer Zeitstempel
+Einordnung: Besondere gesetzliche Vermutung nur bei qualifizierten elektronischen Zeitstempeln.
+Amtliche Fundstelle: https://eur-lex.europa.eu/eli/reg/2014/910/oj?locale=de
+Kurzer Gesetzesauszug: „Für qualifizierte elektronische Zeitstempel gilt die Vermutung der Richtigkeit des Datums und der Zeit“
+
+Art. 42 eIDAS – Qualifizierte elektronische Zeitstempel
+Einordnung: Qualifizierte Zeitstempel müssen die gesetzlichen Anforderungen an Bindung, Zeitquelle und Signatur/Siegel erfüllen.
+Amtliche Fundstelle: https://eur-lex.europa.eu/eli/reg/2014/910/oj?locale=de
+Kurzer Gesetzesauszug: „Er beruht auf einer korrekten Zeitquelle, die mit der koordinierten Weltzeit verknüpft ist.“
+
+Technische Referenzen (keine automatische Konformitätsbescheinigung)
+RFC 3161, RFC 5816; ETSI EN 319 421, EN 319 422, EN 319 102-1, EN 319 122-1, EN 319 142-1; BSI TR-03125 und – nur bei einschlägigen Scanverfahren – BSI TR-03138.
+Standards sind nicht vollständig reproduziert und sind teils urheberrechtlich geschützt.

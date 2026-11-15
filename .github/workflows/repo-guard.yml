@@ -1,0 +1,93 @@
+name: repository guard
+
+# Upload restrictions: fail the build when a file that must never be published
+# reaches the repository. See SECURITY.md for the reasoning behind each rule.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  guards:
+    name: upload restrictions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reject tracked files larger than 50 MB
+        shell: bash
+        run: |
+          set -euo pipefail
+          limit=50000000
+          failed=0
+          while IFS= read -r -d '' file; do
+            size=$(stat -c %s "$file")
+            if [ "$size" -gt "$limit" ]; then
+              echo "::error file=$file::tracked file is $size bytes, limit is $limit bytes"
+              failed=1
+            fi
+          done < <(git ls-files -z)
+          if [ "$failed" -ne 0 ]; then
+            echo "Pending an approved exception, remove the file from the index and add it to .gitignore."
+            exit 1
+          fi
+          echo "No tracked file is larger than 50 MB."
+
+      - name: Reject forbidden paths and extensions
+        shell: bash
+        run: |
+          set -euo pipefail
+          pattern='\.(sqlite3|sqlite|db|7z|zip|tar|gz|bak|pyc|der|p12|pfx)$'
+          pattern="$pattern|(^|/)\.chronoseal-venv/|(^|/)__pycache__/|(^|/)\.pytest_cache/"
+          pattern="$pattern|(^|/)ChronoSeal_Archive/|(^|/)ChronoSeal_Evidence/"
+          pattern="$pattern|(^|/)qualification_logs/|(^|/)node_modules/|(^|/)logs/"
+          pattern="$pattern|(^|/)RPT-[^/]*\.pdf$|(^|/)\.env$"
+          if git ls-files | grep -E "$pattern"; then
+            echo "::error::a tracked file matches a forbidden path or extension"
+            echo "Keep evidence, archives, local environments and generated reports out of the repository."
+            exit 1
+          fi
+          echo "No forbidden path or extension is tracked."
+
+      - name: Reject private key material
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-files -z | xargs -0 grep -lE '-----BEGIN (RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----' 2>/dev/null | head -n 20; then
+            echo "::error::private key material found in a tracked file"
+            exit 1
+          fi
+          echo "No private key material found."
+
+      - name: Reject credential patterns
+        shell: bash
+        run: |
+          set -euo pipefail
+          pattern='gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}'
+          pattern="$pattern|AKIA[0-9A-Z]{16}|xox[baprs]-[A-Za-z0-9-]{10,}"
+          pattern="$pattern|sk-[A-Za-z0-9]{20,}"
+          if git ls-files -z | xargs -0 grep -lE "$pattern" 2>/dev/null | head -n 20; then
+            echo "::error::credential material found in a tracked file"
+            exit 1
+          fi
+          echo "No credential pattern found."
+
+      - name: Confirm the required policy files exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in LICENSE SECURITY.md README.md .gitignore .gitattributes; do
+            if [ ! -f "$file" ]; then
+              echo "::error file=$file::required policy file is missing"
+              exit 1
+            fi
+          done
+          echo "Policy files present."

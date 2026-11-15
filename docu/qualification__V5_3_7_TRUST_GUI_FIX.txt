@@ -1,0 +1,4 @@
+ChronoSeal v5.3.7 RC
+Scope: X.509 TSA chain construction/recovery and Windows GUI copy/paste usability.
+Regression: 47 tests PASS under xvfb; Python compile PASS; Node syntax PASS.
+Release status: RC / NOT FINAL. Real Windows START+STOP TSA qualification still required.

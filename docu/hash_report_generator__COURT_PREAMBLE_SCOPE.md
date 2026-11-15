@@ -1,0 +1,1 @@
+Applies to SINGLE and COMBO report builders and their modes that reuse these builders. Legal references are informative, not proof of conformance. Requires PDF rendering and end-to-end validation before release.

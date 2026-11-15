@@ -1,0 +1,1 @@
+INTEGRATION CANDIDATE / NOT RELEASE QUALIFIED. Pre-seal PDF merge and footer implemented. Real Windows dual TSA end-to-end NOT VERIFIED. Existing PDF input currently bypasses hash generator and therefore original-PDF inclusion is BLOCKED until report-generation path is implemented. The footer safety zone may BLOCK on existing page content. Do not publish as FINAL.
