@@ -12,6 +12,7 @@
 - JSX_PORT_BG.md
 - V91_REPORT_FROM_FILES_BG.md
 - JS_CLONE_BG.md
+- HAPI_REPORT_BUTTONS_BG.md
 - docs/history/CONTINUATION_AUDIT.md
 - docs/history/ENTERPRISE_STATUS.md
 - docs/history/FIX_STATUS.md
