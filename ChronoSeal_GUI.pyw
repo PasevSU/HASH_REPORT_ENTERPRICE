@@ -11,7 +11,7 @@ BASE = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE))
 sys.path.insert(0, str(BASE / "automation"))
 
-from chronoseal import i18n
+from chronoseal import branding, i18n
 i18n.install()
 
 automation_loader = importlib.machinery.SourceFileLoader(
@@ -63,82 +63,107 @@ class ChronoSealDesktop(original.App):
     def _configure_enterprise_theme(self):
         super()._configure_enterprise_theme()
         style = ttk.Style(self)
-        bg = "#f3f6fa"
-        navy = "#10243a"
-        panel = "#ffffff"
-        border = "#dce4ed"
-        muted = "#64758a"
-        accent = "#087e8b"
+        palette = branding.PALETTE
+        fonts = self._fonts()
+        bg = palette["background"]
+        navy = palette["primary"]
+        panel = palette["surface"]
+        border = palette["border"]
+        muted = palette["muted"]
+        accent = palette["accent"]
+        body = palette["body"]
         self.configure(background=bg)
-        style.configure(".", font=("Segoe UI", 10))
+        style.configure(".", font=fonts.font(branding.FONT_SIZES["body"]))
         style.configure("TFrame", background=bg)
-        style.configure("TLabel", background=bg, foreground="#182a3d")
+        style.configure("TLabel", background=bg, foreground=body)
         style.configure("Workspace.TFrame", background=navy)
         style.configure("Header.TFrame", background=panel)
-        style.configure("BrandMark.TLabel", background=accent, foreground="#ffffff",
-                        font=("Segoe UI", 13, "bold"), padding=(10, 6))
+        style.configure("BrandMark.TLabel", background=navy, padding=(9, 7))
         style.configure("BrandTitle.TLabel", background=panel, foreground=navy,
-                        font=("Segoe UI", 17, "bold"))
+                        font=fonts.font(branding.FONT_SIZES["brand"], "bold"))
+        style.configure("BrandBadge.TLabel", background=palette["gold"], foreground=navy,
+                        padding=(8, 2),
+                        font=fonts.font(branding.FONT_SIZES["micro"], "bold"))
         style.configure("BrandSub.TLabel", background=panel, foreground=muted,
-                        font=("Segoe UI", 9))
-        style.configure("WorkspaceTitle.TLabel", background=navy, foreground="#f4f7fc",
-                        font=("Segoe UI", 18, "bold"))
-        style.configure("WorkspaceSub.TLabel", background=navy, foreground="#b7c8d9",
-                        font=("Segoe UI", 9))
+                        font=fonts.font(branding.FONT_SIZES["small"]))
+        style.configure("WorkspaceTitle.TLabel", background=navy,
+                        foreground=palette["rail_text_strong"],
+                        font=fonts.font(branding.FONT_SIZES["workspace"], "bold"))
+        style.configure("WorkspaceSub.TLabel", background=navy,
+                        foreground=palette["rail_text"],
+                        font=fonts.font(branding.FONT_SIZES["small"]))
         style.configure("Eyebrow.TLabel", background=bg, foreground=accent,
-                        font=("Segoe UI", 9, "bold"))
+                        font=fonts.font(branding.FONT_SIZES["small"], "bold"))
         style.configure("PageTitle.TLabel", background=bg, foreground=navy,
-                        font=("Segoe UI", 20, "bold"))
+                        font=fonts.font(branding.FONT_SIZES["page"], "bold"))
         style.configure("PageSub.TLabel", background=bg, foreground=muted,
-                        font=("Segoe UI", 10))
+                        font=fonts.font(branding.FONT_SIZES["body"], role="document"))
         style.configure("Section.TLabel", background=panel, foreground=navy,
-                        font=("Segoe UI", 11, "bold"))
+                        font=fonts.font(branding.FONT_SIZES["section"], "bold"))
         style.configure("Muted.TLabel", background=bg, foreground=muted,
-                        font=("Segoe UI", 9))
+                        font=fonts.font(branding.FONT_SIZES["small"]))
         style.configure("Workspace.TNotebook", background=bg, borderwidth=0, tabmargins=0)
         style.layout("Workspace.TNotebook.Tab", [])
-        style.configure("Nav.TButton", background=navy, foreground="#d5e1ed",
-                        anchor="w", justify="left", padding=(13, 12), borderwidth=0,
-                        font=("Segoe UI", 10))
-        style.map("Nav.TButton", background=[("active", "#203a54")],
-                  foreground=[("active", "#ffffff")])
-        style.configure("NavSelected.TButton", background="#1c3b53",
-                        foreground="#ffffff", anchor="w", justify="left",
-                        padding=(13, 12), borderwidth=0, font=("Segoe UI", 10, "bold"))
-        style.map("NavSelected.TButton", background=[("active", "#254a64")])
+        style.configure("Nav.TButton", background=navy, foreground=palette["rail_text"],
+                        anchor="w", justify="left", padding=(13, 11), borderwidth=0,
+                        font=fonts.font(branding.FONT_SIZES["body"]))
+        style.map("Nav.TButton", background=[("active", palette["primary_hover"])],
+                  foreground=[("active", palette["rail_text_strong"])])
+        style.configure("NavSelected.TButton", background=accent,
+                        foreground=palette["on_accent"], anchor="w", justify="left",
+                        padding=(13, 11), borderwidth=0,
+                        font=fonts.font(branding.FONT_SIZES["body"], "bold"))
+        style.map("NavSelected.TButton", background=[("active", palette["accent_hover"])])
         style.configure("Panel.TLabelframe", background=panel, bordercolor=border,
                         relief="solid", padding=14)
         style.configure("Panel.TLabelframe.Label", background=panel, foreground=navy,
-                        font=("Segoe UI", 10, "bold"))
-        style.configure("Accent.TButton", background=accent, foreground="#ffffff",
-                        font=("Segoe UI", 10, "bold"), padding=(16, 11), borderwidth=0)
-        style.map("Accent.TButton", background=[("active", "#086b76"),
-                                                ("disabled", "#aab9c6")])
+                        font=fonts.font(branding.FONT_SIZES["label"], "bold"))
+        style.configure("Accent.TButton", background=accent,
+                        foreground=palette["on_accent"],
+                        font=fonts.font(branding.FONT_SIZES["body"], "bold"),
+                        padding=(16, 11), borderwidth=0)
+        style.map("Accent.TButton", background=[("active", palette["accent_hover"]),
+                                                ("disabled", palette["disabled"])])
         style.configure("TButton", padding=(10, 7))
-        style.configure("TEntry", padding=8, fieldbackground="#ffffff",
-                        foreground="#182a3d")
-        style.configure("TCombobox", padding=7, fieldbackground="#ffffff",
-                        foreground="#182a3d")
-        style.map("TCombobox", fieldbackground=[("readonly", "#ffffff")],
-                  foreground=[("readonly", "#182a3d")])
-        style.configure("TCheckbutton", background=panel, foreground="#273c50")
+        style.configure("TEntry", padding=8, fieldbackground=panel, foreground=body)
+        style.configure("TCombobox", padding=7, fieldbackground=panel, foreground=body)
+        style.map("TCombobox", fieldbackground=[("readonly", panel)],
+                  foreground=[("readonly", body)])
+        style.configure("TCheckbutton", background=panel, foreground=body)
         style.map("TCheckbutton", background=[("active", panel)])
-        style.configure("Status.TLabel", background="#eaf0f5", foreground="#344a60",
-                        padding=(10, 7), font=("Segoe UI", 9))
-        style.configure("Horizontal.TProgressbar", thickness=9, troughcolor="#e4ebf2",
-                        background=accent)
-        style.configure("TScrollbar", background="#dbe4ed", troughcolor=bg,
-                        arrowcolor="#536b82")
+        style.configure("Status.TLabel", background=palette["status_bg"],
+                        foreground=palette["status_fg"], padding=(10, 7),
+                        font=fonts.font(branding.FONT_SIZES["small"]))
+        style.configure("Horizontal.TProgressbar", thickness=9,
+                        troughcolor=palette["trough"], background=accent)
+        style.configure("TScrollbar", background=palette["border_soft"], troughcolor=bg,
+                        arrowcolor=palette["muted_soft"])
+
+    def _fonts(self):
+        book = getattr(self, "_font_book", None)
+        if book is None:
+            book = branding.FontBook(self)
+            self._font_book = book
+        return book
 
     def _ui(self):
         header = ttk.Frame(self, style="Header.TFrame", padding=(22, 14))
         header.pack(fill="x")
-        ttk.Label(header, text="CS", style="BrandMark.TLabel").pack(side="left")
+        self._brand_icon = branding.icon(
+            "verification", size=30, fg=branding.PALETTE["gold"], master=self
+        )
+        ttk.Label(header, image=self._brand_icon, style="BrandMark.TLabel").pack(side="left")
         brand = ttk.Frame(header, style="Header.TFrame")
-        brand.pack(side="left", padx=(12, 0))
-        ttk.Label(brand, text="ChronoSeal", style="BrandTitle.TLabel").pack(anchor="w")
-        ttk.Label(brand, text="EVIDENCE OPERATIONS WORKSPACE",
-                  style="BrandSub.TLabel").pack(anchor="w", pady=(1, 0))
+        brand.pack(side="left", padx=(14, 0))
+        lockup = ttk.Frame(brand, style="Header.TFrame")
+        lockup.pack(anchor="w")
+        ttk.Label(lockup, text=branding.PRODUCT["product"],
+                  style="BrandTitle.TLabel").pack(side="left")
+        ttk.Label(lockup, text=branding.PRODUCT["badge"].upper(),
+                  style="BrandBadge.TLabel").pack(side="left", padx=(10, 0), pady=(3, 0))
+        ttk.Label(brand, text=f"{branding.PRODUCT['vendor']}  ·  {branding.PRODUCT['tagline']}",
+                  style="BrandSub.TLabel").pack(anchor="w", pady=(2, 0))
+        tk.Frame(self, height=3, background=branding.PALETTE["gold"]).pack(fill="x")
         self._clock_text = tk.StringVar(value="")
         i18n.add_language_selector(
             header, self, style="Header.TFrame", label_style="BrandSub.TLabel",
@@ -185,9 +210,21 @@ class ChronoSealDesktop(original.App):
             self.nb.add(page, text=title)
 
         self._nav_buttons = {}
+        self._nav_icons = {}
         for page, number, title, subtitle in self.NAV_ITEMS:
+            module_icon = branding.PAGE_ICONS.get(page, "report")
+            icons = {
+                "idle": branding.icon(module_icon, size=20,
+                                      fg=branding.PALETTE["rail_text"],
+                                      bg=branding.PALETTE["primary"], master=self),
+                "selected": branding.icon(module_icon, size=20,
+                                          fg=branding.PALETTE["on_accent"],
+                                          bg=branding.PALETTE["accent"], master=self),
+            }
+            self._nav_icons[page] = icons
             button = ttk.Button(
-                rail, text=self._nav_text(number, title, subtitle), style="Nav.TButton",
+                rail, text=self._nav_text(number, title, subtitle),
+                image=icons["idle"], compound="left", style="Nav.TButton",
                 command=lambda name=page: self._select_page(name)
             )
             button.pack(fill="x", pady=3)
@@ -340,10 +377,14 @@ class ChronoSealDesktop(original.App):
         log_box.grid(row=1, column=0, sticky="nsew")
         log_box.columnconfigure(0, weight=1)
         log_box.rowconfigure(0, weight=1)
+        palette = branding.PALETTE
         self.log = tk.Text(
-            log_box, height=12, wrap="word", background="#12283b",
-            foreground="#dce8f2", insertbackground="#ffffff",
-            selectbackground="#087e8b", font=("Cascadia Mono", 9),
+            log_box, height=12, wrap="word", background=palette["console_bg"],
+            foreground=palette["console_fg"],
+            insertbackground=palette["console_fg"],
+            selectbackground=palette["console_select"],
+            selectforeground=palette["on_accent"],
+            font=self._fonts().font(branding.FONT_SIZES["small"], role="mono"),
             relief="flat", padx=12, pady=10
         )
         self.log.grid(row=0, column=0, sticky="nsew")
@@ -363,7 +404,8 @@ class ChronoSealDesktop(original.App):
         scroll_host.grid(row=3, column=0, sticky="nsew")
         scroll_host.columnconfigure(0, weight=1)
         scroll_host.rowconfigure(0, weight=1)
-        canvas = tk.Canvas(scroll_host, background="#f3f6fa", highlightthickness=0)
+        canvas = tk.Canvas(scroll_host, background=branding.PALETTE["background"],
+                           highlightthickness=0)
         canvas.grid(row=0, column=0, sticky="nsew")
         scrollbar = ttk.Scrollbar(scroll_host, orient="vertical", command=canvas.yview)
         scrollbar.grid(row=0, column=1, sticky="ns")
@@ -416,10 +458,15 @@ class ChronoSealDesktop(original.App):
         self.diag_tab = panel
         self._diag_ui()
         self.diag_tab = actual_page
+        palette = branding.PALETTE
         self.diag.configure(
-            wrap="word", background="#12283b", foreground="#dce8f2",
-            insertbackground="#ffffff", selectbackground="#087e8b",
-            font=("Cascadia Mono", 9), relief="flat", padx=12, pady=10
+            wrap="word", background=palette["console_bg"],
+            foreground=palette["console_fg"],
+            insertbackground=palette["console_fg"],
+            selectbackground=palette["console_select"],
+            selectforeground=palette["on_accent"],
+            font=self._fonts().font(branding.FONT_SIZES["small"], role="mono"),
+            relief="flat", padx=12, pady=10
         )
 
     def _refresh_filter_indicator(self):
@@ -458,8 +505,10 @@ class ChronoSealDesktop(original.App):
             current = self.nb.select()
             for name, *_rest in self.NAV_ITEMS:
                 page = getattr(self, name)
+                selected = str(page) == current
                 self._nav_buttons[name].configure(
-                    style="NavSelected.TButton" if str(page) == current else "Nav.TButton"
+                    style="NavSelected.TButton" if selected else "Nav.TButton",
+                    image=self._nav_icons[name]["selected" if selected else "idle"],
                 )
         except (AttributeError, tk.TclError):
             return
@@ -485,12 +534,13 @@ class ChronoSealDesktop(original.App):
             side="left", fill="x", expand=True
         )
         ttk.Label(
-            footer, text="Created & licensed by Home Assistant Projects · PasevSU DEV",
-            style="BrandSub.TLabel"
+            footer,
+            text=f"{branding.PRODUCT['footer']}  ·  {branding.PRODUCT['version_label']}",
+            style="BrandSub.TLabel",
         ).pack(side="right", padx=(10, 0))
         ttk.Label(
             footer,
-            text="Part of the NO TRUST Cybersecurity volunteer campaign",
+            text=f"{branding.PRODUCT['licence']}  ·  {branding.PRODUCT['campaign']}",
             style="BrandSub.TLabel",
         ).pack(side="bottom", anchor="e", pady=(4, 0))
 

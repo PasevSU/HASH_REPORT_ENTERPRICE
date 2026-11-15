@@ -184,21 +184,51 @@ npm run verify  # release gate: syntax, vendor integrity, self-check, doctor, te
 Current state on a real SMB tree:
 
 ```
-338 passed, 11 subtests passed   (269.38 s)
- 33 passed   UI acceptance, every step driven through Tk widgets only
- 21 passed   JS rule loader and style cache contract
+260 tests OK   unittest discover -s tests                       (73.31 s)
+133 tests OK   unittest discover -s hash_report_generator/tests  (68.24 s)
+ 35 passed     UI acceptance, every step driven through Tk widgets only
+ 21 passed     JS rule loader and style cache contract
+ 19 passed     brand tokens, glyph geometry, no colour literals in the GUI
 ```
+
+Run the suites with `python -m unittest` / `python -m pytest` from the checkout.
+Do not use `npm test` or `npm run verify` from a UNC path: Windows starts
+`cmd.exe` in `C:\Windows` for those scripts, `-s tests` then resolves through
+`sys.path` to the unrelated `tests` package shipped inside `site-packages`
+(bitcoinlib), and the gate silently measures a foreign suite - 661 "tests" with
+failures that have nothing to do with this project. The same fallback breaks
+`npm run doctor` and `npm run verify:vendor`. Run the gate from a local drive, or
+call the two `python -m unittest` commands directly.
 
 The UI acceptance suite drives the real widgets for all five pages and is the
 only path used to validate the interface; `docu/V89_UI_TEST_REPORT_BG.md`
 records every iteration, including the failures that were fixed.
+
+## Brand identity
+
+The interface carries the **ChronoSeal(TM) Enterprise v5.5.1** identity: navy
+`#0B1F3B` primary, blue `#1E64D6` accent, gold `#D4AF37`, `#E6EEF7` background
+and white surfaces, with Inter for the interface and Source Sans 3 for documents
+(both fall back to Segoe UI / the system mono face when they are not installed).
+
+Every colour, font stack, icon and product string lives in one module,
+`chronoseal/branding.py`, read by the desktop workspace, the legacy base theme,
+the automation panel, the Selection panel and the static preview in `ui/`. A test
+fails if a GUI file reintroduces a local colour literal, so a future surface
+cannot drift from the palette.
+
+The **PDF report palette is deliberately untouched**. The report is a forensic
+document: its style bundle feeds the golden payload hash, so rebranding it would
+invalidate the verification path for reports already issued. Branding stops at
+the window frame - see [docu/BRANDING_V551_BG.md](docu/BRANDING_V551_BG.md).
 
 ## Repository layout
 
 ```
 ChronoSeal_GUI.pyw            GUI entry point (Tkinter)
 chronoseal_cli.py             headless entry point
-chronoseal/                   pipeline, settings, self-heal, Tk bootstrap, i18n
+chronoseal/                   pipeline, settings, self-heal, Tk bootstrap, i18n,
+                              branding (palette, fonts, icons, product strings)
 hash_report_generator/        generator, JS rule loader, file filters, tests
 automation/                   automation window and the Selection panel
 tests/                        integration, hardening, UI acceptance suites
@@ -216,6 +246,7 @@ config/config.json            runtime configuration
 | `docu/V89_UPGRADE_PLAN_BG.md` | every planned addition, test and its status |
 | `docu/V89_UI_TEST_REPORT_BG.md` | iteration log, full-suite evidence, known limits |
 | `docu/V90_JS_CAPABILITY_ANALYSIS_BG.md` | what can move to JS, with measurements |
+| `docu/BRANDING_V551_BG.md` | interface brand identity: palette, fonts, icons, tests |
 
 These documents are written in Bulgarian because they are the working record of
 the project; the code, the comments and this README are in English.

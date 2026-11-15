@@ -22,7 +22,7 @@ for _path in (str(HERE), str(BASE)):
     if _path not in sys.path:
         sys.path.insert(0, _path)
 
-from chronoseal import i18n
+from chronoseal import branding, i18n
 
 i18n.install()
 
@@ -162,7 +162,7 @@ class App:
         holder.grid(row=1, column=0, sticky="nsew", padx=10)
         holder.columnconfigure(0, weight=1)
         self.rows_canvas = tk.Canvas(
-            holder, highlightthickness=0, height=112, background="#ffffff", borderwidth=0
+            holder, highlightthickness=0, height=112, background=branding.PALETTE["surface"], borderwidth=0
         )
         self.rows_canvas.grid(row=0, column=0, sticky="nsew")
         bar = ttk.Scrollbar(holder, orient="vertical", command=self.rows_canvas.yview)

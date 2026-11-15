@@ -7,7 +7,7 @@ HERE=Path(__file__).resolve().parent
 BASE=HERE.parent
 sys.path.insert(0,str(HERE));sys.path.insert(0,str(BASE))
 from automation_core import plan,execute,MODES
-from chronoseal import i18n
+from chronoseal import branding, i18n
 i18n.install()
 
 def bg(text):
@@ -72,7 +72,7 @@ class App:
   self.loaded_files=[]
   self.files=tk.Listbox(sel,selectmode=tk.EXTENDED,height=8,exportselection=False)
   self.files.pack(side='left',fill='both',expand=True)
-  self.files.configure(background='#15263a',foreground='#eef5ff',selectbackground='#30b5a5',selectforeground='#071a22',font=('Segoe UI',10),borderwidth=0,highlightthickness=0,activestyle='none')
+  self.files.configure(background=branding.PALETTE['console_bg'],foreground=branding.PALETTE['console_fg'],selectbackground=branding.PALETTE['accent'],selectforeground=branding.PALETTE['on_accent'],font=branding.FontBook(self.files).font(10),borderwidth=0,highlightthickness=0,activestyle='none')
   scroll=ttk.Scrollbar(sel,command=self.files.yview);scroll.pack(side='right',fill='y');self.files.config(yscrollcommand=scroll.set)
   controls=ttk.Frame(self.selection_frame);controls.pack(fill='x',padx=6,pady=(0,6))
   ttk.Button(controls,text='Добави файлове…',command=self.add_files).pack(side='left')
@@ -94,7 +94,7 @@ class App:
   ttk.Label(progress_panel,textvariable=self.metrics).pack(anchor='w',padx=10,pady=(0,8))
   ttk.Label(frm,text='Дневник на изпълнението:').pack(anchor='w')
   logrow=ttk.Frame(frm);logrow.pack(fill='both',expand=True)
-  self.log=tk.Text(logrow,height=10,state='disabled',wrap='word',background='#0d1726',foreground='#d9f0ed',insertbackground='#ffffff',font=('Consolas',10),relief='flat');self.log.pack(side='left',fill='both',expand=True)
+  self.log=tk.Text(logrow,height=10,state='disabled',wrap='word',background=branding.PALETTE['console_bg'],foreground=branding.PALETTE['console_fg'],insertbackground=branding.PALETTE['on_accent'],font=branding.FontBook(logrow).font(10,role='mono'),relief='flat');self.log.pack(side='left',fill='both',expand=True)
   logscroll=ttk.Scrollbar(logrow,orient='vertical',command=self.log.yview);logscroll.pack(side='right',fill='y');self.log.configure(yscrollcommand=logscroll.set)
   ttk.Label(frm,text='Всяка задача използва оригиналния Pipeline и задължителните TSA START/STOP проверки. Неуспешна задача не се отбелязва като PASS.',wraplength=900).pack(anchor='w',pady=8)
   self.source.trace_add('write',lambda *_:self.clear_files());self.root.after(100,self.poll)
