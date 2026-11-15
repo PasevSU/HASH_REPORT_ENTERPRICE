@@ -116,6 +116,7 @@ MODULES = (
 
 PAGE_ICONS = MappingProxyType({
     "run_tab": "report",
+    "report_files_tab": "journal",
     "automation_tab": "timestamp",
     "set_tab": "configuration",
     "diag_tab": "journal",

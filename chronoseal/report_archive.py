@@ -7,10 +7,13 @@ import os
 import re
 import shutil
 import sqlite3
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from .util import json_safe
 
 
 _SCHEMA = """
@@ -50,6 +53,32 @@ def _sha256(path: Path) -> str:
             digest.update(chunk)
     return digest.hexdigest()
 
+
+_WINDOWS_TRANSIENT_WINERRORS = (5, 32, 33)
+
+
+def _rename_with_retry(source: Path, destination: Path, attempts: int = 6) -> None:
+    """Publish the staged folder, retrying a transient Windows sharing violation.
+
+    Antivirus and the search indexer briefly open files inside a folder that was
+    just written, so ``os.rename`` can fail with WinError 5/32/33 on a directory
+    that is not actually in use. One failed publish would leave the report number
+    blocked by the destination guard, so the rename is retried with backoff.
+    """
+    delay = 0.05
+    for attempt in range(1, attempts + 1):
+        try:
+            os.rename(source, destination)
+            return
+        except OSError as error:
+            transient = (
+                os.name == "nt"
+                and getattr(error, "winerror", None) in _WINDOWS_TRANSIENT_WINERRORS
+            )
+            if not transient or attempt == attempts:
+                raise
+            time.sleep(delay)
+            delay = min(delay * 2, 0.8)
 
 def archive_report(
     *,
@@ -101,7 +130,7 @@ def archive_report(
                 encoding="utf-8",
             )
 
-        archive_manifest = {
+        archive_manifest = json_safe({
             **manifest,
             "report_id": report_id,
             "archive_directory": str(destination),
@@ -110,7 +139,7 @@ def archive_report(
             "archive_log": str(destination / "run.log"),
             "archive_evidence_directory": str(destination / "evidence"),
             "archive_database": str(database),
-        }
+        })
         (stage / "evidence" / "manifest.json").write_text(
             json.dumps(archive_manifest, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
@@ -158,7 +187,7 @@ def archive_report(
 
         if destination.exists():
             raise FileExistsError(f"Report archive already exists; refusing overwrite: {destination}")
-        os.rename(stage, destination)
+        _rename_with_retry(stage, destination)
         published = True
         connection.commit()
         manifest.clear()

@@ -1,0 +1,785 @@
+{
+ "file_filters": {
+  "audit": [
+   {
+    "expect": {
+     "filter_case_sensitive": false,
+     "filter_count": 0,
+     "filter_description": "none",
+     "filters": []
+    },
+    "input": null
+   },
+   {
+    "expect": {
+     "filter_case_sensitive": false,
+     "filter_count": 0,
+     "filter_description": "none",
+     "filters": []
+    },
+    "input": []
+   },
+   {
+    "expect": {
+     "filter_case_sensitive": false,
+     "filter_count": 2,
+     "filter_description": "*.pdf, *.eml",
+     "filters": [
+      "*.pdf",
+      "*.eml"
+     ]
+    },
+    "input": [
+     "*.pdf",
+     "*.eml"
+    ]
+   }
+  ],
+  "describe": [
+   {
+    "expect": "none",
+    "input": null
+   },
+   {
+    "expect": "none",
+    "input": []
+   },
+   {
+    "expect": "*.pdf",
+    "input": "*.pdf"
+   },
+   {
+    "expect": "*.pdf, *.eml",
+    "input": [
+     "*.pdf",
+     "*.PDF",
+     "*.eml"
+    ]
+   },
+   {
+    "expect": "*.pdf, *.eml, *.txt",
+    "input": [
+     "*.pdf; *.eml",
+     "*.txt"
+    ]
+   },
+   {
+    "expect": "*.pdf, *.eml, *.txt",
+    "input": "*.pdf, *.eml\r\n*.txt"
+   },
+   {
+    "expect": "none",
+    "input": [
+     "",
+     "   ",
+     ";;;"
+    ]
+   },
+   {
+    "expect": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+    "input": [
+     "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+    ]
+   },
+   {
+    "expect": "none",
+    "input": [
+     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    ]
+   },
+   {
+    "expect": "*.pdf\u0000",
+    "input": [
+     "*.pdf\u0000"
+    ]
+   }
+  ],
+  "matches": [
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "*eml.pdf"
+    ],
+    "name": "scan_0001.eml.pdf",
+    "rel": "invoices/2026/scan_0001.eml.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": false,
+    "filters": [
+     "*eml.pdf"
+    ],
+    "name": "scan_0001.pdf",
+    "rel": "invoices/2026/scan_0001.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "*eml.pdf"
+    ],
+    "name": "scan_0001.EML.PDF",
+    "rel": "Invoices/SCAN_0001.EML.PDF"
+   },
+   {
+    "env_case": "1",
+    "expect": false,
+    "filters": [
+     "*eml.pdf"
+    ],
+    "name": "scan_0001.EML.PDF",
+    "rel": "Invoices/SCAN_0001.EML.PDF"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "*.pdf"
+    ],
+    "name": "report.pdf",
+    "rel": "report.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "*.PDF"
+    ],
+    "name": "report.pdf",
+    "rel": "report.pdf"
+   },
+   {
+    "env_case": "1",
+    "expect": false,
+    "filters": [
+     "*.PDF"
+    ],
+    "name": "report.pdf",
+    "rel": "report.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "report"
+    ],
+    "name": "report.pdf",
+    "rel": "report.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "report.pdf"
+    ],
+    "name": "report.pdf",
+    "rel": "report.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "re?ort.pdf"
+    ],
+    "name": "report.pdf",
+    "rel": "report.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "repor[st].pdf"
+    ],
+    "name": "report.pdf",
+    "rel": "report.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "repor[!s].pdf"
+    ],
+    "name": "report.pdf",
+    "rel": "report.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": false,
+    "filters": [
+     "*.txt"
+    ],
+    "name": "report.pdf",
+    "rel": "report.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": false,
+    "filters": [
+     "nested/*"
+    ],
+    "name": "report.txt",
+    "rel": "deep/nested/report.txt"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "*nested*"
+    ],
+    "name": "report.txt",
+    "rel": "deep/nested/report.txt"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "deep/*/report.txt"
+    ],
+    "name": "report.txt",
+    "rel": "deep/nested/report.txt"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "*"
+    ],
+    "name": "report.txt",
+    "rel": "deep/nested/report.txt"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [],
+    "name": "report.txt",
+    "rel": "deep/nested/report.txt"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "*.pdf",
+     "*.txt"
+    ],
+    "name": "report.txt",
+    "rel": "deep/nested/report.txt"
+   },
+   {
+    "env_case": "1",
+    "expect": true,
+    "filters": [
+     "*.pdf",
+     "*.txt"
+    ],
+    "name": "report.txt",
+    "rel": "deep/nested/report.txt"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "*.pdf"
+    ],
+    "name": "a.pdf",
+    "rel": ""
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "*.pdf"
+    ],
+    "name": "",
+    "rel": "deep/a.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "*.pdf"
+    ],
+    "name": "a.b.c.pdf",
+    "rel": "x/a.b.c.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "a.b.c.pdf"
+    ],
+    "name": "a.b.c.pdf",
+    "rel": "x/a.b.c.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "a.b.c"
+    ],
+    "name": "a.b.c.pdf",
+    "rel": "x/a.b.c.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": false,
+    "filters": [
+     "["
+    ],
+    "name": "a.pdf",
+    "rel": "x/a.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "a[[]1].pdf"
+    ],
+    "name": "a[1].pdf",
+    "rel": "x/a[1].pdf"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "a[0-9].pdf"
+    ],
+    "name": "a1.pdf",
+    "rel": "x/a1.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": false,
+    "filters": [
+     "a[!0-9].pdf"
+    ],
+    "name": "a1.pdf",
+    "rel": "x/a1.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "a$.pdf"
+    ],
+    "name": "a$.pdf",
+    "rel": "x/a$.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "a$*.pdf"
+    ],
+    "name": "a$.pdf",
+    "rel": "x/a$.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "a b.pdf"
+    ],
+    "name": "a b.pdf",
+    "rel": "x/a b.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "*.pdf"
+    ],
+    "name": "празен.pdf",
+    "rel": "папка/празен.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "ПРАЗЕН.PDF"
+    ],
+    "name": "празен.pdf",
+    "rel": "папка/празен.pdf"
+   },
+   {
+    "env_case": "1",
+    "expect": false,
+    "filters": [
+     "ПРАЗЕН.PDF"
+    ],
+    "name": "празен.pdf",
+    "rel": "папка/празен.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": true,
+    "filters": [
+     "*.pdf",
+     "*.pdf"
+    ],
+    "name": "x.pdf",
+    "rel": "x.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": false,
+    "filters": [
+     "*.pdf;*.eml"
+    ],
+    "name": "x.pdf",
+    "rel": "x.pdf"
+   },
+   {
+    "env_case": null,
+    "expect": false,
+    "filters": [
+     "*.pdf;*.eml"
+    ],
+    "name": "x.eml",
+    "rel": "x.eml"
+   },
+   {
+    "env_case": null,
+    "expect": false,
+    "filters": [
+     "*.pdf,*.eml"
+    ],
+    "name": "x.eml",
+    "rel": "x.eml"
+   },
+   {
+    "env_case": null,
+    "expect": false,
+    "filters": [
+     "  *.eml  "
+    ],
+    "name": "x.eml",
+    "rel": "x.eml"
+   },
+   {
+    "env_case": null,
+    "expect": false,
+    "filters": [
+     "*"
+    ],
+    "name": "",
+    "rel": ""
+   },
+   {
+    "env_case": null,
+    "expect": false,
+    "filters": [
+     "*.pdf"
+    ],
+    "name": "",
+    "rel": ""
+   }
+  ],
+  "normalize": [
+   {
+    "expect": [
+     "*.pdf",
+     "*.eml"
+    ],
+    "input": "*.pdf, *.eml"
+   },
+   {
+    "expect": [],
+    "input": ""
+   },
+   {
+    "expect": [],
+    "input": "   "
+   },
+   {
+    "expect": [],
+    "input": ";"
+   },
+   {
+    "expect": [
+     "a\\nb"
+    ],
+    "input": "a\\nb"
+   },
+   {
+    "expect": [],
+    "input": null
+   },
+   {
+    "expect": [
+     "spaced"
+    ],
+    "input": "  spaced  "
+   },
+   {
+    "expect": [
+     "x",
+     "y",
+     "z"
+    ],
+    "input": "x;y,z"
+   }
+  ],
+  "parse": [
+   {
+    "expect": [],
+    "input": null
+   },
+   {
+    "expect": [],
+    "input": []
+   },
+   {
+    "expect": [
+     "*.pdf"
+    ],
+    "input": "*.pdf"
+   },
+   {
+    "expect": [
+     "*.pdf",
+     "*.eml"
+    ],
+    "input": [
+     "*.pdf",
+     "*.PDF",
+     "*.eml"
+    ]
+   },
+   {
+    "expect": [
+     "*.pdf",
+     "*.eml",
+     "*.txt"
+    ],
+    "input": [
+     "*.pdf; *.eml",
+     "*.txt"
+    ]
+   },
+   {
+    "expect": [
+     "*.pdf",
+     "*.eml",
+     "*.txt"
+    ],
+    "input": "*.pdf, *.eml\r\n*.txt"
+   },
+   {
+    "expect": [],
+    "input": [
+     "",
+     "   ",
+     ";;;"
+    ]
+   },
+   {
+    "expect": [
+     "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+    ],
+    "input": [
+     "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+    ]
+   },
+   {
+    "expect": [],
+    "input": [
+     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    ]
+   },
+   {
+    "expect": [
+     "*.pdf\u0000"
+    ],
+    "input": [
+     "*.pdf\u0000"
+    ]
+   }
+  ],
+  "to_env": [
+   {
+    "expect": "[]",
+    "input": null
+   },
+   {
+    "expect": "[]",
+    "input": []
+   },
+   {
+    "expect": "[\"*.pdf\", \"*.eml\"]",
+    "input": [
+     "*.pdf",
+     "*.eml",
+     "*.PDF"
+    ]
+   }
+  ]
+ },
+ "generated_by": "tools/jsx/parity/make_reference.py",
+ "hash_table": {
+  "corpus": {
+   "a.txt": "alpha\n",
+   "b.PDF": "bravo\n",
+   "c.eml.pdf": "charlie\n",
+   "empty.bin": "",
+   "sub/d.md": "delta\n",
+   "sub/g.json": "{\"g\": 7}\n",
+   "sub/nested/deep/f.log": "foxtrot\n",
+   "sub/nested/e.PDF": "echo\n"
+  },
+  "dates": [
+   {
+    "expect": "1970-01-01 00:00:00.000 UTC",
+    "ns": 0
+   },
+   {
+    "expect": "2001-09-09 01:46:40.000 UTC",
+    "ns": 1000000000000000000
+   },
+   {
+    "expect": "2024-05-06 12:53:20.123 UTC",
+    "ns": 1715000000123456789
+   },
+   {
+    "expect": "2024-05-06 12:53:21.000 UTC",
+    "ns": 1715000000999999999
+   },
+   {
+    "expect": "2020-09-13 12:26:40.000 UTC",
+    "ns": 1600000000000000000
+   }
+  ],
+  "exclude": [
+   "a.txt",
+   "b.PDF",
+   "c.eml.pdf",
+   "empty.bin",
+   "sub/g.json",
+   "sub/nested/deep/f.log",
+   "sub/nested/e.PDF"
+  ],
+  "modes": [
+   {
+    "files": [
+     "d.md"
+    ],
+    "mode": "single_file",
+    "root": "sub",
+    "source": "sub/d.md"
+   },
+   {
+    "files": [
+     "d.md",
+     "g.json"
+    ],
+    "mode": "current_folder",
+    "root": "sub",
+    "source": "sub"
+   },
+   {
+    "files": [
+     "d.md",
+     "g.json",
+     "nested/deep/f.log",
+     "nested/e.PDF"
+    ],
+    "mode": "recursive_folder",
+    "root": "sub",
+    "source": "sub"
+   }
+  ],
+  "rows": [
+   {
+    "index": 1,
+    "md5": "36c299926dedd08c3f48d5f546a683e6",
+    "path": "a.txt",
+    "sha1": "378db57aa7e9ec5b4f3921bf1e82b1d045a38a93",
+    "sha256": "4a31f8a329cdbbab944056fc992eeb5ab5c0b4a78c3bc34e6d7c4a59fd6cf3b6",
+    "sha512": "c7e16dc66116d74226a23b0f6bdd9fbe0d8d4f4f51d85713fa20e26e49e9d23969715eb1b08a49307ff6e8746f41596d4b2831650dd9243958a96bba01157b2b",
+    "size_bytes": 7,
+    "type": "txt"
+   },
+   {
+    "index": 2,
+    "md5": "59b244275962ae861371be0f12d4649a",
+    "path": "b.PDF",
+    "sha1": "a355a30b977ef1f64736b66d296f88daac75126e",
+    "sha256": "f100697af86b0b7e364e94aa589ddcf30ecc0d84da96184cf03485d5f3b94902",
+    "sha512": "6f3e59c3aa4ff53f369d4e3288eb29377badd1fab73f668696973ef49529f5f164c83f39cf892c24acb6eb20dedf8dd8ad72cbac0237fa15226b7a3e04410028",
+    "size_bytes": 7,
+    "type": "pdf"
+   },
+   {
+    "index": 3,
+    "md5": "abb7be97c6b793eefbd8a86d4ca31011",
+    "path": "c.eml.pdf",
+    "sha1": "76a7054c6ca2b06e9db7b047315c92f2f3e0c0e3",
+    "sha256": "6021fa219adeed913511036200a9e352d45d9392bc3c64347c07b9427a83de39",
+    "sha512": "94aa32dbb78cda41e570eaf5be63434600dcf267376e16837220099aeea80aaee08695829fabd44c8c2ccf68dfff29ebfa2a20c485d1d16b16d65986089d9f14",
+    "size_bytes": 9,
+    "type": "pdf"
+   },
+   {
+    "index": 4,
+    "md5": "d41d8cd98f00b204e9800998ecf8427e",
+    "path": "empty.bin",
+    "sha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sha512": "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e",
+    "size_bytes": 0,
+    "type": "bin"
+   },
+   {
+    "index": 5,
+    "md5": "f12d0203bd30fa2632a672a5f56bbeb1",
+    "path": "sub/d.md",
+    "sha1": "01477753d58f6baa174bfc2d607ccee5e10421d8",
+    "sha256": "dffcb61c954f5c4923b7780c27e905f348edd1f4b9903ba63a73f1e7bd331a7d",
+    "sha512": "2499308e430ad38b753561c86d3fcedb726ac3a09f9c617998f068da2bdd1b408028091c4a27b49642ec1ff8bd9b91d403f4fa49c8452b3ac7a25d71d6583ba0",
+    "size_bytes": 7,
+    "type": "md"
+   },
+   {
+    "index": 6,
+    "md5": "c21e443be8ba56d273d33c93e0385377",
+    "path": "sub/g.json",
+    "sha1": "d76fbe98f6b1ae59729ed3c206898e8e283fa42c",
+    "sha256": "32fd33ee338319e585946b7655b8cb6d05f79085d31276951605f375825bce92",
+    "sha512": "1af2cf1ebdd3fe7f7e69acbfa878a8a7997fb06813ab44ab649d72496246e6989cd4b911bbb9e0445c07d8f18b7913730d77c612ad4530790e330a6437d1b357",
+    "size_bytes": 10,
+    "type": "json"
+   },
+   {
+    "index": 7,
+    "md5": "367197724c668f1914bc68a7b392c7ca",
+    "path": "sub/nested/deep/f.log",
+    "sha1": "7ce69814d53e65d0b4e3519a4177826e53cecf30",
+    "sha256": "053587992dd36b2bcf5a2ab221fe8c4e14be763bfa4b21fdac4bfabe6a8e313d",
+    "sha512": "c0d2da4e0acfeed1796e5445738d9e4a69b2257f4425ec1b8a5e38a249ca090821c7787adf232f7ca212ee4a12794bbec6d679c5105ced028064e43ef4719813",
+    "size_bytes": 9,
+    "type": "log"
+   },
+   {
+    "index": 8,
+    "md5": "cc792838b0af3523373ce95f6546b7b3",
+    "path": "sub/nested/e.PDF",
+    "sha1": "864f52dcbf5d1a4515e2b61129746d47835e27e2",
+    "sha256": "201cf3a0544992497de66344612d368153de5f047718952f5e8c80b17d9ba4a4",
+    "sha512": "0e6b14c41717b13fe3082a5a2ba2ee117aff83945f365dffa8056e83acdb9df051c988e94a81cb5696cdb52a09c049ccfd748e5af00139ebde144d4a304fd390",
+    "size_bytes": 6,
+    "type": "pdf"
+   }
+  ],
+  "single": [
+   {
+    "index": 1,
+    "path": "d.md",
+    "sha256": "dffcb61c954f5c4923b7780c27e905f348edd1f4b9903ba63a73f1e7bd331a7d",
+    "size_bytes": 7,
+    "type": "md"
+   }
+  ]
+ }
+}

@@ -2,7 +2,7 @@ from urllib.parse import urlsplit
 from pathlib import Path
 from datetime import datetime, timezone
 import hashlib, json, queue, re, subprocess, sys, time, shutil, os, threading, uuid
-from .util import sha256, atomic_json
+from .util import sha256, atomic_json, json_safe
 from .settings import executable, node_version, evidence_policy
 from .storage_identity import inspect_storage, inspect_workspaces, low_space_warning
 from . import selfheal
@@ -22,6 +22,21 @@ def _load_file_filters():
 # One matcher is shared by the Selection panel (preview) and the generator
 # (actual discovery), so what the operator sees is what gets hashed.
 file_filters=_load_file_filters()
+
+def _load_generator_module(name):
+    """Load another stdlib-only sibling of the generator without package context."""
+    try:
+        return __import__('hash_report_generator.'+name, fromlist=['*'])
+    except ImportError:
+        import importlib.util
+        path=Path(__file__).resolve().parent.parent/'hash_report_generator'/(name+'.py')
+        spec=importlib.util.spec_from_file_location('chronoseal_'+name,path)
+        module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+        return module
+
+# v5.5.2: an explicit file selection ("Report from files") uses the same
+# grammar module as the panel and the generator, so the three can never drift.
+file_selection=_load_generator_module('file_selection')
 
 # This stdlib build exposes no ``windowsHide``; a hidden child needs CREATE_NO_WINDOW.
 NO_WINDOW = getattr(subprocess, 'CREATE_NO_WINDOW', 0) if os.name == 'nt' else 0
@@ -433,8 +448,16 @@ class Pipeline:
             starts=[ident(p) for p in pol.get('start',[])]; stops=[ident(p) for p in pol.get('stop',[])]
             if starts and stops and not any(all(s[0]!=x[0] and (not s[1] or s[1]!=x[1]) for s in starts) for x in stops):issues.append('STOP has no provider distinct from START (name or endpoint)')
         return info,issues,warnings
-    def generate(self,target,mode='combined',recursive=False,include_explanation=False,filters=None):
+    def generate(self,target,mode='combined',recursive=False,include_explanation=False,filters=None,files=None):
         mode=self._input_mode(target); recursive=bool(recursive and Path(target).is_dir())
+        # v5.5.2: an explicit selection replaces folder discovery entirely. Type
+        # filters describe a folder, so they cannot compete with chosen files; both
+        # are cleared here instead of silently winning over each other.
+        selected=file_selection.parse(files or [])
+        if selected:
+            recursive=False; filters=[]
+            self.log('Explicit file selection: '+file_selection.describe(selected)
+                     +'; evidence root: '+str(file_selection.root(selected)))
         sp=self.discover_generator(target,mode)
         if not sp:raise PipelineError('Hash Report Generator not found.')
         self.log(f'Generator discovered: {sp}'); out_glob=self.cfg.get('generator',{}).get('output_glob','*.pdf')
@@ -473,6 +496,7 @@ class Pipeline:
         # environment channel. Both reproduce v5.4.0 behaviour when unset.
         filters=file_filters.parse(filters or [])
         gen_env['CHRONOSEAL_INCLUDE_PATTERNS']=json.dumps(filters)
+        gen_env['CHRONOSEAL_EXPLICIT_FILES']=file_selection.to_env(selected)
         gen_env['CHRONOSEAL_FILTER_CASE_SENSITIVE']='1' if gcfg.get('filter_case_sensitive',False) else '0'
         heartbeat=float(gcfg.get('heartbeat_seconds',30) or 0)
         gen_env['CHRONOSEAL_HEARTBEAT_SECONDS']=str(heartbeat)
@@ -483,7 +507,8 @@ class Pipeline:
                  +'; '+('no idle timeout' if idle_timeout is None else f'idle timeout {idle_timeout:.0f}s')
                  +' (a large input is limited by progress, not by total runtime)')
         self.log('Heartbeat: '+('disabled' if heartbeat<=0 else f'every {heartbeat:.0f}s')
-                 +'; file type filters: '+file_filters.describe(filters))
+                 +'; file type filters: '+file_filters.describe(filters)
+                 +('; explicit file selection: '+str(len(selected))+' file(s)' if selected else ''))
         if heartbeat>0 and idle_timeout is not None and idle_timeout<3*heartbeat:
             self.log(f'WARNING: idle timeout {idle_timeout:.0f}s is less than three heartbeat intervals '
                      f'({heartbeat:.0f}s); a slow but healthy run could be mistaken for a stall.')
@@ -708,9 +733,27 @@ class Pipeline:
                 'named ChronoSeal_Evidence block evidence capture, so choose a writable output directory.') from exc
         return case
 
-    def run(self,target,mode='combined',recursive=False,include_explanation=False,include_source_pdf=False,output_dir=None,filters=None):
+    def run(self,target,mode='combined',recursive=False,include_explanation=False,include_source_pdf=False,output_dir=None,filters=None,files=None):
         started=time.time(); target=Path(target).expanduser().resolve(); mode=self._input_mode(target); recursive=bool(recursive and target.is_dir()); self.progress(0,'Preflight')
         filters=file_filters.parse(filters or [])
+        # v5.5.2: the operator may name the exact evidence files. The chosen list is
+        # the evidence set; the target folder only anchors relative paths, the
+        # evidence case and the published report.
+        selected=file_selection.parse(files or [])
+        if selected:
+            if filters:
+                raise PipelineError('An explicit file selection and file type filters cannot be '
+                                    'combined: the chosen files already are the evidence set. Clear the filters.')
+            if mode!='combined':
+                raise PipelineError('An explicit file selection always produces a combined report; '
+                                    f'select the folder that contains the files instead of {target}.')
+            absent=file_selection.missing(selected)
+            if absent:
+                raise PipelineError('Selected file(s) no longer exist or are not readable: '
+                                    +', '.join(str(item) for item in absent[:10]))
+            recursive=False
+            self.log(file_selection.describe(selected)
+                     +'; evidence root: '+str(file_selection.root(selected)))
         if filters and mode!='combined':
             raise PipelineError('File type filters only apply to a folder (combined) report; '
                                 'a single-file report has nothing to filter.')
@@ -738,7 +781,7 @@ class Pipeline:
             (case/'logs').mkdir();
             # logs are copied at completion/failure by GUI
         self.progress(20,'Report'); self._check_cancel()
-        self.log('1/5 Generate report'); report=self.generate(target,mode,recursive,include_explanation,filters=filters)
+        self.log('1/5 Generate report'); report=self.generate(target,mode,recursive,include_explanation,filters=filters,files=selected)
         original_hash=sha256(report)
         # Transactional sealing: a generated report is not published under its final RPT name
         # until both START and STOP DocTimeStamp revisions, DSS/Certs and reopen verification PASS.
@@ -790,7 +833,10 @@ class Pipeline:
                 self.log('WARNING: generated intermediate PDF could not be removed: '+str(exc))
         final=publish_path
         final_hash=sha256(sealed); self.log('4/5 Evidence manifest')
-        manifest={'schema':'chronoseal.onebutton/v4-dualstamp','source':str(target),'input_kind':info['input_kind'],'mode':mode,'recursive':recursive,'selection_filters':filters or None,'output_directory':str(destination),'include_explanation':include_explanation,'include_source_pdf':include_source_pdf,'page_identity':str(case/'page-identity.json'),'storage_identity':str(case/'storage-identity.json'),'generator':info.get('generator'),'generated_report':str(working),'report_sha256':original_hash,'final_pdf':str(final),'final_sha256':final_hash,'rfc3161_audit':str(audit),'elapsed_seconds':round(time.time()-started,3),'status':'PASS'}
+        manifest={'schema':'chronoseal.onebutton/v4-dualstamp','source':str(target),'input_kind':info['input_kind'],'mode':mode,'recursive':recursive,'selection_filters':filters or None,
+            'selection_files':[str(item) for item in selected] or None,
+            'selection_root':str(file_selection.root(selected)) if selected else None,
+            'selection_paths':file_selection.relative(selected) if selected else None,'output_directory':str(destination),'include_explanation':include_explanation,'include_source_pdf':include_source_pdf,'page_identity':str(case/'page-identity.json'),'storage_identity':str(case/'storage-identity.json'),'generator':info.get('generator'),'generated_report':str(working),'report_sha256':original_hash,'final_pdf':str(final),'final_sha256':final_hash,'rfc3161_audit':str(audit),'elapsed_seconds':round(time.time()-started,3),'status':'PASS'}
         # Never hide an evidence exclusion: when the operator allowed unreadable
         # files, the generator's audit becomes part of the published manifest.
         discovery_audit=case/'discovery-unreadable.json'
@@ -827,6 +873,10 @@ class Pipeline:
         if self.session:
             shutil.copytree(self.session.dir,case/'logs',dirs_exist_ok=True)
             manifest['evidence_logs']=str(case/'logs')
+        # The evidence manifest is written as JSON twice below (case copy and
+        # archive). A Path object from any subsystem would raise TypeError there
+        # and block a finished report, so normalise it at this boundary.
+        manifest=json_safe(manifest)
         archive_cfg=self.cfg.get('archive',{})
         if archive_cfg.get('enabled',False):
             archive_root=Path(archive_cfg.get('directory','') or '').expanduser()

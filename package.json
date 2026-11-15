@@ -9,9 +9,15 @@
   "scripts": {
     "test": "python -m unittest discover -s tests -v && python -m unittest discover -s hash_report_generator/tests",
     "cli": "python chronoseal_cli.py",
-    "verify": "npm run check && npm run verify:vendor && npm run selfcheck && npm run doctor && npm test",
+    "verify": "npm run check && npm run verify:vendor && npm run selfcheck && npm run doctor && npm test && npm run test:js && npm run test:clone",
     "selfcheck": "python -m chronoseal.selfheal",
     "check": "node --check bridge/stamp.mjs",
+    "test:js": "node --test tools/pdfnorm/test/ tools/jsx/test/",
+    "test:clone": "node --test js/test/",
+    "clone": "node js/cli.mjs",
+    "clone:gui": "js\\HashReport.bat",
+    "pdfnormalize": "node tools/pdfnorm/normalize.mjs",
+    "reference:jsx": "python tools/jsx/parity/make_reference.py && python tools/jsx/parity/make_style_reference.py",
     "doctor": "node --input-type=module -e \"import('pdf-rfc3161').then(()=>console.log('pdf-rfc3161: OK')).catch(e=>{console.error(e);process.exit(1)})\"",
     "verify:vendor": "node tests/vendor_integrity.mjs"
   },

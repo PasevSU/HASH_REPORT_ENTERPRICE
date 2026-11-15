@@ -6,6 +6,24 @@ def sha256(p):
     with open(p,'rb') as f:
         for b in iter(lambda:f.read(1024*1024),b''): h.update(b)
     return h.hexdigest()
+def json_safe(obj):
+    """Deep-copy a manifest into JSON-native types.
+
+    Evidence manifests travel through many subsystems and are finally written
+    with ``json.dumps``. A stray ``Path`` - as a value *or* as a dict key -
+    raises TypeError there and would block publication and archiving of an
+    otherwise finished report, so paths are stringified at the boundary.
+    """
+    if isinstance(obj, dict):
+        return {key if isinstance(key, str) else str(key): json_safe(value)
+                for key, value in obj.items()}
+    if isinstance(obj, (list, tuple, set)):
+        return [json_safe(value) for value in obj]
+    if isinstance(obj, Path):
+        return str(obj)
+    return obj
+
+
 def atomic_json(path,obj,attempts=5):
     """Write JSON atomically, tolerating a transient Windows file lock.
 

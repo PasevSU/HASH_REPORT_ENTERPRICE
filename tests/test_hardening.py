@@ -458,6 +458,41 @@ class ArchiveInterruptTests(unittest.TestCase):
                              'an interrupted archive must not keep a published folder without a row')
             self.assertEqual(list(archive_root.glob('.RPT-*')), [], 'staging directory was left behind')
 
+    def test_a_transient_windows_sharing_violation_on_publish_is_retried(self):
+        from chronoseal import report_archive
+
+        real_rename = os.rename
+        calls = []
+
+        def flaky_rename(source, destination):
+            calls.append(str(destination))
+            if len(calls) == 1:
+                error = PermissionError(13, 'Access is denied', str(destination))
+                error.winerror = 32
+                raise error
+            return real_rename(source, destination)
+
+        with tempfile.TemporaryDirectory() as base:
+            base = Path(base)
+            pdf = base / 'RPT-20260101-2-AB_HASHREPORT_TYP_SINGLE.pdf'
+            pdf.write_bytes(b'%PDF-1.7\n%%EOF\n')
+            evidence = base / 'evidence'
+            evidence.mkdir()
+            (evidence / 'manifest.json').write_text('{}', encoding='utf-8')
+            archive_root = base / 'archive'
+            with patch.object(report_archive.os, 'rename', side_effect=flaky_rename):
+                result = report_archive.archive_report(
+                    archive_root=archive_root,
+                    database_path=base / 'archive.sqlite3',
+                    report_pdf=pdf,
+                    evidence_directory=evidence,
+                    run_log=None,
+                    manifest={'report_id': 'RPT-20260101-2-AB'},
+                    report_name=pdf.name,
+                )
+            self.assertEqual(len(calls), 2, 'a transient lock on publish must be retried')
+            self.assertTrue(Path(result['archive_directory']).is_dir())
+
 
 class EvidenceRetentionPolicyTests(unittest.TestCase):
     """config.evidence switches used to be accepted and silently ignored."""
@@ -617,7 +652,40 @@ class AtomicJsonRetryTests(unittest.TestCase):
         self.assertEqual(len(calls), 2)
 
 
+class JsonSafeNormalisationTests(unittest.TestCase):
+    """Evidence manifests must survive json.dumps even with Path members."""
+
+    def test_path_keys_and_values_become_text(self):
+        from chronoseal import util
+        payload = {Path(r'C:/ev/a.txt'): Path(r'C:/ev/a.txt')}
+        safe = util.json_safe(payload)
+        self.assertEqual(safe, {'C:\\ev\\a.txt': 'C:\\ev\\a.txt'})
+        json.dumps(safe)
+
+    def test_nested_containers_are_normalised(self):
+        from chronoseal import util
+        payload = {
+            'selection_paths': {Path('one.txt'): 'one.txt'},
+            'roots': [Path('a'), {'deep': (Path('b'), {Path('c')})}],
+            'frozen': {'x', 'y'},
+            'plain': {'k': 1, 'v': None, 'ok': True},
+        }
+        safe = util.json_safe(payload)
+        self.assertEqual(sorted(safe['selection_paths']), ['one.txt'])
+        self.assertEqual(safe['roots'][0], 'a')
+        self.assertEqual(safe['roots'][1]['deep'][0], 'b')
+        self.assertEqual(sorted(safe['frozen']), ['x', 'y'])
+        self.assertEqual(safe['plain'], {'k': 1, 'v': None, 'ok': True})
+        json.dumps(safe)
+
+    def test_json_ready_payload_is_returned_equivalent(self):
+        from chronoseal import util
+        payload = {'status': 'PASS', 'count': 3, 'ratio': 0.5, 'none': None}
+        self.assertEqual(util.json_safe(payload), payload)
+
+
 class DiscoveryPolicyWiringTests(unittest.TestCase):
+
     """The operator's discovery policy must reach the stand-alone generator."""
 
     def test_generator_environment_carries_discovery_policy(self):

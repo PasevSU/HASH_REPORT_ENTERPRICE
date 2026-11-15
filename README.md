@@ -46,32 +46,53 @@ launches the application.
 Install_Windows.bat      # first run on a new machine: verify, install, launch
 Start_ChronoSeal.bat     # later runs: launch the GUI
 Run_Diagnostics.bat      # full diagnostic sweep, safe to run any time
+js\HashReport.bat        # menu launcher for the pure JavaScript clone
 ```
 
-`Start_ChronoSeal.bat` starts `ChronoSeal_GUI.pyw` with `pythonw.exe`. If
-PySide6/Tk material or any dependency is missing, `bootstrap.py` shows a native
-preflight window listing the state of every required component and offers an
-explicitly approved installation into `.chronoseal-venv`. Nothing is downloaded
-or installed without that confirmation, and no browser, WebView or HTTP channel
-is used for the interface.
+`Start_ChronoSeal.bat` starts `ChronoSeal_GUI.pyw` with `pythonw.exe`.
+`Install_Windows.bat` is the only step that installs anything: it verifies
+Python, Node.js and OpenSSL, installs `requirements-integration.txt`, locks and
+verifies the Node dependency and runs `chronoseal.selfheal`.
+`Run_Diagnostics.bat` reports the state of every required component at any time.
+No browser, WebView or HTTP channel is used for the interface.
+`js\HashReport.bat` is the launcher of the pure JavaScript clone: it collects the folder, recursion, filter patterns, per-file mode, archive, layout gate, embedded source PDF and report type in a menu and then calls `node js/cli.mjs`, so it needs Node.js only. See `docu/JS_CLONE_BG.md`.
 
-## The five pages
+## The six pages
 
 | Page | Name | Purpose |
 |---|---|---|
 | 01 | Report & TSA | Generate, seal and verify a report |
-| 02 | Automation | Plan recurring reports |
-| 03 | Settings & Trust | Tool paths and time-stamp profiles |
-| 04 | Diagnostics | Preflight checks and evidence logs |
-| 05 | Selection | Pick a folder and filter evidence by file type |
+| 02 | Report from Files | One combo report from individually chosen files |
+| 03 | Automation | Plan recurring reports |
+| 04 | Settings & Trust | Tool paths and time-stamp profiles |
+| 05 | Diagnostics | Preflight checks and evidence logs |
+| 06 | Selection | Pick a folder and filter evidence by file type |
 
-Pages are reachable with `Ctrl+1` .. `Ctrl+5` and with the left navigation rail.
+Pages are reachable with `Ctrl+1` .. `Ctrl+6` and with the left navigation rail.
 Navigation labels, Treeview headings and status lines follow the selected
 language (Bulgarian, English, German).
 
-## Selection panel (page 05)
+## Report from Files (page 02)
 
-Page 05 is the scoped entry point for one evidence set:
+Page 02 builds one combo report from files chosen one by one, instead of from a
+folder scope:
+
+* files can be added from any folder and any number of them can be combined,
+* a review window lists every selected file with its relative name, type, size,
+  modification time and SHA-256 before anything is sealed,
+* the run publishes a single `..._HASHREPORT_TYP_COMBO.pdf` with one evidence
+  set, and each chosen file carries its relative name in the manifest.
+
+A file that cannot be read blocks the run before publication, exactly as in the
+folder-scoped path: a combo report is never published with missing evidence.
+The selection travels to the generator as `CHRONOSEAL_EXPLICIT_FILES` and is
+recorded in the manifest as `selection_files`, `selection_paths` and
+`selection_root`. File-type filters do not apply here; the equivalent scoped
+path is page 06.
+
+## Selection panel (page 06)
+
+Page 06 is the scoped entry point for one evidence set:
 
 * pick a folder, optionally including all subfolders,
 * chain file-type filters: a filter is typed as a glob (`*.eml`, `*.pdf`,
@@ -102,6 +123,10 @@ python chronoseal_cli.py --self-check         # verify and repair dependencies
 Exit codes: `0` PASS, `2` BLOCKED (see `error.txt` in the session log), `3` a
 filter chain matched no file, `130` cancelled with `Ctrl+C`. Session logs,
 `environment.json` and every executed command are written to `--log-dir`.
+
+The JavaScript clone carries its own CLI (`node js/cli.mjs --help`) and a
+programmatic API; how to obtain and drive them from another machine is described in
+[Consuming the repository from GitHub](#consuming-the-repository-from-github).
 
 ## Configuration
 
@@ -191,6 +216,11 @@ Current state on a real SMB tree:
  19 passed     brand tokens, glyph geometry, no colour literals in the GUI
 ```
 
+The JavaScript clone has its own suite, `node --test js/test/` (38 tests: 7 core,
+8 workflow, 7 API, 7 embedded PDF, 9 report type), which needs no Python and no
+network, and covers the six report types, the three-pass page-text hashing and
+the published marker of every type.
+
 Run the suites with `python -m unittest` / `python -m pytest` from the checkout.
 Do not use `npm test` or `npm run verify` from a UNC path: Windows starts
 `cmd.exe` in `C:\Windows` for those scripts, `-s tests` then resolves through
@@ -233,6 +263,8 @@ hash_report_generator/        generator, JS rule loader, file filters, tests
 automation/                   automation window and the Selection panel
 tests/                        integration, hardening, UI acceptance suites
 ui/                           static preview of the Selection panel
+js/                           pure JavaScript clone: CLI, programmatic API, PDF
+                              layer, six per-type report modules, its own tests
 trust/                        public CA / TSA material and the EU trusted list
 docu/                         design, upgrade plan and test evidence (Bulgarian)
 config/config.json            runtime configuration
@@ -247,9 +279,144 @@ config/config.json            runtime configuration
 | `docu/V89_UI_TEST_REPORT_BG.md` | iteration log, full-suite evidence, known limits |
 | `docu/V90_JS_CAPABILITY_ANALYSIS_BG.md` | what can move to JS, with measurements |
 | `docu/BRANDING_V551_BG.md` | interface brand identity: palette, fonts, icons, tests |
+| `docu/JS_CLONE_BG.md` | JavaScript clone: stages, CLI, API, six report types, three-pass hashing, tests |
+| `docu/PDFNORM_JS_BG.md` | the `tools/pdfnorm` PDF/A-2b normaliser used by the clone |
 
 These documents are written in Bulgarian because they are the working record of
 the project; the code, the comments and this README are in English.
+
+## Consuming the repository from GitHub
+
+Short answer: **GitHub can serve these files, it cannot run them.** The repository is
+public, so every committed file is reachable over HTTPS, but there is no hosted
+endpoint, no upload API and no server-side generation - a report is always produced
+by the clone in your own process, on your own machine. GitHub is the distribution
+channel, not the service.
+
+> **Check the URL before you build on it.** A path added in a newer commit is `404`
+> on an older tag, so confirm the exact file answers `200` at the ref you pinned:
+>
+> ```powershell
+> curl.exe -s -o NUL -w "%{http_code}`n" https://raw.githubusercontent.com/PasevSU/HASH_REPORT_ENTERPRICE/main/js/api.mjs
+> ```
+
+### What is addressable
+
+| Need | Endpoint |
+|---|---|
+| One file, no authentication | `https://raw.githubusercontent.com/PasevSU/HASH_REPORT_ENTERPRICE/main/<path>` |
+| One file, with metadata (size, sha) | `https://api.github.com/repos/PasevSU/HASH_REPORT_ENTERPRICE/contents/<path>` |
+| Whole tree, one request | `https://api.github.com/repos/PasevSU/HASH_REPORT_ENTERPRICE/git/trees/main?recursive=1` |
+| A pinned snapshot | `https://github.com/PasevSU/HASH_REPORT_ENTERPRICE/archive/refs/tags/<tag>.zip` (or `.tar.gz`) |
+| A release asset | `https://github.com/PasevSU/HASH_REPORT_ENTERPRICE/releases/download/<tag>/<asset>` |
+| Metadata only (tags, assets) | `https://api.github.com/repos/PasevSU/HASH_REPORT_ENTERPRICE/releases` |
+
+Three copy-paste examples:
+
+```powershell
+# raw file
+curl.exe -sO https://raw.githubusercontent.com/PasevSU/HASH_REPORT_ENTERPRICE/main/js/api.mjs
+
+# contents API: base64 payload, use it when you also want the blob sha
+$r = Invoke-RestMethod https://api.github.com/repos/PasevSU/HASH_REPORT_ENTERPRICE/contents/config/config.json
+[IO.File]::WriteAllText("$PWD\config.json", [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($r.content)))
+
+# tree listing, then filter locally (one request instead of hundreds)
+(Invoke-RestMethod 'https://api.github.com/repos/PasevSU/HASH_REPORT_ENTERPRICE/git/trees/main?recursive=1').tree |
+  Where-Object { $_.path -like 'js/*' } | Select-Object path, size
+```
+
+With the GitHub CLI the same reads need no token plumbing:
+
+```powershell
+gh api repos/PasevSU/HASH_REPORT_ENTERPRICE/contents/js/api.mjs --jq '.sha'
+gh release download chronoseal-v5.5.1 --pattern '*.zip' -D .
+```
+
+### Running the clone you downloaded
+
+The clone is dependency-free JavaScript: no `npm install`, no Python, no
+`node_modules`. Copy these paths out of a checkout or an archive and it runs,
+because every path is resolved relative to the file that reads it:
+
+```
+js/                                  CLI, programmatic API, PDF layer, tests
+tools/                               file filters and the PDF/A-2b normaliser
+config/config.json                   required - archive folder, retention, defaults
+hash_report_generator/style/         PDF layout rules (33 rule files)
+hash_report_generator/report_profiles/
+hash_report_generator/modules/
+```
+
+That set is about 1.3 MB; Node >= 22.12.0 is the only requirement. A consumer
+script, run from anywhere:
+
+```js
+import path from 'node:path';
+import { reportForFolder, reportForFile, reportForFiles } from './js/api.mjs';
+
+const folder = await reportForFolder('./case', { archive: false, profile: 'combo' });
+const single = await reportForFile('./case/scan.pdf', { archive: false, profile: 'single_pdf', embedPdf: true });
+const batch = await reportForFiles(['./case/a.eml', './case/b.eml'], { archive: false, perFile: true });
+
+console.log(folder.exitCode, path.basename(String(folder.published)));
+```
+
+Each call returns `{ exitCode, summary, layout, published, evidenceDirectory, archive }`,
+so callers never parse console text. `reportForFile` takes exactly one file and
+`reportForFiles` gives every file its own report, report number and archive row. The
+API enforces two rules callers should expect: a generated report is never accepted as
+input (the evidence set must not grow with the program's own output), and
+`--embed-pdf` accepts exactly one PDF under the `single` / `single_pdf` profiles.
+
+As a package-manager source it also works - the name is `chronoseal-python-rfc3161-addon`
+(the root manifest is `private`, so it is not on npm, but `file:` and `github:` sources
+resolve). Pin a tag instead of `#main` once you need a reproducible build:
+
+```powershell
+npm install github:PasevSU/HASH_REPORT_ENTERPRICE#main --no-audit --no-fund
+```
+
+```js
+import { reportForFolder } from 'chronoseal-python-rfc3161-addon/js/api.mjs';
+```
+
+Be aware that a `github:` install clones the whole history - the pack is roughly
+350 MB, while `js/` plus `tools/` are 0.4 MB. For a small footprint clone only what
+you need:
+
+```powershell
+git clone --filter=blob:none --sparse https://github.com/PasevSU/HASH_REPORT_ENTERPRICE.git
+cd HASH_REPORT_ENTERPRICE
+git sparse-checkout set js tools config hash_report_generator
+```
+
+### What GitHub cannot do here
+
+* **Generate a report.** No workflow, action or webhook turns a case folder into a
+  PDF; the hashing, the PDF layer and the normaliser all run locally. Publishing a
+  CI job that generated real reports would also mean publishing evidence, which this
+  project forbids.
+* **Store or receive evidence.** There is no upload endpoint. Pushing to the
+  repository needs a token with `contents: write` and is a deliberate human act; the
+  repository ships the tool, never the evidence.
+* **Sign, seal or time-stamp.** The clone has no TSA client. Its signature rows read
+  `NOT APPLIED`, `NOT VERIFIED`, `NOT SEALED` by design; trust material lives in
+  `trust/` for verification only.
+* **Serve the GUI.** `js\HashReport.bat` is a Windows launcher for a local menu; the
+  CLI and the API are cross-platform.
+
+### Limits worth knowing
+
+* Unauthenticated REST is 60 requests per hour per IP; a token raises it to 5000.
+  Reads of `raw.githubusercontent.com` are not counted against that budget.
+* The contents API returns files up to 1 MB inline; larger blobs need either the raw
+  URL or `/git/blobs/{sha}` (base64, up to 100 MB).
+* Anything read from `main` is a moving target - pin a tag or a commit sha when the
+  consumer has to be reproducible.
+
+The internal API, the six report types and the three-pass hashing are described in
+[docu/JS_CLONE_BG.md](docu/JS_CLONE_BG.md).
 
 ## Security and privacy
 

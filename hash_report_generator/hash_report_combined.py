@@ -60,6 +60,10 @@ from hash_report_core import (
 # Selection panel. Both are stdlib-only siblings of this script.
 import progress_heartbeat
 import file_filters
+# v5.5.2: explicit file selection (the "Report from files" workspace). A folder
+# described by type filters and a list of exactly chosen files travel through the
+# same environment channel; an empty selection reproduces the previous behaviour.
+import file_selection
 
 # Допълнителни импорти за PDF
 from reportlab.platypus import Table, TableStyle, Paragraph, Spacer, Image
@@ -763,7 +767,7 @@ class CombinedReportGenerator(HashGeneratorCore):
 
     @staticmethod
     def _write_unreadable_audit(folder_path, unreadable, skipped, recursive,
-                                filters=None, excluded_by_filter=0):
+                                filters=None, excluded_by_filter=0, selection=None):
         """Record every excluded file so the evidence case is self-describing.
 
         v5.5.0: the active file-type filters are recorded too, so a report that
@@ -786,6 +790,7 @@ class CombinedReportGenerator(HashGeneratorCore):
                      'the report evidence set; the list is retained for auditability.'),
         }
         payload.update(file_filters.audit_payload(filters))
+        payload.update(file_selection.audit_payload(selection))
         target = target_dir / 'discovery-unreadable.json'
         tmp = target.with_name(target.name + '.tmp')
         tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
@@ -817,16 +822,43 @@ class CombinedReportGenerator(HashGeneratorCore):
         # so the generator stays a stand-alone script with no ChronoSeal imports.
         filters = file_filters.parse(filters if filters is not None else file_filters.from_env())
         excluded_by_filter = 0
+        # v5.5.2: an explicit selection names the exact evidence files. Discovery
+        # then walks nothing at all: the folder scope only anchors the relative
+        # paths, so an unrelated file sitting next to the selection is never
+        # admitted and is never reported as "filtered out" either.
+        try:
+            selection = file_selection.from_env()
+        except ValueError as exc:
+            raise RuntimeError('EXPLICIT_SELECTION_INVALID: ' + str(exc)) from exc
+        selection_rel = {}
+        if selection:
+            absent = file_selection.missing(selection)
+            if absent:
+                raise RuntimeError(
+                    'EXPLICIT_SELECTION_MISSING: '
+                    + ', '.join(str(item) for item in absent[:15])
+                    + (' ...' if len(absent) > 15 else '')
+                    + '\nEvery selected file must exist and be a regular file; a report that '
+                      'silently drops a chosen file would misrepresent the evidence set.')
+            selection_rel = file_selection.relative(selection, folder_path)
+            if filters:
+                print(f"{FileIcons.INFO} Explicit selection is active: file type filters are not applied.")
+                filters = []
 
         print(f"\n{FileIcons.SEARCH} {'='*60}")
         print(f"{FileIcons.SEARCH} GENERIC FOLDER DISCOVERY")
         print(f"{FileIcons.SEARCH} Root: {folder_path}")
         print(f"{FileIcons.SEARCH} Recursive: {bool(recursive)}; follow links: {follow_links}")
         print(f"{FileIcons.SEARCH} File type filters: {file_filters.describe(filters)}")
+        print(f"{FileIcons.SEARCH} Explicit selection: {file_selection.describe(selection)}")
         print(f"{FileIcons.SEARCH} {'='*60}")
-        progress_heartbeat.phase('discovery', note=file_filters.describe(filters))
+        progress_heartbeat.phase(
+            'discovery',
+            note=(file_selection.describe(selection) if selection else file_filters.describe(filters)))
 
-        for file_path in self._iter_evidence_files(folder_path, recursive, follow_links, skipped):
+        walker = (list(selection) if selection
+                  else self._iter_evidence_files(folder_path, recursive, follow_links, skipped))
+        for file_path in walker:
             progress_heartbeat.tick()
             resolved = file_path.resolve()
             if resolved in excluded:
@@ -845,7 +877,8 @@ class CombinedReportGenerator(HashGeneratorCore):
                 continue
 
             try:
-                rel_name = file_path.relative_to(folder_path).as_posix()
+                rel_name = (selection_rel.get(str(resolved))
+                            or file_path.relative_to(folder_path).as_posix())
                 stat = file_path.stat()
                 created, modified = self._times_from_stat(stat)
                 file_hash = self.calculate_sha256(file_path)
@@ -883,7 +916,8 @@ class CombinedReportGenerator(HashGeneratorCore):
                                  note=f'{excluded_by_filter} filtered out')
         audit_path = self._write_unreadable_audit(folder_path, unreadable, skipped, recursive,
                                                   filters=filters,
-                                                  excluded_by_filter=excluded_by_filter)
+                                                  excluded_by_filter=excluded_by_filter,
+                                                  selection=selection)
         if audit_path:
             print(f"{FileIcons.INFO} Discovery audit: {audit_path}")
         if excluded_by_filter:
@@ -908,6 +942,11 @@ class CombinedReportGenerator(HashGeneratorCore):
             self.logger.warning('Discovery exclusions: ' + summary)
             print(f"{FileIcons.WARNING} Discovery exclusions: {summary}")
 
+        if not files_for_report and selection:
+            raise RuntimeError(
+                'EXPLICIT_SELECTION_EMPTY: none of the explicitly selected files could be admitted. '
+                'Generated hash reports and evidence artefacts are never re-admitted, so choose the '
+                'original source files instead.\n  ' + file_selection.describe(selection))
         if not files_for_report and filters:
             raise RuntimeError(
                 'FILTER_MATCHED_NO_FILES: the file type filters matched no file below '

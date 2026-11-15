@@ -19,7 +19,7 @@ class GuiTests(unittest.TestCase):
  def test_constructs_real_tk_and_defaults(self):
   a=self.make()
   try:
-   self.assertEqual(a.mode.get(),'combined'); self.assertFalse(a.rec.get()); self.assertEqual(len(a.nb.tabs()),5); self.assertEqual(str(a.go['state']),'disabled')
+   self.assertEqual(a.mode.get(),'combined'); self.assertFalse(a.rec.get()); self.assertEqual(len(a.nb.tabs()),6); self.assertEqual(str(a.go['state']),'disabled')
   finally:a.destroy()
  def test_start_is_blocked_before_startup_qualification(self):
   a=self.make()

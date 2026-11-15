@@ -33,6 +33,19 @@ filter_loader.exec_module(filter_module)
 FilterPanel = filter_module.App
 file_filters = filter_module.file_filters
 
+# v5.5.2: additive Report-from-Files workspace. It builds one COMBO report from
+# an explicit list of files instead of scanning a folder. Loaded the same way as
+# the other panels so the legacy window keeps working unchanged.
+report_files_loader = importlib.machinery.SourceFileLoader(
+    "chronoseal_report_files_ui", str(BASE / "automation" / "Report_From_Files_Panel.py")
+)
+report_files_spec = importlib.util.spec_from_loader(
+    report_files_loader.name, report_files_loader
+)
+report_files_module = importlib.util.module_from_spec(report_files_spec)
+report_files_loader.exec_module(report_files_module)
+ReportFilesPanel = report_files_module.App
+
 loader = importlib.machinery.SourceFileLoader(
     "chronoseal_original_ui", str(BASE / "ChronoSeal_Original_Legacy.py")
 )
@@ -44,10 +57,11 @@ loader.exec_module(original)
 class ChronoSealDesktop(original.App):
     NAV_ITEMS = (
         ("run_tab", "01", "Report & TSA", "Generate, seal and verify"),
-        ("automation_tab", "02", "Automation", "Plan recurring reports"),
-        ("set_tab", "03", "Settings & Trust", "Tools and TSA profiles"),
-        ("diag_tab", "04", "Diagnostics", "Preflight and evidence logs"),
-        ("filter_tab", "05", "Selection", "Filter evidence by file type"),
+        ("report_files_tab", "02", "Report from Files", "One combo report from chosen files"),
+        ("automation_tab", "03", "Automation", "Plan recurring reports"),
+        ("set_tab", "04", "Settings & Trust", "Tools and TSA profiles"),
+        ("diag_tab", "05", "Diagnostics", "Preflight and evidence logs"),
+        ("filter_tab", "06", "Selection", "Filter evidence by file type"),
     )
 
     def __init__(self, *, auto_bootstrap=True):
@@ -196,12 +210,14 @@ class ChronoSealDesktop(original.App):
         self.nb.grid(row=0, column=0, sticky="nsew")
 
         self.run_tab = ttk.Frame(self.nb, padding=0)
+        self.report_files_tab = ttk.Frame(self.nb, padding=0)
         self.automation_tab = ttk.Frame(self.nb, padding=0)
         self.set_tab = ttk.Frame(self.nb, padding=0)
         self.diag_tab = ttk.Frame(self.nb, padding=0)
         self.filter_tab = ttk.Frame(self.nb, padding=0)
         for page, title in (
             (self.run_tab, "Report & TSA"),
+            (self.report_files_tab, "Report from Files"),
             (self.automation_tab, "Automatic Reports"),
             (self.set_tab, "Settings & Trust"),
             (self.diag_tab, "Diagnostics & Logs"),
@@ -231,7 +247,7 @@ class ChronoSealDesktop(original.App):
             self._nav_buttons[page] = button
         i18n.on_change(self._refresh_nav_text)
         ttk.Frame(rail, style="Workspace.TFrame").pack(fill="both", expand=True)
-        ttk.Label(rail, text="Evidence-first workflow\nCtrl+1–5  ·  Navigate",
+        ttk.Label(rail, text="Evidence-first workflow\nCtrl+1–6  ·  Navigate",
                   style="WorkspaceSub.TLabel", justify="left").pack(
             anchor="w", padx=10, pady=(10, 4)
         )
@@ -239,6 +255,7 @@ class ChronoSealDesktop(original.App):
         self._build_run_page()
         self._build_settings_page()
         self._build_diagnostics_page()
+        self.report_files_panel = ReportFilesPanel(self, parent=self.report_files_tab)
         self.automation_panel = AutomationPanel(self, parent=self.automation_tab)
         self.filter_panel = FilterPanel(self, parent=self.filter_tab)
         self.nb.bind("<<NotebookTabChanged>>", self._on_page_changed, add="+")
@@ -471,9 +488,16 @@ class ChronoSealDesktop(original.App):
 
     def _refresh_filter_indicator(self):
         filters = getattr(self, "file_filters", None) or []
+        selection = getattr(self, "file_selection", None) or []
         if not hasattr(self, "filter_summary"):
             return
-        if not filters:
+        if selection:
+            count = len(selection)
+            noun = "file" if count == 1 else "files"
+            self.filter_summary.set(
+                f"{count} explicitly selected {noun} - the folder is only the evidence anchor"
+            )
+        elif not filters:
             self.filter_summary.set("none - every file in the folder is evidence")
         elif self.mode.get() != "combined":
             self.filter_summary.set(f"{file_filters.describe(filters)}  (ignored for a single file)")

@@ -234,14 +234,16 @@ def no_worker(monkeypatch, app):
 
 
 # ------------------------------------------------------------------ T01 .. T03
-def test_t01_panel_exists_five_pages_and_ctrl5(app):
-    assert len(app.nb.tabs()) == 5
-    assert app.nb.index(app.filter_tab) == 4
+def test_t01_panel_exists_six_pages_and_ctrl6(app):
+    assert len(app.nb.tabs()) == 6
+    assert app.nb.index(app.report_files_tab) == 1
+    assert app.nb.index(app.filter_tab) == 5
     assert app.filter_panel.frame.winfo_exists()
-    # A bare digit sequence (<Control-5>) binds a mouse button in Tk, so the
-    # keyboard shortcut must be registered as <Control-Key-5>.
-    assert app.bind("<Control-Key-5>"), "Ctrl+5 must be bound to the selection page"
-    assert not app.bind("<Control-5>"), "Ctrl+5 must not be bound as a mouse button"
+    # A bare digit sequence (<Control-1>) binds a mouse button in Tk, so the
+    # keyboard shortcut must be registered as <Control-Key-N>.
+    assert app.bind("<Control-Key-6>"), "Ctrl+6 must be bound to the selection page"
+    assert app.bind("<Control-Key-1>"), "Ctrl+1 must be bound to the report page"
+    assert not app.bind("<Control-1>"), "Ctrl+1 must not be bound as a mouse button"
     app._select_page("run_tab")
     _pump(app, 0.1)
     # Key events are routed to the focus window, so the window has to own focus.
@@ -250,7 +252,7 @@ def test_t01_panel_exists_five_pages_and_ctrl5(app):
     app.focus_force()
     _pump(app, 0.15)
     try:
-        app.event_generate("<Control-Key-5>")
+        app.event_generate("<Control-Key-6>")
         _pump(app, 0.3)
         assert app.nb.select() == str(app.filter_tab)
         app.event_generate("<Control-Key-1>")
@@ -499,7 +501,7 @@ def test_t24_navigating_all_pages_keeps_the_panel_intact(app):
             _pump(app, 0.05)
     app._select_page("filter_tab")
     _pump(app, 0.1)
-    assert app.nb.index(app.filter_tab) == 4
+    assert app.nb.index(app.filter_tab) == 5
     assert panel.filter_state.get() == state
     assert panel.active_filters() == ["*.pdf"]
 
@@ -530,7 +532,7 @@ def test_t25b_single_file_report_never_sends_filters(app, tmp_path, no_worker):
 
 def test_t26_automation_panel_still_loads(app):
     assert app.automation_panel is not None
-    assert app.nb.index(app.automation_tab) == 1
+    assert app.nb.index(app.automation_tab) == 2
     assert app.automation_tab.winfo_children()
     app._select_page("automation_tab")
     _pump(app, 0.1)

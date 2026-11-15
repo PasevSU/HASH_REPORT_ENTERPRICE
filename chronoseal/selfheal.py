@@ -211,15 +211,17 @@ def repair_python_packages(root, log=print, allow_network=False, cfg=None, pytho
     report = {'missing': missing, 'action': 'none', 'after': missing}
     if not missing:
         return report
-    requirements = Path(root) / 'requirements.txt'
+    requirements = next((c for c in (Path(root) / 'requirements-integration.txt',
+                                     Path(root) / 'requirements.txt') if c.is_file()),
+                        Path(root) / 'requirements-integration.txt')
     if not allow_network:
         report['action'] = 'reported (network installs are disabled)'
         return report
     if not requirements.is_file():
-        report['action'] = 'reported (requirements.txt is missing)'
+        report['action'] = 'reported (%s is missing)' % requirements.name
         return report
     python = python or sys.executable
-    log('> %s -m pip install -r requirements.txt' % python)
+    log('> %s -m pip install -r %s' % (python, requirements.name))
     try:
         q = subprocess.run([python, '-m', 'pip', 'install', '--disable-pip-version-check', '--no-input',
                             '-r', str(requirements)], cwd=str(root), stdin=subprocess.DEVNULL,
@@ -232,7 +234,7 @@ def repair_python_packages(root, log=print, allow_network=False, cfg=None, pytho
         log('SELF-HEAL: pip install failed (%s): %s' % (q.returncode, (q.stderr or q.stdout or '').strip()[-400:]))
         report['action'] = 'pip install failed'
         return report
-    report['action'] = 'pip install -r requirements.txt'
+    report['action'] = 'pip install -r %s' % requirements.name
     report['after'] = missing_python_modules(cfg)
     return report
 

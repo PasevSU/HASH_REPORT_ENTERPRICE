@@ -119,6 +119,42 @@ class ReportArchiveTests(unittest.TestCase):
             self.assertEqual(manifest, original_manifest)
             self.assertFalse((root / "archive" / "RPT-2").exists())
 
+    def test_manifest_with_path_objects_is_archived_as_text(self):
+        # A report built from an explicit file selection used to carry
+        # {Path: relative-name} in its manifest. json.dumps() then raised
+        # "keys must be str, int, float, bool or None" inside the archive pass,
+        # which aborted a run whose report was already signed and finished.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            evidence = root / "evidence"
+            evidence.mkdir()
+            report = root / "RPT-3_HASHREPORT_TYP_COMBO.pdf"
+            report.write_bytes(b"%PDF")
+            chosen = root / "evidence" / "note.txt"
+            chosen.write_text("x", encoding="utf-8")
+            manifest = {
+                "status": "PASS",
+                "selection_paths": {chosen: "note.txt"},
+                "selection_files": [chosen],
+                "nested": {"deeper": {chosen: {"path": chosen}}},
+            }
+
+            result = archive_report(
+                archive_root=root / "archive",
+                database_path=root / "archive" / "reports.sqlite3",
+                report_pdf=report,
+                evidence_directory=evidence,
+                run_log=None,
+                manifest=manifest,
+            )
+
+            saved = json.loads(
+                (Path(result["archive_directory"]) / "manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(saved["selection_paths"], {str(chosen): "note.txt"})
+            self.assertEqual(saved["selection_files"], [str(chosen)])
+            self.assertEqual(saved["nested"]["deeper"][str(chosen)]["path"], str(chosen))
+
     def test_report_number_rejects_unsafe_characters(self):
         with self.assertRaises(ValueError):
             report_id_from_pdf("bad name_HASHREPORT_TYP_COMBO.pdf")

@@ -1,0 +1,1906 @@
+{
+ "cases": {
+  "array_root": {
+   "detail_suffix": "<DIR>\\array_root\\01_array.js",
+   "error_code": "NOT_OBJECT",
+   "expected_code": "NOT_OBJECT",
+   "leaks_subprocess_repr": true
+  },
+  "duplicate": {
+   "error": "ValueError: Duplicate style rule 'SAME' in <DIR>\\duplicate\\02_second.js"
+  },
+  "empty_dir": {
+   "error": "ValueError: No style definitions found in <DIR>\\empty"
+  },
+  "files": {
+   "array_root": {
+    "01_array.js": "module.exports = [1, 2, 3];\n"
+   },
+   "duplicate": {
+    "01_first.js": "module.exports = {\"SAME\": 1, \"SHARED\": {\"a\": 1}};\n",
+    "02_second.js": "module.exports = {\"SAME\": 2};\n"
+   },
+   "merge": {
+    ".hidden.js": "module.exports = {\"HIDDEN\": 1};\n",
+    "01_page.js": "module.exports = {\"PAGE\": {\"paper\": \"A4\", \"width\": 595.28}, \"COLORS\": {\"ink\": \"#111\"}};\n",
+    "02_more.js": "module.exports = {\"PAGE\": {\"height\": 841.89}, \"NESTED\": {\"list\": [1, 2, {\"deep\": true}]}};\n",
+    "03_sub/x_extra.js": "module.exports = {\"EXTRA\": {\"zero\": 0, \"flag\": false, \"text\": \"\\u00e9\"} };\n",
+    "notes.txt": "not a rule\n"
+   },
+   "nested_duplicate": {
+    "01_first.js": "module.exports = {\"PAGE\": {\"width\": 595}};\n",
+    "02_second.js": "module.exports = {\"PAGE\": {\"width\": 612}};\n"
+   },
+   "throwing": {
+    "01_boom.js": "throw new Error(\"boom\");\n"
+   }
+  },
+  "merge": {
+   "expect": {
+    "COLORS": {
+     "ink": "#111"
+    },
+    "EXTRA": {
+     "flag": false,
+     "text": "é",
+     "zero": 0
+    },
+    "NESTED": {
+     "list": [
+      1,
+      2,
+      {
+       "deep": true
+      }
+     ]
+    },
+    "PAGE": {
+     "height": 841.89,
+     "paper": "A4",
+     "width": 595.28
+    }
+   }
+  },
+  "missing_dir": {
+   "error": "FileNotFoundError: Style directory missing: <DIR>\\does_not_exist"
+  },
+  "missing_sections": {
+   "error": "ValueError: Missing mandatory style sections: ['BRIDGE_LAYOUT', 'COLUMNS', 'FONTS', 'FONT_FAMILIES', 'FONT_FILES', 'FONT_POLICY', 'KEY_VALUE', 'LEADING', 'LEGAL_CONTAINER', 'OBJECTS', 'REPORT_BLOCK_CONTRACT', 'SIZE_UNIT', 'TABLE', 'TITLE_HIERARCHY']"
+  },
+  "nested_duplicate": {
+   "error": "ValueError: Duplicate style rule 'width' in <DIR>\\nested_duplicate\\02_second.js"
+  },
+  "throwing": {
+   "detail_suffix": "<DIR>\\throwing\\01_boom.js: boom",
+   "error_code": "EVALUATION",
+   "expected_code": "EVALUATION",
+   "leaks_subprocess_repr": true
+  }
+ },
+ "generated_by": "tools/jsx/parity/make_style_reference.py",
+ "layout": {
+  "merged_root": {
+   "expect": {
+    "footer_separation_mm": 15,
+    "heading_first_paragraph_keep_together": true,
+    "long_tables_split_between_rows": true,
+    "minimum_margins_mm": {
+     "bottom": 35,
+     "left": 20,
+     "right": 20,
+     "top": 20
+    },
+    "minimum_orphan_lines": 3,
+    "minimum_widow_lines": 3,
+    "no_orphan_section_headings": true,
+    "paper": "A4",
+    "report_qa_requires_rendering": true,
+    "section_break_strategy": "measure_flowables",
+    "short_table_max_rows": 8,
+    "short_tables_keep_together": true,
+    "stretch_tables_to_fill_page": false,
+    "table_headers_repeat": true
+   },
+   "key": "PAGINATION"
+  },
+  "out_of_scope": {
+   "error": "KeyError: 'PAGINATION'",
+   "path": [
+    "PAGINATION"
+   ]
+  },
+  "paths": [
+   {
+    "expect": {
+     "enforce_page_safe_area": true,
+     "file_size_unit": "bytes",
+     "hash_display_case": "upper",
+     "minimum_orphan_lines": 3,
+     "minimum_table_fragment_rows": 3,
+     "minimum_widow_lines": 3,
+     "text_encoding": "UTF-8",
+     "unicode_normalization": "NFC"
+    },
+    "path": [
+     "document_policy"
+    ]
+   },
+   {
+    "expect": {
+     "default_padding_pt": 2.5,
+     "explanatory_padding_pt": 3,
+     "header_bottom_padding_pt": 6,
+     "ots_padding_pt": 3
+    },
+    "path": [
+     "tables"
+    ]
+   },
+   {
+    "expect": {
+     "document_policy": {
+      "enforce_page_safe_area": true,
+      "file_size_unit": "bytes",
+      "hash_display_case": "upper",
+      "minimum_orphan_lines": 3,
+      "minimum_table_fragment_rows": 3,
+      "minimum_widow_lines": 3,
+      "text_encoding": "UTF-8",
+      "unicode_normalization": "NFC"
+     },
+     "legal_qr": {
+      "box_alignment": "RIGHT",
+      "column_width_pt": 149,
+      "image_height_pt": 135,
+      "image_horizontal_alignment": "CENTER",
+      "image_width_pt": 135,
+      "panel_alignment": "LEFT"
+     },
+     "tables": {
+      "default_padding_pt": 2.5,
+      "explanatory_padding_pt": 3,
+      "header_bottom_padding_pt": 6,
+      "ots_padding_pt": 3
+     },
+     "title": {
+      "separator_height_pt": 2
+     }
+    },
+    "path": []
+   }
+  ]
+ },
+ "loader": {
+  "payload": {
+   "BLOCK_TEXT": {
+    "data_color": "#000000",
+    "data_font_size_pt": 9,
+    "data_leading_pt": 12,
+    "heading_color": "#000000",
+    "heading_font_size_pt": 10,
+    "heading_leading_pt": 12,
+    "heading_space_after_pt": 2,
+    "heading_space_before_pt": 12
+   },
+   "BRIDGE_CANVAS_FOOTER": {
+    "baseline_y_pt": 14,
+    "bold_font_pt": 8,
+    "bold_rgb": [
+     0.35,
+     0.35,
+     0.35
+    ],
+    "horizontal_inset_mm": 12.5,
+    "regular_font_pt": 6.5,
+    "regular_rgb": [
+     0.45,
+     0.45,
+     0.45
+    ],
+    "separator_line_width_pt": 0.25,
+    "separator_rgb": [
+     0.8,
+     0.8,
+     0.8
+    ],
+    "separator_y_pt": 20
+   },
+   "BRIDGE_LAYOUT": {
+    "colors": {
+     "hash_line": "#444444",
+     "heading": "#2c3e50",
+     "legal_text": "#3a3a3a",
+     "normal_text": "#1a1a1a",
+     "qr_caption": "#666666",
+     "qr_fallback": "#888888",
+     "subheading": "#34495e"
+    },
+    "header_identity": {
+     "font_pt": 11,
+     "leading_pt": 15,
+     "space_after_pt": 4,
+     "trailing_spacer_pt": 14
+    },
+    "legal_qr": {
+     "caption_font_pt": 6,
+     "caption_leading_pt": 7.5,
+     "cell_right_padding_pt": 8,
+     "legal_font_pt": 8,
+     "legal_leading_pt": 10,
+     "qr_column_fraction": 0.19,
+     "qr_inner_column_fraction": 0.94,
+     "qr_size_mm": 26
+    },
+    "legal_table_widths_mm": [
+     148,
+     32
+    ],
+    "paragraph_styles": {
+     "attachment_hash": {
+      "color": "hash_line",
+      "font": "Courier",
+      "font_pt": 7,
+      "leading_pt": 9,
+      "left_indent_pt": 18,
+      "space_after_pt": 8
+     },
+     "attachment_item": {
+      "color": "normal_text",
+      "font_pt": 9,
+      "leading_pt": 12,
+      "space_after_pt": 2
+     },
+     "attachments_heading": {
+      "color": "heading",
+      "font_pt": 12,
+      "leading_pt": 16,
+      "space_after_pt": 6,
+      "space_before_pt": 12
+     },
+     "header_identity": {
+      "color": "normal_text",
+      "font_pt": 11,
+      "leading_pt": 15,
+      "space_after_pt": 4
+     },
+     "legal": {
+      "color": "legal_text",
+      "font_pt": 8,
+      "leading_pt": 10
+     },
+     "qr_caption": {
+      "color": "qr_caption",
+      "font_pt": 6,
+      "leading_pt": 7.5
+     },
+     "qr_fallback": {
+      "color": "qr_fallback",
+      "font_pt": 7,
+      "leading_pt": 9
+     },
+     "total_heading": {
+      "color": "heading",
+      "font_pt": 14,
+      "leading_pt": 18,
+      "space_after_pt": 10,
+      "space_before_pt": 14
+     },
+     "total_sub": {
+      "color": "subheading",
+      "font_pt": 11,
+      "leading_pt": 15,
+      "space_after_pt": 5,
+      "space_before_pt": 8
+     },
+     "tsa_heading": {
+      "color": "heading",
+      "font_pt": 12,
+      "leading_pt": 16,
+      "space_after_pt": 4,
+      "space_before_pt": 6
+     }
+    },
+    "qr_caption_text": "Gesetze-im-internet.de\n§ 371 ZPO\n§ 286 ZPO\nArt. 41 eIDAS",
+    "qr_cell_width_mm": 30,
+    "qr_fallback": {
+     "font_pt": 7,
+     "leading_pt": 9
+    },
+    "qr_target_url": "https://www.gesetze-im-internet.de/zpo/__371.html",
+    "spacing": {
+     "attachments_intro_after_pt": 8,
+     "attachments_list_after_pt": 10,
+     "legal_after_pt": 8,
+     "processing_duration_after_pt": 14,
+     "stop_details_after_pt": 8
+    }
+   },
+   "BRIDGE_VISUAL_LEGACY": {
+    "attachment_hash": {
+     "fontName": "Courier",
+     "fontSize": 7,
+     "leading": 9,
+     "leftIndent": 18,
+     "spaceAfter": 8,
+     "textColor": "#444444"
+    },
+    "attachment_item": {
+     "fontSize": 9,
+     "leading": 12,
+     "spaceAfter": 2
+    },
+    "attachments_heading": {
+     "fontSize": 12,
+     "leading": 16,
+     "spaceAfter": 6,
+     "spaceBefore": 12
+    },
+    "issuer_heading": {
+     "fontSize": 12,
+     "leading": 16,
+     "spaceAfter": 4,
+     "spaceBefore": 6
+    },
+    "legal_basis": {
+     "spaceAfter": 0
+    },
+    "total_heading": {
+     "fontSize": 14,
+     "leading": 18,
+     "spaceAfter": 10,
+     "spaceBefore": 14
+    },
+    "total_subheading": {
+     "fontSize": 11,
+     "leading": 15,
+     "spaceAfter": 5,
+     "spaceBefore": 8,
+     "textColor": "#34495e"
+    }
+   },
+   "CENTRAL_BLOCK_TABLE_STYLES": {
+    "legal_panel": {
+     "box_width_pt": 0.35,
+     "padding_commands": [
+      "LEFTPADDING",
+      "RIGHTPADDING",
+      "TOPPADDING",
+      "BOTTOMPADDING"
+     ]
+    },
+    "title_separator": {
+     "padding_commands": [
+      "LEFTPADDING",
+      "RIGHTPADDING",
+      "TOPPADDING",
+      "BOTTOMPADDING"
+     ],
+     "padding_pt": {
+      "BOTTOMPADDING": 0,
+      "LEFTPADDING": 0,
+      "RIGHTPADDING": 0,
+      "TOPPADDING": 0
+     }
+    }
+   },
+   "CENTRAL_LAYOUT": {
+    "document_policy": {
+     "enforce_page_safe_area": true,
+     "file_size_unit": "bytes",
+     "hash_display_case": "upper",
+     "minimum_orphan_lines": 3,
+     "minimum_table_fragment_rows": 3,
+     "minimum_widow_lines": 3,
+     "text_encoding": "UTF-8",
+     "unicode_normalization": "NFC"
+    },
+    "legal_qr": {
+     "box_alignment": "RIGHT",
+     "column_width_pt": 149,
+     "image_height_pt": 135,
+     "image_horizontal_alignment": "CENTER",
+     "image_width_pt": 135,
+     "panel_alignment": "LEFT"
+    },
+    "tables": {
+     "default_padding_pt": 2.5,
+     "explanatory_padding_pt": 3,
+     "header_bottom_padding_pt": 6,
+     "ots_padding_pt": 3
+    },
+    "title": {
+     "separator_height_pt": 2
+    }
+   },
+   "CHECKSUM_APPENDIX_TABLE": {
+    "available_height_pt": 680,
+    "columns_source": "COLUMNS.hashes"
+   },
+   "COLORS": {
+    "accent": "#293e50",
+    "grid": "#d4dce4",
+    "header_text": "#ffffff",
+    "ink": "#1a2733",
+    "muted": "#526579",
+    "paper": "#ffffff",
+    "stripe": "#f3f6f9"
+   },
+   "COLUMNS": {
+    "certificate": {
+     "property": 0.3,
+     "value": 0.7
+    },
+    "combined": {
+     "created": 0.145,
+     "hash": 0.235,
+     "modified": 0.145,
+     "name": 0.245,
+     "number": 0.045,
+     "size": 0.09,
+     "type": 0.095
+    },
+    "hashes": {
+     "algorithm": 0.2,
+     "digest": 0.8
+    },
+    "info": {
+     "property": 0.3,
+     "value": 0.7
+    },
+    "legal": {
+     "law": 0.32,
+     "meaning": 0.68
+    },
+    "ots": {
+     "details": 0.34,
+     "file": 0.26,
+     "modified": 0.22,
+     "size": 0.08,
+     "type": 0.1
+    },
+    "summary": {
+     "check": 0.35,
+     "legal": 0.35,
+     "proof": 0.3
+    },
+    "technical": {
+     "element": 0.28,
+     "meaning": 0.72
+    },
+    "timestamp": {
+     "label": 0.31,
+     "value": 0.69
+    }
+   },
+   "COMBINED_CELL_TYPOGRAPHY": {
+    "hash": {
+     "alignment": "LEFT",
+     "font_size_constant": "FONT_SIZE_TABLE_HASH",
+     "leading_constant": "LEADING_TABLE_HASH",
+     "name": "HashStyle2",
+     "parent_key": "hash_style",
+     "wrap_key": "hash_report_combined__L585__wordWrap"
+    },
+    "header": {
+     "alignment": "CENTER",
+     "font_size_constant": "FONT_SIZE_TABLE_HEADER",
+     "leading_multiplier": 1.35,
+     "minimum_leading_pt": 9,
+     "name": "HeaderStyle2",
+     "parent_key": "header_style",
+     "text_color": "#ffffff"
+    },
+    "safe": {
+     "alignment": "LEFT",
+     "font_size_constant": "FONT_SIZE_TABLE_TEXT",
+     "leading_constant": "LEADING_TABLE_TEXT",
+     "name": "SafeStyle",
+     "parent_key": "table_text_style",
+     "wrap_key": "hash_report_combined__L576__wordWrap"
+    }
+   },
+   "COMBINED_PRESENTATION": {
+    "header_color": "#18354D",
+    "legal_color": "#34465A",
+    "title_alignment": 0,
+    "title_color": "#18354D",
+    "title_font_pt": 14,
+    "title_leading_pt": 18
+   },
+   "CORE_PAGE_NUMBER_FOOTER": {
+    "baseline_y_pt": 12,
+    "font_name": "Helvetica",
+    "font_size_pt": 8,
+    "horizontal_page_fraction": 0.5,
+    "rgb": [
+     0.5,
+     0.5,
+     0.5
+    ]
+   },
+   "CORE_PARAGRAPH_BEHAVIOR": {
+    "explanatory_small_style": {
+     "word_wrap": "WORD"
+    },
+    "explanatory_table_cell_style": {
+     "word_wrap": "WORD"
+    },
+    "hash_style": {
+     "word_wrap": "WORD"
+    },
+    "table_text_style": {
+     "word_wrap": "WORD"
+    },
+    "timestamp_style": {
+     "word_wrap": "WORD"
+    }
+   },
+   "CORE_PARAGRAPH_LAYOUT": {
+    "explanatory_heading_style": {
+     "alignment": 0,
+     "space_after": 12,
+     "space_before": 8
+    },
+    "explanatory_subheading_style": {
+     "alignment": 0,
+     "space_after": 8
+    },
+    "explanatory_table_header_style": {
+     "font_name": "Helvetica-Bold"
+    },
+    "header_style": {
+     "alignment": 1,
+     "font_name": "Helvetica-Bold"
+    },
+    "legal_style": {
+     "alignment": 0,
+     "space_after": 6
+    },
+    "success_style": {
+     "alignment": 0
+    },
+    "title_style": {
+     "alignment": 1,
+     "space_after": 12
+    },
+    "warning_style": {
+     "alignment": 1
+    }
+   },
+   "CORE_PARAGRAPH_PRESENTATION": {
+    "explanatory_heading_style": {
+     "text_color": "#2c3e50"
+    },
+    "explanatory_small_style": {
+     "text_color": "#334155"
+    },
+    "explanatory_subheading_style": {
+     "text_color": "#888888"
+    },
+    "explanatory_table_cell_style": {
+     "text_color": "#000000"
+    },
+    "explanatory_table_header_style": {
+     "text_color": "#f5f5f5"
+    },
+    "hash_style": {
+     "text_color": "#000000"
+    },
+    "header_style": {
+     "text_color": "#f5f5f5"
+    },
+    "legal_declaration_style": {
+     "text_color": "#000000"
+    },
+    "legal_style": {
+     "text_color": "#2d3748"
+    },
+    "small_style": {
+     "text_color": "#808080"
+    },
+    "success_style": {
+     "text_color": "#15803d"
+    },
+    "table_text_style": {
+     "text_color": "#000000"
+    },
+    "timestamp_style": {
+     "text_color": "#000000"
+    },
+    "title_style": {
+     "text_color": "#18354D"
+    },
+    "warning_style": {
+     "text_color": "#8b0000"
+    }
+   },
+   "CORE_REPORT_METRICS": {
+    "FONT_SIZE_EXPLANATORY_CELL": 7,
+    "FONT_SIZE_EXPLANATORY_SMALL": 8,
+    "FONT_SIZE_HEADING": 12,
+    "FONT_SIZE_LEGAL": 7.3,
+    "FONT_SIZE_LEGAL_DECLARATION": 8,
+    "FONT_SIZE_OTS_DETAIL": 7,
+    "FONT_SIZE_OTS_HEADER": 7,
+    "FONT_SIZE_PAGE_NUMBER": 8,
+    "FONT_SIZE_SMALL": 8,
+    "FONT_SIZE_SUBHEADING": 10,
+    "FONT_SIZE_TABLE_HASH": 6.5,
+    "FONT_SIZE_TABLE_HEADER": 8,
+    "FONT_SIZE_TABLE_TEXT": 7,
+    "FONT_SIZE_TITLE": 16,
+    "LEADING_EXPLANATORY_CELL": 9,
+    "LEADING_EXPLANATORY_HEADER": 10,
+    "LEADING_EXPLANATORY_SMALL": 10,
+    "LEADING_HEADING": 16,
+    "LEADING_LEGAL": 9,
+    "LEADING_LEGAL_DECLARATION": 10,
+    "LEADING_OTS_DETAIL": 9,
+    "LEADING_SMALL": 10,
+    "LEADING_SUBHEADING": 14,
+    "LEADING_TABLE_HASH": 8,
+    "LEADING_TABLE_TEXT": 9
+   },
+   "DESIGN_LAYOUT": {
+    "section_gap_pt": 7
+   },
+   "DESIGN_TABLE": {
+    "alternate_background": "#f1f4f7",
+    "border_color": "#cbd5df",
+    "vertical_padding_pt": 4
+   },
+   "FONTS": {
+    "body": 9,
+    "footer": 6,
+    "heading": 12,
+    "legal": 8,
+    "mono": 7,
+    "small": 8,
+    "subheading": 10,
+    "table_hash": 6.5,
+    "table_header": 8,
+    "table_text": 7,
+    "title": 16
+   },
+   "FONT_FAMILIES": {
+    "bold": "ChronoUnicodeBold",
+    "bold_italic": "ChronoUnicodeBoldItalic",
+    "italic": "ChronoUnicodeItalic",
+    "monospace": "ChronoUnicodeMono",
+    "monospace_bold": "ChronoUnicodeMonoBold",
+    "regular": "ChronoUnicode"
+   },
+   "FONT_FILES": {},
+   "FONT_POLICY": {
+    "fallback_to_builtin": false,
+    "require_embedded_unicode": true,
+    "system_font_candidates": {
+     "bold": [
+      "C:/Windows/Fonts/arialbd.ttf",
+      "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+     ],
+     "bold_italic": [
+      "C:/Windows/Fonts/arialbi.ttf",
+      "/usr/share/fonts/truetype/dejavu/DejaVuSans-BoldOblique.ttf"
+     ],
+     "italic": [
+      "C:/Windows/Fonts/ariali.ttf",
+      "/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf"
+     ],
+     "monospace": [
+      "C:/Windows/Fonts/consola.ttf",
+      "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
+     ],
+     "monospace_bold": [
+      "C:/Windows/Fonts/consolab.ttf",
+      "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf"
+     ],
+     "regular": [
+      "C:/Windows/Fonts/arial.ttf",
+      "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+     ]
+    }
+   },
+   "GLOBAL_TABLE_PROFILE": {
+    "body_align": "LEFT",
+    "body_background": "#FFFFFF",
+    "body_row_start": 1,
+    "body_text_color": "#1A2733",
+    "body_valign": "TOP",
+    "cell_padding_pt": 2.5,
+    "compact_padding_pt": 2.2,
+    "compact_vertical_padding_pt": 1.6,
+    "hash_chunk_chars": 48,
+    "hash_wrap_mode": "character",
+    "header_align": "CENTER",
+    "header_background": "#293F50",
+    "header_font_role": "bold",
+    "header_repeat_rows": 1,
+    "header_text_color": "#FFFFFF",
+    "reference": "FILE INFORMATION",
+    "row_rule_pt": 0.25,
+    "shadow_clearance_pt": 8,
+    "stripe_background": "#F1F4F6",
+    "table_split_by_row": 1,
+    "timestamp_compact_row_separator": true,
+    "timestamp_valign": "TOP"
+   },
+   "HASH_DISPLAY": {
+    "uppercase": true
+   },
+   "INFORMATION_BLOCK_STYLE": {
+    "background": "#FFFFFF",
+    "border_bottom_pt": 1,
+    "border_color": "#E6E6FA",
+    "border_left_pt": 1,
+    "gap_after_pt": 16,
+    "gap_before_pt": 12,
+    "label_column_ratio": 0.3,
+    "line_gap_pt": 2,
+    "padding_bottom_pt": 6,
+    "padding_left_pt": 6,
+    "padding_right_pt": 6,
+    "padding_top_pt": 5,
+    "separator_color": "#E6E6FA",
+    "split_by_row": 1,
+    "value_wrap": true,
+    "volume_row_geometry": {
+     "bottom_padding_pt": 0,
+     "first_row_top_padding_pt": 0,
+     "horizontal_padding_pt": 0,
+     "last_row_bottom_padding_pt": 0,
+     "line_gap_pt": 0,
+     "top_padding_pt": 0
+    },
+    "volume_table_alignment": "LEFT",
+    "volume_typography": {
+     "font_bold": "Helvetica-Bold",
+     "font_regular": "Helvetica",
+     "font_size_pt": 10,
+     "heading_bold": true,
+     "heading_uppercase": true,
+     "label_bold": true,
+     "leading_pt": 12,
+     "space_after_pt": 0,
+     "space_before_pt": 0
+    }
+   },
+   "INFO_LINE": {
+    "font_size_pt": 8.5,
+    "label_color": "#18354D",
+    "leading_pt": 12,
+    "space_after_pt": 1,
+    "value_color": "#2B3A4A"
+   },
+   "KEY_VALUE": {
+    "label_bold": true,
+    "label_ratio": 0.29,
+    "preserve_colon": true,
+    "value_alignment": "LEFT"
+   },
+   "KEY_VALUE_BLOCK": {
+    "compact_padding_pt": 2.2,
+    "padding_pt": 3,
+    "rule_color": "#d7dde5",
+    "rule_pt": 0.2,
+    "stripe_color": "#f8fafc",
+    "vertical_padding_pt": 1.6
+   },
+   "LAYOUT_OBJECTS": {
+    "field_label": {
+     "font_role": "bold",
+     "font_size_pt": 9
+    },
+    "field_value": {
+     "font_role": "regular",
+     "font_size_pt": 9
+    },
+    "legal_notice": {
+     "background": "#f1f2f4",
+     "font_role": "regular",
+     "font_size_pt": 8,
+     "padding_pt": 7
+    },
+    "page_footer": {
+     "alignment": "CENTER",
+     "font_role": "regular",
+     "font_size_pt": 7,
+     "height_pt": 30
+    },
+    "page_header": {
+     "alignment": "LEFT",
+     "font_role": "regular",
+     "font_size_pt": 8,
+     "height_pt": 36
+    },
+    "qr_code": {
+     "size_pt": 88
+    },
+    "report_title": {
+     "font_role": "bold",
+     "font_size_pt": 20,
+     "space_after_pt": 10
+    },
+    "section_title": {
+     "font_role": "bold",
+     "font_size_pt": 12,
+     "space_after_pt": 6,
+     "space_before_pt": 12
+    },
+    "signature": {
+     "font_role": "regular",
+     "font_size_pt": 8
+    },
+    "table_cell": {
+     "font_role": "regular",
+     "font_size_pt": 8
+    },
+    "table_header": {
+     "background": "#293e50",
+     "color": "#ffffff",
+     "font_role": "bold",
+     "font_size_pt": 8
+    },
+    "timestamp_start": {
+     "font_role": "bold",
+     "font_size_pt": 10
+    },
+    "timestamp_stop": {
+     "font_role": "bold",
+     "font_size_pt": 10
+    }
+   },
+   "LEADING": {
+    "body": 12,
+    "heading": 16,
+    "legal": 10,
+    "small": 10,
+    "subheading": 14,
+    "table_hash": 8,
+    "table_text": 9
+   },
+   "LEGACY_SPACING_PT": {
+    "bridge__helper_enabled__L212": 6,
+    "bridge__helper_enabled__L425": 8,
+    "bridge__helper_enabled__L437": 3,
+    "bridge__helper_enabled__L451": 3,
+    "bridge__helper_enabled__L456": 8,
+    "bridge__layout__L255": 10,
+    "bridge__layout__L323": 10,
+    "bridge__layout__L334": 10,
+    "bridge__layout__L347": 4,
+    "bridge__layout__L353": 8,
+    "bridge__layout__L395": 8,
+    "bridge__layout__L428": 10,
+    "hash_report_core__L1433": 2,
+    "hash_report_core__L1454": 3,
+    "hash_report_core__L1462": 4,
+    "hash_report_core__L1774": 4,
+    "hash_report_core__L1937": 2
+   },
+   "LEGAL_CONTAINER": {
+    "background": "#f1f2f4",
+    "border_color": "#d4dce4",
+    "font_size_pt": 8,
+    "padding_pt": 7
+   },
+   "LEGAL_QR_TABLE_LAYOUT": {
+    "outer": {
+     "legal_text_right_padding_source": "BRIDGE_LAYOUT.legal_qr.cell_right_padding_pt",
+     "padding_pt": 0,
+     "vertical_alignment": "TOP"
+    },
+    "qr_inner": {
+     "horizontal_alignment": "CENTER",
+     "padding_pt": 0,
+     "vertical_alignment": "TOP"
+    }
+   },
+   "MIGRATED_VISUAL_LITERALS": {
+    "a4_document__L30__leftPadding": 0,
+    "a4_document__L30__rightPadding": 0,
+    "a4_document__L31__bottomPadding": 0,
+    "a4_document__L31__topPadding": 0,
+    "bridge__helper_enabled__L512__repeatRows": 1,
+    "bridge__helper_enabled__L541__wordWrap": "WORD",
+    "bridge__helper_enabled__L549__wordWrap": "WORD",
+    "bridge__helper_enabled__L587__repeatRows": 1,
+    "bridge__layout__L166__table_VALIGN_3": "TOP",
+    "bridge__layout__L167__table_ALIGN_3": "CENTER",
+    "bridge__layout__L168__table_LEFTPADDING_3": 0,
+    "bridge__layout__L169__table_RIGHTPADDING_3": 0,
+    "bridge__layout__L170__table_TOPPADDING_3": 0,
+    "bridge__layout__L171__table_BOTTOMPADDING_3": 0,
+    "bridge__layout__L177__table_VALIGN_3": "TOP",
+    "bridge__layout__L178__table_LEFTPADDING_3": 0,
+    "bridge__layout__L180__table_LEFTPADDING_3": 0,
+    "bridge__layout__L181__table_RIGHTPADDING_3": 0,
+    "bridge__layout__L182__table_TOPPADDING_3": 0,
+    "bridge__layout__L183__table_BOTTOMPADDING_3": 0,
+    "bridge__layout__L242__keepWithNext": true,
+    "chronoseal_volume_report__L12__height": 6,
+    "hash_report_combined__L533__height": 135,
+    "hash_report_combined__L533__width": 135,
+    "hash_report_combined__L539__hAlign": "RIGHT",
+    "hash_report_combined__L544__hAlign": "LEFT",
+    "hash_report_combined__L576__wordWrap": "WORD",
+    "hash_report_combined__L585__wordWrap": "WORD",
+    "hash_report_combined__L638__hAlign": "LEFT",
+    "hash_report_combined__L638__repeatRows": 1,
+    "hash_report_combined__L638__spaceAfter": 0,
+    "hash_report_combined__L638__spaceBefore": 0,
+    "hash_report_combined__L638__splitByRow": 1,
+    "hash_report_core__L1313__fontName": "Helvetica-Bold",
+    "hash_report_core__L1314__wordWrap": "WORD",
+    "hash_report_core__L1315__spaceAfter": 0,
+    "hash_report_core__L1315__spaceBefore": 0,
+    "hash_report_core__L1315__splitLongWords": 1,
+    "hash_report_core__L1320__wordWrap": "CJK",
+    "hash_report_core__L1321__spaceAfter": 0,
+    "hash_report_core__L1321__spaceBefore": 0,
+    "hash_report_core__L1321__splitLongWords": 1,
+    "hash_report_core__L1329__hAlign": "LEFT",
+    "hash_report_core__L1329__spaceAfter": 0,
+    "hash_report_core__L1329__spaceBefore": 0,
+    "hash_report_core__L1329__splitByRow": 1,
+    "hash_report_core__L1444__keepWithNext": true,
+    "hash_report_core__L1670__alignment": 1,
+    "hash_report_core__L1670__spaceAfter": 12,
+    "hash_report_core__L1672__alignment": 0,
+    "hash_report_core__L1672__spaceAfter": 6,
+    "hash_report_core__L1677__alignment": 1,
+    "hash_report_core__L1679__alignment": 0,
+    "hash_report_core__L1682__wordWrap": "WORD",
+    "hash_report_core__L1685__wordWrap": "WORD",
+    "hash_report_core__L1688__alignment": 1,
+    "hash_report_core__L1688__fontName": "Helvetica-Bold",
+    "hash_report_core__L1693__wordWrap": "WORD",
+    "hash_report_core__L1702__wordWrap": "WORD",
+    "hash_report_core__L1704__spaceAfter": 12,
+    "hash_report_core__L1705__alignment": 0,
+    "hash_report_core__L1705__spaceBefore": 8,
+    "hash_report_core__L1707__spaceAfter": 8,
+    "hash_report_core__L1708__alignment": 0,
+    "hash_report_core__L1711__fontName": "Helvetica-Bold",
+    "hash_report_core__L1714__wordWrap": "WORD",
+    "hash_report_core__L1775__keepWithNext": true,
+    "hash_report_core__L1887__repeatRows": 1,
+    "hash_report_core__L1910__repeatRows": 1,
+    "hash_report_core__L1957__repeatRows": 1,
+    "hash_report_core__L317__setFont_0": "Helvetica",
+    "hash_report_core__L317__setFont_1": 8,
+    "hash_report_core__L318__setFillColorRGB_0": 0.5,
+    "hash_report_core__L318__setFillColorRGB_1": 0.5,
+    "hash_report_core__L318__setFillColorRGB_2": 0.5,
+    "hash_report_single__L165__height": 135,
+    "hash_report_single__L165__width": 135,
+    "hash_report_single__L171__hAlign": "RIGHT",
+    "hash_report_single__L176__hAlign": "LEFT",
+    "hash_report_single__L225__repeatRows": 1,
+    "modular_report__L25__splitLongWords": 1,
+    "modular_report__L30__hAlign": "LEFT",
+    "modular_report__L33__table_BOTTOMPADDING_3": 3,
+    "modular_report__L33__table_LEFTPADDING_3": 0,
+    "modular_report__L33__table_VALIGN_3": "TOP",
+    "modular_report__L50__splitLongWords": 1,
+    "modular_report__L50__wordWrap": "CJK",
+    "modular_report__L63__table_LINEBELOW_3": 0.25,
+    "modular_report__L63__table_VALIGN_3": "TOP",
+    "pdf_object_rules__L142__hAlign": "LEFT",
+    "pdf_object_rules__L146__table_VALIGN_3": "TOP",
+    "pdf_object_rules__L147__table_LEFTPADDING_3": 0,
+    "pdf_object_rules__L148__table_RIGHTPADDING_3": 5,
+    "pdf_object_rules__L149__table_TOPPADDING_3": 0,
+    "pdf_object_rules__L150__table_BOTTOMPADDING_3": 1,
+    "pdf_object_rules__L156__hAlign": "LEFT",
+    "pdf_object_rules__L161__table_BOX_3": 0.35,
+    "pdf_object_rules__L183__keepWithNext": true,
+    "pdf_object_rules__L183__spaceAfter": 5,
+    "pdf_object_rules__L194__splitLongWords": true,
+    "pdf_object_rules__L221__alignment": 1,
+    "pdf_object_rules__L234__table_VALIGN_3": "TOP",
+    "pdf_object_rules__L235__table_ALIGN_3": "CENTER",
+    "pdf_object_rules__L236__table_ALIGN_3": "CENTER",
+    "pdf_object_rules__L238__table_LINEBELOW_3": 0.35,
+    "pdf_object_rules__L311__height": 8,
+    "pdf_object_rules__L311__table_LEFTPADDING_3": 0,
+    "pdf_object_rules__L311__table_RIGHTPADDING_3": 0,
+    "pdf_object_rules__L312__table_BOTTOMPADDING_3": 0,
+    "pdf_object_rules__L312__table_TOPPADDING_3": 0,
+    "pdf_object_rules__L321__table_BOX_3": 0.7,
+    "pdf_object_rules__L322__table_LINEBELOW_3": 0.4,
+    "pdf_object_rules__L324__table_ALIGN_3": "CENTER",
+    "pdf_object_rules__L325__table_LEFTPADDING_3": 5,
+    "pdf_object_rules__L325__table_RIGHTPADDING_3": 5,
+    "pdf_object_rules__L326__table_BOTTOMPADDING_3": 5,
+    "pdf_object_rules__L326__table_TOPPADDING_3": 5,
+    "pdf_object_rules__L327__table_BOTTOMPADDING_3": 4,
+    "pdf_object_rules__L327__table_TOPPADDING_3": 4,
+    "pdf_object_rules__L335__table_VALIGN_3": "TOP",
+    "pdf_object_rules__L337__table_LINEBELOW_3": 0.6,
+    "pdf_object_rules__L340__table_LEFTPADDING_3": 4,
+    "pdf_object_rules__L340__table_RIGHTPADDING_3": 0
+   },
+   "MODULAR_RENDERER_VISUAL": {
+    "default_font_role": "regular",
+    "default_font_size_pt": 9,
+    "default_leading_multiplier": 1.32,
+    "default_space_after_pt": 4,
+    "default_space_before_pt": 0,
+    "default_table_leading_pt": 10,
+    "default_text_color": "#1a2733",
+    "hash_chunk_chars": 16,
+    "no_repeat_header_rows": 0,
+    "repeat_header_rows": 1,
+    "split_by_row": 1,
+    "table_horizontal_alignment": "LEFT",
+    "title_top_offset_pt": 12
+   },
+   "OBJECTS": {
+    "attachment": {
+     "never_modify_bytes": true
+    },
+    "certificate": {
+     "keep_label_value_together": true
+    },
+    "divider": {
+     "width": "content"
+    },
+    "footer": {
+     "align": "right",
+     "include_page_numbers": true,
+     "repeat": true
+    },
+    "hash": {
+     "monospace": true,
+     "preserve_all_characters": true
+    },
+    "header": {
+     "align": "left",
+     "repeat": true
+    },
+    "heading": {
+     "keep_with_next": true
+    },
+    "image": {
+     "keep_aspect_ratio": true
+    },
+    "legal_text": {
+     "container_background": "#f1f2f4",
+     "orphans": 3,
+     "padding_pt": 7,
+     "widows": 3
+    },
+    "link": {
+     "allow_wrap": true
+    },
+    "list": {
+     "keep_marker_with_text": true
+    },
+    "page": {
+     "allow_overflow": false,
+     "keep_footer_separate": true
+    },
+    "page_break": {
+     "only_explicit_sections": true
+    },
+    "page_hashes": {
+     "exclude_footer": true
+    },
+    "paragraph": {
+     "orphans": 3,
+     "widows": 3
+    },
+    "qr": {
+     "keep_aspect_ratio": true
+    },
+    "section_heading": {
+     "bold": true,
+     "keep_with_next": true,
+     "preserve_colon": true,
+     "uppercase": true
+    },
+    "signature": {
+     "never_rewrite_signed_pdf": true
+    },
+    "spacer": {
+     "collapse_at_page_start": true
+    },
+    "system_information": {
+     "wrap": true
+    },
+    "table": {
+     "repeat_header": true,
+     "split_by_row": true
+    },
+    "table_cell": {
+     "wrap": true
+    },
+    "table_date": {
+     "split_date_time_only": true
+    },
+    "table_filename": {
+     "wrap": true
+    },
+    "table_header": {
+     "white_text": true
+    },
+    "table_number": {
+     "no_wrap": true
+    },
+    "table_size": {
+     "unit": "bytes",
+     "unit_in_heading": true
+    },
+    "table_type": {
+     "wrap": true
+    },
+    "timestamp": {
+     "keep_label_value_together": true
+    },
+    "title": {
+     "keep_with_next": true
+    },
+    "user_information": {
+     "wrap": true
+    },
+    "volume": {
+     "wrap_paths": true
+    }
+   },
+   "PAGE": {
+    "body_footer_gap_mm": 5,
+    "bottom_mm": 35,
+    "coordinate_origin": "bottom_left",
+    "footer_reserved_mm": 15,
+    "frame_padding_pt": 0,
+    "header_zone_mm": 0,
+    "height_mm": 297,
+    "left_mm": 20,
+    "minimum_content_width_mm": 100,
+    "right_mm": 20,
+    "standard": "ISO_216_A4",
+    "top_mm": 20,
+    "width_mm": 210
+   },
+   "PAGE_IDENTITY": {
+    "appendix_body_font_pt": 8,
+    "appendix_heading_font_pt": 13,
+    "appendix_heading_y_pt": 800,
+    "appendix_intro_ys_pt": [
+     780,
+     766,
+     752,
+     738
+    ],
+    "appendix_note_all_algorithms": "All eleven digest algorithms are listed in this appendix and manifest.",
+    "appendix_note_font_pt": 7,
+    "appendix_note_page_values": "Individual page values: first six algorithms appear in report-page footers.",
+    "appendix_note_scope": "This checksum appendix is excluded from the text checksum scope.",
+    "appendix_notes_y_pt": [
+     120,
+     107,
+     94
+    ],
+    "appendix_property_header": "Property",
+    "appendix_table_top_pt": 718,
+    "appendix_value_header": "Value",
+    "brand": "CRYPTO REPORT ENTERPRICE v5.5.3-RC",
+    "collision_boundary_from_bottom_pt": 91,
+    "combined_appendix_title": "TEXT CHECKSUMS",
+    "combined_file_heading": "FILE TEXT",
+    "combined_file_heading_y_pt": 734,
+    "combined_heading_font_pt": 9,
+    "combined_heading_gap_pt": 13,
+    "combined_line_leading_pt": 11,
+    "combined_min_bottom_pt": 76,
+    "combined_note_leading_pt": 10,
+    "combined_notes_gap_pt": 6,
+    "combined_pdf_heading": "PDF TEXT",
+    "combined_section_gap_pt": 20,
+    "developer": "Entwickler: D.D.PASEV",
+    "document_appendix_encoding": "Encoding: UTF-8; NFC; LF; strip; PyMuPDF sorted text.",
+    "document_appendix_framing": "Page framing: 8-byte big-endian length followed by each page text.",
+    "document_appendix_page_count": "Included report and source pages: {page_count}",
+    "document_appendix_scope": "Scope: whole file = report pages + embedded PDF pages; appendices and footers excluded.",
+    "document_appendix_title": "WHOLE FILE TEXT CHECKSUMS",
+    "font_bold": "ChronoUnicodeBold",
+    "font_mono": "ChronoUnicodeMono",
+    "font_regular": "ChronoUnicode",
+    "footer_brand_font_pt": 7,
+    "footer_brand_y_pt": 45,
+    "footer_developer_y_pt": 25,
+    "footer_hash_font_pt": 4,
+    "footer_hash_leading_pt": 6,
+    "footer_hash_start_y_pt": 50,
+    "footer_heading_y_pt": 57,
+    "footer_id_font_pt": 6.3,
+    "footer_id_y_pt": 55,
+    "footer_left_max_width_pt": 300,
+    "footer_left_x_pt": 16,
+    "footer_license_y_pt": 35,
+    "footer_other_font_pt": 6.6,
+    "footer_page_font_pt": 8,
+    "footer_page_y_pt": 55,
+    "footer_right_margin_mm": 5,
+    "footer_url_y_pt": 16,
+    "license": "Bereitgestellt und lizenziert durch PasevSU",
+    "separator_color": "#B3C2D1",
+    "separator_use_page_margins": true,
+    "separator_width_pt": 0.55,
+    "separator_y_pt": 65,
+    "source_appendix_note": "Per-page hashes are in each page footer; source PDF is also attached byte-for-byte.",
+    "source_appendix_reference": "Embedded PDF only: {source_page_count} pages, visible document pages {first_page}-{last_page}.",
+    "source_appendix_scope": "Page content is unmodified (footer added in an extra bottom strip); hashes cover only the embedded PDF text.",
+    "source_appendix_signature_scope": "This inventory does not validate signatures, trust, revocation, or eIDAS qualification.",
+    "source_appendix_signature_status": "Source signature objects detected: {signature_count}; inventory: {status}.",
+    "source_appendix_title": "EMBEDDED PDF ONLY TEXT CHECKSUMS",
+    "url": "https://pasevsu.github.io"
+   },
+   "PAGINATION": {
+    "footer_separation_mm": 15,
+    "heading_first_paragraph_keep_together": true,
+    "long_tables_split_between_rows": true,
+    "minimum_margins_mm": {
+     "bottom": 35,
+     "left": 20,
+     "right": 20,
+     "top": 20
+    },
+    "minimum_orphan_lines": 3,
+    "minimum_widow_lines": 3,
+    "no_orphan_section_headings": true,
+    "paper": "A4",
+    "report_qa_requires_rendering": true,
+    "section_break_strategy": "measure_flowables",
+    "short_table_max_rows": 8,
+    "short_tables_keep_together": true,
+    "stretch_tables_to_fill_page": false,
+    "table_headers_repeat": true
+   },
+   "PROCESS_BLOCKS": {
+    "file_information": {
+     "object": "section_title",
+     "title": "FILE INFORMATION:"
+    },
+    "hashes": {
+     "object": "section_title",
+     "title": "CRYPTOGRAPHIC HASHES:"
+    },
+    "legal": {
+     "object": "section_title",
+     "title": "LEGAL INFORMATION:"
+    },
+    "system_information": {
+     "object": "section_title",
+     "title": "SYSTEM INFORMATION (BEWEISSICHERUNG):"
+    },
+    "timestamp_start": {
+     "object": "timestamp_start",
+     "title": "CRYPTOGRAPHIC TIMESTAMP START:"
+    },
+    "timestamp_stop": {
+     "object": "timestamp_stop",
+     "title": "CRYPTOGRAPHIC TIMESTAMP STOP:"
+    },
+    "user_information": {
+     "object": "section_title",
+     "title": "USER INFORMATION:"
+    },
+    "volume": {
+     "object": "section_title",
+     "title": "VOLUME:"
+    }
+   },
+   "REPORT_BLOCK_CONTRACT": {
+    "footer": {
+     "line_within_page_margins": true,
+     "source": "PAGE_IDENTITY"
+    },
+    "information": {
+     "separator_color": "#E6E6FA",
+     "source": "INFORMATION_BLOCK_STYLE",
+     "wrap_values": true
+    },
+    "legal_basis": {
+     "qr_source": "LAYOUT_OBJECTS.qr_code",
+     "source": "LEGAL_CONTAINER",
+     "two_column": true
+    },
+    "table": {
+     "header_white": true,
+     "relief_source": "TABLE_RELIEF",
+     "repeat_header": true,
+     "source": "GLOBAL_TABLE_PROFILE",
+     "wrap_long_hashes": true
+    },
+    "title": {
+     "header_source": "LAYOUT_OBJECTS.report_title",
+     "source": "TITLE_HIERARCHY",
+     "underline_source": "PAGE_IDENTITY"
+    }
+   },
+   "REPORT_HEADER": {
+    "eyebrow": "CRYPTO REPORT ENTERPRISE / TECHNISCHER PRÜFBERICHT",
+    "header_text_color": "#18354D",
+    "legal_background": "#F3F6F8",
+    "legal_html": [
+     "<b>Rechtliche und technische Hinweise für Deutschland</b>",
+     "<b>Beweisrecht (§§ 286, 371, 371a, 130a ZPO):</b> Elektronische Dateien können als Beweismittel vorgelegt werden; das Gericht würdigt sie im Einzelfall. § 371a ZPO betrifft insbesondere qualifiziert elektronisch signierte private elektronische Dokumente; ein Zeitstempel allein erfüllt diese Voraussetzung nicht. Für Schriftsätze gelten außerdem die Form- und Übermittlungsanforderungen des § 130a ZPO.",
+     "<b>eIDAS (Art. 25, 41, 42; EU 2024/1183):</b> Ein RFC-3161-Zeitstempel ist nicht automatisch qualifiziert und keine qualifizierte elektronische Signatur. Nur ein nachweislich qualifizierter elektronischer Zeitstempel genießt nach Art. 41 Abs. 2 die widerlegliche Vermutung für die Richtigkeit der angegebenen Zeit und die Integrität der gebundenen Daten. Er belegt für sich weder Urheberschaft noch Wahrheit des Inhalts und ersetzt weder eine erforderliche qualifizierte elektronische Signatur noch den sicheren Übermittlungsweg.",
+     "<b>Technische Referenzen:</b> RFC 3161/5816; ETSI EN 319 421/422, 319 102-1, 319 122-1, 319 142-1; BSI TR-03125 und, soweit einschlägig, TR-03138. Die Nennung begründet keine Zertifizierung oder Konformität.",
+     "<b>Prüfbarkeit und Grenzen:</b> Datei-Hashes, Aggregationsmethode, TSA-Token, ByteRange, CMS, Zertifikatskette, EKU, CRL/OCSP und DSS sind unabhängig zu prüfen. VERIFIED / FAILED / NOT VERIFIED bezeichnen den tatsächlichen Prüfstatus. Herkunft, Urheberschaft und inhaltliche Wahrheit werden nicht allein durch Hashwerte belegt. Dieser technische Bericht ist keine eidesstattliche Versicherung."
+    ],
+    "legal_rule_color": "#B5C5D1",
+    "legal_rule_pt": 0.6,
+    "legal_text_color": "#34465A",
+    "legal_text_left_padding_pt": 0,
+    "legal_text_right_padding_pt": 8,
+    "legal_text_vertical_padding_pt": 0,
+    "muted_color": "#60778A",
+    "muted_font_size_pt": 8,
+    "qr_box_color": "#304255",
+    "qr_box_pt": 0.7,
+    "qr_caption": "<b>QR-Code</b> – Vollständige Rechtsgrundlagen<br/>und technische Referenzen",
+    "qr_caption_background": "#F0F3F6",
+    "qr_caption_padding_pt": 4,
+    "qr_column_pt": 149,
+    "qr_divider_color": "#AAB4BF",
+    "qr_divider_pt": 0.4,
+    "qr_file": "legal_full_text_qr.png",
+    "qr_left_padding_pt": 4,
+    "qr_padding_pt": 5,
+    "qr_size_pt": 135,
+    "rule_color": "#18354D",
+    "rule_height_pt": 2,
+    "subtitle": "Kryptographischer Existenznachweis",
+    "title": "SHA-256 HASH REPORT",
+    "title_alignment": 0,
+    "title_color": "#18354D",
+    "title_font_size_pt": 16,
+    "title_leading_pt": 20
+   },
+   "SECTION_HEADING": {
+    "color": "#18354D",
+    "font_size_pt": 9.5,
+    "leading_pt": 12,
+    "rule_color": "#B5C5D1",
+    "rule_gap_pt": 2,
+    "rule_pt": 0.6,
+    "space_after_pt": 4,
+    "space_before_pt": 12
+   },
+   "SINGLE_PRESENTATION": {
+    "header_color": "#18354D",
+    "legal_color": "#34465A",
+    "title_alignment": 0,
+    "title_color": "#18354D",
+    "title_font_pt": 14,
+    "title_leading_pt": 18
+   },
+   "SIZE_UNIT": "bytes",
+   "STATUS_COLORS": {
+    "error": "#8b0000",
+    "muted": "#888888",
+    "ok": "#15803d",
+    "primary": "#2c3e50",
+    "warning": "#ea580c"
+   },
+   "TABLE": {
+    "alternate_rows": true,
+    "header_bottom_padding_pt": 6,
+    "header_contrast": true,
+    "padding_pt": 2.5,
+    "repeat_header": true,
+    "split_by_row": true,
+    "valign": "TOP"
+   },
+   "TABLE_COLUMN_ALIGNMENTS": {
+    "combined": {
+     "0": "CENTER",
+     "3": "RIGHT",
+     "4": "CENTER"
+    }
+   },
+   "TABLE_PRESENTATION_VARIANTS": {
+    "aligned_fields": {
+     "bottom_padding_pt": 1,
+     "left_padding_pt": 0,
+     "right_padding_pt": 5,
+     "top_padding_pt": 0,
+     "vertical_alignment": "TOP"
+    },
+    "combined": {
+     "body_backgrounds": [
+      "#ffffff",
+      "#f3f6f9"
+     ],
+     "cell_padding_pt": 2.5,
+     "first_column_alignment": "CENTER",
+     "header_alignment": "CENTER",
+     "header_background": "#293e50",
+     "header_bottom_padding_pt": 6,
+     "header_text_color": "#ffffff",
+     "row_line_color": "#d4dce4",
+     "row_line_width_pt": 0.35,
+     "vertical_alignment": "TOP"
+    }
+   },
+   "TABLE_RELIEF": {
+    "edge_color": "#B4BAC1",
+    "frame_pt": 0.5,
+    "row_rule_color": "#D4DAE0",
+    "shadow_blur_pt": 5,
+    "shadow_color": "#000000",
+    "shadow_layers": 10,
+    "shadow_offset_x_pt": 0.5,
+    "shadow_offset_y_pt": -2,
+    "shadow_opacity": 0.55
+   },
+   "TIMESTAMP_CELL_TYPOGRAPHY": {
+    "label": {
+     "font_name": "Helvetica-Bold",
+     "space_after_pt": 0,
+     "space_before_pt": 0,
+     "split_long_words": 1,
+     "word_wrap": "WORD"
+    },
+    "value": {
+     "space_after_pt": 0,
+     "space_before_pt": 0,
+     "split_long_words": 1,
+     "word_wrap": "CJK"
+    }
+   },
+   "TITLE_HIERARCHY": {
+    "h1": {
+     "bold": true,
+     "size_pt": 20,
+     "uppercase": false
+    },
+    "h2": {
+     "bold": true,
+     "size_pt": 14,
+     "uppercase": false
+    },
+    "h3": {
+     "bold": false,
+     "size_pt": 11,
+     "uppercase": false
+    },
+    "section": {
+     "bold": true,
+     "size_pt": 11,
+     "uppercase": true
+    }
+   }
+  },
+  "required": [
+   "BRIDGE_LAYOUT",
+   "COLORS",
+   "COLUMNS",
+   "FONTS",
+   "FONT_FAMILIES",
+   "FONT_FILES",
+   "FONT_POLICY",
+   "KEY_VALUE",
+   "LEADING",
+   "LEGAL_CONTAINER",
+   "OBJECTS",
+   "PAGE",
+   "REPORT_BLOCK_CONTRACT",
+   "SIZE_UNIT",
+   "TABLE",
+   "TITLE_HIERARCHY"
+  ],
+  "sections": [
+   "BLOCK_TEXT",
+   "BRIDGE_CANVAS_FOOTER",
+   "BRIDGE_LAYOUT",
+   "BRIDGE_VISUAL_LEGACY",
+   "CENTRAL_BLOCK_TABLE_STYLES",
+   "CENTRAL_LAYOUT",
+   "CHECKSUM_APPENDIX_TABLE",
+   "COLORS",
+   "COLUMNS",
+   "COMBINED_CELL_TYPOGRAPHY",
+   "COMBINED_PRESENTATION",
+   "CORE_PAGE_NUMBER_FOOTER",
+   "CORE_PARAGRAPH_BEHAVIOR",
+   "CORE_PARAGRAPH_LAYOUT",
+   "CORE_PARAGRAPH_PRESENTATION",
+   "CORE_REPORT_METRICS",
+   "DESIGN_LAYOUT",
+   "DESIGN_TABLE",
+   "FONTS",
+   "FONT_FAMILIES",
+   "FONT_FILES",
+   "FONT_POLICY",
+   "GLOBAL_TABLE_PROFILE",
+   "HASH_DISPLAY",
+   "INFORMATION_BLOCK_STYLE",
+   "INFO_LINE",
+   "KEY_VALUE",
+   "KEY_VALUE_BLOCK",
+   "LAYOUT_OBJECTS",
+   "LEADING",
+   "LEGACY_SPACING_PT",
+   "LEGAL_CONTAINER",
+   "LEGAL_QR_TABLE_LAYOUT",
+   "MIGRATED_VISUAL_LITERALS",
+   "MODULAR_RENDERER_VISUAL",
+   "OBJECTS",
+   "PAGE",
+   "PAGE_IDENTITY",
+   "PAGINATION",
+   "PROCESS_BLOCKS",
+   "REPORT_BLOCK_CONTRACT",
+   "REPORT_HEADER",
+   "SECTION_HEADING",
+   "SINGLE_PRESENTATION",
+   "SIZE_UNIT",
+   "STATUS_COLORS",
+   "TABLE",
+   "TABLE_COLUMN_ALIGNMENTS",
+   "TABLE_PRESENTATION_VARIANTS",
+   "TABLE_RELIEF",
+   "TIMESTAMP_CELL_TYPOGRAPHY",
+   "TITLE_HIERARCHY"
+  ]
+ },
+ "pagination": {
+  "config": {
+   "footer_separation_mm": 15,
+   "heading_first_paragraph_keep_together": true,
+   "long_tables_split_between_rows": true,
+   "minimum_margins_mm": {
+    "bottom": 35,
+    "left": 20,
+    "right": 20,
+    "top": 20
+   },
+   "minimum_orphan_lines": 3,
+   "minimum_widow_lines": 3,
+   "no_orphan_section_headings": true,
+   "paper": "A4",
+   "report_qa_requires_rendering": true,
+   "section_break_strategy": "measure_flowables",
+   "short_table_max_rows": 8,
+   "short_tables_keep_together": true,
+   "stretch_tables_to_fill_page": false,
+   "table_headers_repeat": true
+  },
+  "heading": {
+   "expect": [
+    "KeepTogether"
+   ]
+  },
+  "keep": [
+   {
+    "expect": [
+     "KeepTogether"
+    ],
+    "rows": 1
+   },
+   {
+    "expect": [
+     "KeepTogether"
+    ],
+    "rows": 2
+   },
+   {
+    "expect": [
+     "KeepTogether"
+    ],
+    "rows": 3
+   },
+   {
+    "expect": [
+     "KeepTogether"
+    ],
+    "rows": 4
+   },
+   {
+    "expect": [
+     "KeepTogether"
+    ],
+    "rows": 5
+   },
+   {
+    "expect": [
+     "KeepTogether"
+    ],
+    "rows": 6
+   },
+   {
+    "expect": [
+     "KeepTogether"
+    ],
+    "rows": 7
+   },
+   {
+    "expect": [
+     "KeepTogether"
+    ],
+    "rows": 8
+   },
+   {
+    "error": "ValueError: Long table must be placed as separate splittable flowables",
+    "rows": 9
+   },
+   {
+    "error": "ValueError: Long table must be placed as separate splittable flowables",
+    "rows": 10
+   },
+   {
+    "error": "ValueError: Long table must be placed as separate splittable flowables",
+    "rows": 11
+   },
+   {
+    "error": "ValueError: Long table must be placed as separate splittable flowables",
+    "rows": 12
+   }
+  ],
+  "non_table": {
+   "error": "TypeError: Expected ReportLab Table"
+  }
+ },
+ "presentation": {
+  "digest": [
+   {
+    "expect": "ABCDEF",
+    "input": "abcdef"
+   },
+   {
+    "expect": "0123456789ABCDEF",
+    "input": "0123456789abcdef"
+   },
+   {
+    "expect": "ABCDEF",
+    "input": "ABCDEF"
+   },
+   {
+    "error": "ValueError: Digest must be a hexadecimal string",
+    "input": ""
+   },
+   {
+    "error": "ValueError: Digest must be a hexadecimal string",
+    "input": "xyz"
+   },
+   {
+    "error": "ValueError: Digest must be a hexadecimal string",
+    "input": "ab cd"
+   },
+   {
+    "error": "ValueError: Digest must be a hexadecimal string",
+    "input": "ab\n"
+   },
+   {
+    "error": "ValueError: Digest must be a hexadecimal string",
+    "input": 123
+   },
+   {
+    "error": "ValueError: Digest must be a hexadecimal string",
+    "input": null
+   }
+  ],
+  "file_size": [
+   {
+    "expect": "0 bytes",
+    "input": 0
+   },
+   {
+    "expect": "1 bytes",
+    "input": 1
+   },
+   {
+    "expect": "999 bytes",
+    "input": 999
+   },
+   {
+    "expect": "1 000 bytes",
+    "input": 1000
+   },
+   {
+    "expect": "1 234 567 bytes",
+    "input": 1234567
+   },
+   {
+    "expect": "2 147 483 648 bytes",
+    "input": 2147483648
+   },
+   {
+    "error": "ValueError: Negative byte count",
+    "input": -1
+   },
+   {
+    "expect": "3 bytes",
+    "input": 3.9
+   },
+   {
+    "expect": "42 bytes",
+    "input": "42"
+   },
+   {
+    "expect": "7 bytes",
+    "input": " 7 "
+   },
+   {
+    "expect": "5 000 bytes",
+    "input": "5_000"
+   },
+   {
+    "error": "ValueError: invalid literal for int() with base 10: 'x'",
+    "input": "x"
+   },
+   {
+    "error": "TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+    "input": null
+   }
+  ],
+  "fragment": [
+   {
+    "error": "ValueError: Table fragment has 0 rows; minimum is 3",
+    "input": 0
+   },
+   {
+    "error": "ValueError: Table fragment has 1 rows; minimum is 3",
+    "input": 1
+   },
+   {
+    "error": "ValueError: Table fragment has 2 rows; minimum is 3",
+    "input": 2
+   },
+   {
+    "expect": true,
+    "input": 3
+   },
+   {
+    "expect": true,
+    "input": 4
+   },
+   {
+    "expect": true,
+    "input": 10
+   },
+   {
+    "error": "TypeError: '<' not supported between instances of 'str' and 'int'",
+    "input": "3"
+   },
+   {
+    "error": "ValueError: Table fragment has -1 rows; minimum is 3",
+    "input": -1
+   }
+  ],
+  "text": [
+   {
+    "expect": "á",
+    "input": "á"
+   },
+   {
+    "expect": "Á",
+    "input": "Á"
+   },
+   {
+    "expect": "école",
+    "input": "école"
+   },
+   {
+    "expect": "ﬃ",
+    "input": "ﬃ"
+   },
+   {
+    "expect": "ß",
+    "input": "ß"
+   },
+   {
+    "expect": "123",
+    "input": 123
+   },
+   {
+    "expect": "None",
+    "input": null
+   }
+  ]
+ },
+ "profile": {
+  "custom": {
+   "audit_options": {
+    "appendix_top_mm": 10,
+    "bottom_mm": 20,
+    "footer_band_mm": 23,
+    "left_mm": 15,
+    "minimum_body_words": 30,
+    "right_mm": 20,
+    "top_mm": 20
+   },
+   "to_dict": {
+    "appendix_top_mm": 10,
+    "bottom_mm": 20,
+    "footer_band_mm": 23,
+    "left_mm": 15,
+    "min_body_words": 30,
+    "name": "Custom",
+    "page_height_mm": 297,
+    "page_width_mm": 210,
+    "right_mm": 20,
+    "top_mm": 20,
+    "version": "9.9"
+   }
+  },
+  "default": {
+   "audit_options": {
+    "appendix_top_mm": 10,
+    "bottom_mm": 20,
+    "footer_band_mm": 23,
+    "left_mm": 20,
+    "minimum_body_words": 12,
+    "right_mm": 20,
+    "top_mm": 20
+   },
+   "to_dict": {
+    "appendix_top_mm": 10,
+    "bottom_mm": 20,
+    "footer_band_mm": 23,
+    "left_mm": 20,
+    "min_body_words": 12,
+    "name": "ChronoSeal Unified A4",
+    "page_height_mm": 297,
+    "page_width_mm": 210,
+    "right_mm": 20,
+    "top_mm": 20,
+    "version": "1.0-dev"
+   }
+  }
+ },
+ "visual": [
+  {
+   "expect": 0,
+   "key": "a4_document__L30__leftPadding"
+  },
+  {
+   "expect": 0,
+   "key": "a4_document__L30__rightPadding"
+  },
+  {
+   "expect": 0,
+   "key": "a4_document__L31__bottomPadding"
+  },
+  {
+   "expect": 0,
+   "key": "a4_document__L31__topPadding"
+  },
+  {
+   "expect": 1,
+   "key": "bridge__helper_enabled__L512__repeatRows"
+  },
+  {
+   "expect": "WORD",
+   "key": "bridge__helper_enabled__L541__wordWrap"
+  },
+  {
+   "expect": "WORD",
+   "key": "bridge__helper_enabled__L549__wordWrap"
+  },
+  {
+   "expect": 1,
+   "key": "bridge__helper_enabled__L587__repeatRows"
+  },
+  {
+   "expect": "TOP",
+   "key": "bridge__layout__L166__table_VALIGN_3"
+  },
+  {
+   "expect": "CENTER",
+   "key": "bridge__layout__L167__table_ALIGN_3"
+  },
+  {
+   "expect": 0,
+   "key": "bridge__layout__L168__table_LEFTPADDING_3"
+  },
+  {
+   "expect": 0,
+   "key": "bridge__layout__L169__table_RIGHTPADDING_3"
+  }
+ ]
+}
