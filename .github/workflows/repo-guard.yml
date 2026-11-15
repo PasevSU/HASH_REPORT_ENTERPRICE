@@ -50,6 +50,9 @@ jobs:
           pattern="$pattern|(^|/)ChronoSeal_Archive/|(^|/)ChronoSeal_Evidence/"
           pattern="$pattern|(^|/)qualification_logs/|(^|/)node_modules/|(^|/)logs/"
           pattern="$pattern|(^|/)RPT-[^/]*\.pdf$|(^|/)\.env$"
+          # A PDF at the repository root is case material or a generated report.
+          # Test fixtures are allowed only inside qualification/ and migration_kit/.
+          pattern="$pattern|^[^/]*\.pdf$|(^|/)2026_08_04 "
           if git ls-files | grep -E "$pattern"; then
             echo "::error::a tracked file matches a forbidden path or extension"
             echo "Keep evidence, archives, local environments and generated reports out of the repository."

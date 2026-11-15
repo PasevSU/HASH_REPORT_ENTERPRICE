@@ -37,7 +37,7 @@ afterwards. Please allow the fix to be published before disclosing the defect.
 |---|---|---|
 | Evidence databases | `*.sqlite3`, `*.db`, `ChronoSeal_Archive/`, `ChronoSeal_Evidence/` | contain the case inventory, paths and digests |
 | Generated reports | `RPT-*.pdf`, produced PDFs and manifests | contain file names, paths and personal data |
-| Real case material | court documents, contracts, correspondence, scans | personal data of real people |
+| Real case material | court documents, contracts, correspondence, scans, **any PDF at the repository root** | personal data of real people |
 | Credentials | tokens, passwords, `.env`, `*.der`, `*.p12`, `*.pfx` | direct access risk |
 | Private keys | anything containing `BEGIN PRIVATE KEY`, `BEGIN RSA PRIVATE KEY`, `BEGIN OPENSSH PRIVATE KEY` | signing and TSA material |
 | Local environments | `.chronoseal-venv/`, `node_modules/`, `vendor/` payloads | thousands of files, no review value |
@@ -58,9 +58,13 @@ Three layers keep the list above true, in this order:
 2. **`.github/workflows/repo-guard.yml`** - runs on every push and pull request
    and fails when a tracked file is above 50 MB, matches a forbidden path or
    extension, contains private key material, or contains a token pattern.
-3. **Manual review before publishing a release** - a secret and personal-data
-   scan over the exact archive that will be attached to the release, with the
-   resulting SHA-256 recorded next to the archive.
+3. **Release assets are built from the published tree** - `git archive
+   origin/main`, so an archive can only ever contain files the guard already
+   accepted. Third-party or artificially generated fixtures stay under
+   `qualification/` and `migration_kit/`; nothing is added to an archive by hand.
+
+A release asset is covered by exactly the same rules as the repository. An
+archive that predates a rule must be rebuilt, not exempted.
 
 ## Handling a machine that ran a case
 

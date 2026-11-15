@@ -31,6 +31,9 @@ HASH_REPORT_ENTERPRICE*/
 RPT-*.pdf
 RPT-*_HASHREPORT_TYP_*.pdf
 2026_08_04 Ergänzungspflegschaft Nikolay Plamenov Petrov.pdf
+# No PDF belongs at the repository root: root-level documents are case material
+# or generated reports, never test fixtures. Fixtures live in qualification/.
+/*.pdf
 
 # --- Local environments and dependency payloads -----------------------------
 .chronoseal-venv/
