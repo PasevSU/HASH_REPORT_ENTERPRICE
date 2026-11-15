@@ -7,10 +7,10 @@ folder can still be proven later, on another machine, without the original data.
 
 |  |  |
 |---|---|
-| Version | 5.5.1 |
+| Version | 5.6.0 |
 | Platform | Windows 10 / 11 (x64) |
 | Runtime | Python 3.12+ and Node.js 22.12+ |
-| Interface | Tkinter desktop GUI (5 pages) and a headless CLI |
+| Interface | Tkinter desktop GUI (6 pages) and a headless CLI |
 | Licence | Proprietary, all rights reserved - see [LICENSE](LICENSE) |
 
 ## What a run produces
@@ -236,7 +236,7 @@ records every iteration, including the failures that were fixed.
 
 ## Brand identity
 
-The interface carries the **ChronoSeal(TM) Enterprise v5.5.1** identity: navy
+The interface carries the **ChronoSeal(TM) Enterprise** identity introduced in v5.5.1: navy
 `#0B1F3B` primary, blue `#1E64D6` accent, gold `#D4AF37`, `#E6EEF7` background
 and white surfaces, with Inter for the interface and Source Sans 3 for documents
 (both fall back to Segoe UI / the system mono face when they are not installed).
@@ -330,7 +330,7 @@ With the GitHub CLI the same reads need no token plumbing:
 
 ```powershell
 gh api repos/PasevSU/HASH_REPORT_ENTERPRICE/contents/js/api.mjs --jq '.sha'
-gh release download chronoseal-v5.5.1 --pattern '*.zip' -D .
+gh release download chronoseal-v5.6.0 --pattern '*.zip' -D .
 ```
 
 ### Running the clone you downloaded
@@ -371,10 +371,10 @@ input (the evidence set must not grow with the program's own output), and
 
 As a package-manager source it also works - the name is `chronoseal-python-rfc3161-addon`
 (the root manifest is `private`, so it is not on npm, but `file:` and `github:` sources
-resolve). Pin a tag instead of `#main` once you need a reproducible build:
+resolve). The example pins the release tag so the build is reproducible:
 
 ```powershell
-npm install github:PasevSU/HASH_REPORT_ENTERPRICE#main --no-audit --no-fund
+npm install github:PasevSU/HASH_REPORT_ENTERPRICE#chronoseal-v5.6.0 --no-audit --no-fund
 ```
 
 ```js

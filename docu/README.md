@@ -32,7 +32,7 @@ The LOTL/TSL XMLDSig verifier uses the OJEU C/2026/1944 signer certificate pin a
 
 ## Брандинг на интерфейса
 
-Интерфейсът използва идентичността **ChronoSeal™ Enterprise v5.5.1**
+Интерфейсът използва идентичността **ChronoSeal™ Enterprise v5.6.0**
 (`#0B1F3B` основен, `#1E64D6` акцент, `#D4AF37` златен, `#E6EEF7` фон, `#FFFFFF`
 панели; Inter за интерфейса и Source Sans 3 за документи). Всички цветове,
 шрифтове, икони и продуктови низове живеят на едно място —

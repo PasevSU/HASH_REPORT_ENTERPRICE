@@ -16,8 +16,8 @@ export const DEFAULTS = {
   subject: 'Legal Framework, Technical Aspects',
   keywords: 'electronic Signatures, electronic Seals, ETSI, RFC, eIDAS-Standards, '
     + 'Cryptography, Signature Algorithms, Evidence Record',
-  producer: 'ChronoSeal Enterprise 5.5.1 PDF normalizer (pure JavaScript)',
-  creatorTool: 'ChronoSeal Enterprise 5.5.1',
+  producer: 'ChronoSeal Enterprise 5.6.0 PDF normalizer (pure JavaScript)',
+  creatorTool: 'ChronoSeal Enterprise 5.6.0',
   fontDir: process.env.CS_FONT_DIR || 'C:/Windows/Fonts',
   iccPath: process.env.CS_ICC || 'C:/Windows/System32/spool/drivers/color/ewsrgb.icm',
   pageLabels: true,

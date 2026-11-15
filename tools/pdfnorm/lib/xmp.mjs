@@ -17,7 +17,7 @@ export const PDFA = { part: 2, conformance: 'B' };
 export function buildXmp(meta) {
   const {
     title, author, subject, keywords, creatorTool, producer,
-    createDate, modifyDate, toolVersion = 'ChronoSeal Enterprise 5.5.1',
+    createDate, modifyDate, toolVersion = 'ChronoSeal Enterprise 5.6.0',
   } = meta;
   const created = xmpDate(createDate);
   const modified = xmpDate(modifyDate);

@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from types import MappingProxyType
 
-VERSION = "5.5.1"
+VERSION = "5.6.0"
 
 # --------------------------------------------------------------------- palette
 # The five brand colours come straight from the brand sheet.  Everything else
