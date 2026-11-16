@@ -25,6 +25,8 @@ set "PERFILE=0"
 set "ARCHIVE=config"
 set "STRICT=0"
 set "EMBED=0"
+set "EMBEDPDF="
+set "EMBEDPOS=after"
 set "PROFILE=auto"
 
 :MENU
@@ -44,6 +46,8 @@ echo   8. Strict layout gate .................. %STRICT%
 echo   9. Explicit file list .................. [%FILES%]
 echo  10. Embedded source PDF (one PDF) ....... %EMBED%
 echo  11. Report type ........................ [%PROFILE%]
+echo  12. PDF to include ..................... [%EMBEDPDF%]
+echo  13. Where it goes ...................... %EMBEDPOS%
 echo ----------------------------------------------------------------
 echo   R. Run        H. Help        Q. Quit
 echo ================================================================
@@ -63,6 +67,8 @@ if /i "%CHOICE%"=="8" goto :TOGSTRICT
 if /i "%CHOICE%"=="9" goto :SETFILES
 if /i "%CHOICE%"=="10" goto :TOGEMBED
 if /i "%CHOICE%"=="11" goto :CYCLEPROFILE
+if /i "%CHOICE%"=="12" goto :SETEMBEDPDF
+if /i "%CHOICE%"=="13" goto :TOGEMBEDPOS
 if /i "%CHOICE%"=="R" goto :RUN
 if /i "%CHOICE%"=="H" goto :HELP
 if /i "%CHOICE%"=="Q" goto :END
@@ -133,6 +139,25 @@ goto :MENU
 if "%EMBED%"=="1" (set "EMBED=0") else (set "EMBED=1")
 goto :MENU
 
+:TOGEMBEDPOS
+if /i "%EMBEDPOS%"=="after" (set "EMBEDPOS=before") else (set "EMBEDPOS=after")
+goto :MENU
+
+:SETEMBEDPDF
+echo.
+set "ANSWER="
+set /p "ANSWER=PDF to include in a folder report (empty clears)> "
+if not "%ANSWER%"=="" (
+  set "ANSWER=%ANSWER:"=%"
+  if not exist "%ANSWER%" (
+    echo BLOCKED: no such file: %ANSWER%
+    pause
+    goto :MENU
+  )
+)
+set "EMBEDPDF=%ANSWER%"
+goto :MENU
+
 :CYCLEPROFILE
 if /i "%PROFILE%"=="auto" (
   set "PROFILE=single"
@@ -141,6 +166,10 @@ if /i "%PROFILE%"=="auto" (
 ) else if /i "%PROFILE%"=="combo" (
   set "PROFILE=combo_all"
 ) else if /i "%PROFILE%"=="combo_all" (
+  set "PROFILE=combo_pdf"
+) else if /i "%PROFILE%"=="combo_pdf" (
+  set "PROFILE=combo_all_pdf"
+) else if /i "%PROFILE%"=="combo_all_pdf" (
   set "PROFILE=volume"
 ) else if /i "%PROFILE%"=="volume" (
   set "PROFILE=file_information_report"
@@ -154,6 +183,15 @@ goto :MENU
 ;READYEMBED is a subroutine on purpose: an unescaped parenthesis inside
 ;an if(...) block would terminate the block early.
 :READYEMBED
+if "%EMBEDPDF%"=="" goto :READYEMBEDSELF
+echo %EMBEDPDF%| findstr /i /e /c:".pdf" >nul
+if errorlevel 1 (
+  echo BLOCKED: the included file must be a .pdf: %EMBEDPDF%
+  pause
+  exit /b 1
+)
+exit /b 0
+:READYEMBEDSELF
 if not "%FILES%"=="" goto :READYEMBEDFILES
 if exist "%SOURCE%\" (
   echo BLOCKED: the embedded mode needs one PDF file, not a folder.
@@ -182,7 +220,10 @@ goto :MENU
 
 :RUN
 echo.
-if "%EMBED%"=="1" (
+set "EMBEDNEEDED=0"
+if "%EMBED%"=="1" set "EMBEDNEEDED=1"
+if not "%EMBEDPDF%"=="" set "EMBEDNEEDED=1"
+if "%EMBEDNEEDED%"=="1" (
   call :READYEMBED
   if errorlevel 1 goto :MENU
 )
@@ -219,7 +260,9 @@ if /i not "%PROFILE%"=="auto" if "%PERFILE%"=="0" set "ARGS=%ARGS% --profile %PR
 if /i "%ARCHIVE%"=="on" set "ARGS=%ARGS% --archive"
 if /i "%ARCHIVE%"=="off" set "ARGS=%ARGS% --no-archive"
 if "%STRICT%"=="1" set "ARGS=%ARGS% --require-layout-pass"
-if "%EMBED%"=="1" set "ARGS=%ARGS% --embed-pdf"
+if "%EMBED%"=="1" if "%EMBEDPDF%"=="" set "ARGS=%ARGS% --embed-pdf"
+if not "%EMBEDPDF%"=="" set "ARGS=%ARGS% --embed-pdf "%EMBEDPDF%""
+if not "%EMBEDPOS%"=="after" if "%EMBEDNEEDED%"=="1" set "ARGS=%ARGS% --embed-position %EMBEDPOS%"
 if not "%FILTERS%"=="" set "ARGS=%ARGS% %FILTERS%"
 
 echo node js\cli.mjs %ARGS%
@@ -251,7 +294,7 @@ echo      own report number, evidence case and archive row.
 echo   7  Archive: config (respect the repository configuration), on, off.
 echo   8  Strict layout gate: block publication instead of reporting REVIEW.
 echo   9  Explicit file list, one path per line.
-echo  10  Embedded source PDF: one .pdf only. The report keeps its own
+echo  10  Embedded source PDF: the report is about one .pdf, keeps its own
 echo      pages, appends the pages of that PDF and attaches the original
 echo      byte for byte, exactly like the Python single_pdf profile.
 echo      This mode always uses the single_pdf report type.
@@ -262,12 +305,22 @@ echo                                 recursive -^> COMBO_ALL
 echo        single                   one file, evidence package
 echo        combo                    current folder, evidence package
 echo        combo_all                recursive, with the folder breakdown
+echo        combo_pdf                folder plus one included PDF
+echo        combo_all_pdf            recursive plus one included PDF
 echo        volume                   where the bytes live, per folder
 echo        file_information_report  SHA-256 file sheet, no legal reprint
 echo        single_pdf               one embedded source PDF
+echo  12  PDF to include in a folder report: the report keeps its own
+echo      pages, inserts the pages of that PDF and attaches the original
+echo      byte for byte - the Python combo_pdf / combo_all_pdf types.
+echo      A folder report takes one chosen PDF here; option 10 takes
+echo      the file the one-file report is about. Set one, not both.
+echo  13  Position of the included pages: after the report (default)
+echo      or before it, exactly like --embed-position in Python.
 echo      An explicit type is ignored by per-file mode, which always writes
 echo      one SINGLE report per file.
-echo      The single_pdf type needs option 10; without it the CLI refuses,
+echo      A type that documents an included PDF (single_pdf, combo_pdf,
+echo      combo_all_pdf) needs option 10 or 12; without it the CLI refuses,
 echo      because the name would describe content the document lacks.
 echo.
 echo Exit codes: 0 = report published, 2 = layout review, 1 = error.

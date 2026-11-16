@@ -30,6 +30,43 @@ class DistributionSafetyTests(unittest.TestCase):
                 self.assertEqual(text.count('if /I not "%POS%"=='), 2)
 
 
+    def test_js_launcher_reaches_every_report_type_and_both_embedding_routes(self):
+
+        # The clone's menu is the only entry point most users see: a profile or
+
+        # an option the menu cannot name is unreachable in practice.
+
+        data = (ROOT / "js" / "HashReport.bat").read_bytes()
+
+        self.assertNotIn(b"\n", data.replace(b"\r\n", b""), "js/HashReport.bat must stay CRLF")
+
+        text = data.decode("utf-8")
+
+        # A label reference in the dispatch block would match too, so anchor on the label line.
+
+        start = text.index("\n:CYCLEPROFILE")
+
+        cycle = text[start:text.index("goto :MENU", start)]
+
+        for profile in ("auto", "single", "combo", "combo_all", "combo_pdf", "combo_all_pdf",
+
+                        "volume", "file_information_report", "single_pdf"):
+
+            with self.subTest(profile=profile):
+
+                self.assertIn('set "PROFILE=%s"' % profile, cycle)
+
+        self.assertIn("--embed-pdf", text)
+
+        self.assertIn("--embed-position", text)
+
+        self.assertIn("BLOCKED: the included file must be a .pdf", text)
+
+        self.assertIn("12. PDF to include", text)
+
+        self.assertIn("13. Where it goes", text)
+
+
     def test_installer_checks_python_before_installing_dependencies(self):
         text = (ROOT / "Install_Windows.bat").read_text(encoding="utf-8")
         version_check = text.index("sys.version_info < (3,12)")

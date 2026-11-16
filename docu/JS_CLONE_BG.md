@@ -26,15 +26,15 @@ Python генераторът изисква интерпретатор, `pytz`,
 | `lib/config.mjs` | Чете `config.json`; `generatorSettings`, `evidencePolicy`, `archiveSettings`, `toolPath` |
 | `lib/selection.mjs` | `resolveSelection` / `discover` — рекурсия, филтри, `MAX_FILES = 20000`, относителни пътища |
 | `lib/util.mjs` | `sha256File`, `sha256Bytes`, `atomicWriteBytes/Json`, `jsonSafe`, `formatUtc`, `posix`, `A4_PT` |
-| `lib/identity.mjs` | `reportId`, `documentName`, `isGeneratedHashReport`, системна/потребителска/томна информация; разпознава всичките шест маркера `_HASHREPORT_TYP_*` |
+| `lib/identity.mjs` | `reportId`, `documentName`, `isGeneratedHashReport`, системна/потребителска/томна информация; разпознава всичките осем маркера `_HASHREPORT_TYP_*` |
 | `lib/generate.mjs` | Оркестрация на отчета: `hashSelection`, `aggregatePayload`, `aggregateProof`, `describeFile`, триминаващ рендер и цикъл на сходимост |
 | `lib/classify.mjs` | `classifyArtifactFile` — точно копие на Python `_classify_artifact_file`, `TYPE_PRIORITY`, `typeCounts` |
 | `lib/report.mjs` | Съдържание и оформление: типове редове, колони, формати на клетките, единадесетте дийджеста; `REPORT_TYPE_LABELS`, `reportType()` |
-| `lib/embed.mjs` | `describeSourcePdf`, `appendSourcePages`, `attachOriginal` — вграденият изходен PDF за типа `single_pdf` |
-| `lib/reports/index.mjs` | Регистър на шестте типа: `REPORT_MODULES`, `loadReportModule`, `reportModuleIds`, `listReportModules`, `renderReportSections` |
+| `lib/embed.mjs` | `describeSourcePdf`, `importPages`, `attachFile`, `readAttachment`, `embedSourcePdf`, `embedCodes`, `EMBED_POSITIONS` — вграденият изходен PDF за `single_pdf`, `combo_pdf` и `combo_all_pdf`, с позиция `before` / `after` |
+| `lib/reports/index.mjs` | Регистър на осемте типа: `REPORT_MODULES`, `loadReportModule`, `reportModuleIds`, `listReportModules`, `renderReportSections` |
 | `lib/reports/sections.mjs` | Шестте споделени секции: `timestamp_record`, `generation_note`, `legal_documentation`, `text_checksums`, `source_pdf_evidence`, `volume_breakdown`; `getSection` хвърля при непознат идентификатор |
 | `lib/reports/checksums.mjs` | Двигател на текстовите хешове: `PAGE_TEXT_ALGORITHMS` (6), `ALL_TEXT_ALGORITHMS` (11), `digestText`, `digestBytes`, `digestLength`, `normalisePageText`, `framePageTexts`, `pageDigests`, `documentDigests`, `footerHashLines`, `placeholderDigests` |
-| `lib/reports/{single,single_pdf,combo,combo_all,volume,file_information_report}.mjs` | По един самостоятелен модул за всеки тип — секциите и редът им като в съответния Python профил |
+| `lib/reports/{single,single_pdf,combo,combo_pdf,combo_all,combo_all_pdf,volume,file_information_report}.mjs` | По един самостоятелен модул за всеки тип — секциите и редът им като в съответния Python профил |
 | `lib/pdf/builder.mjs` | Авторски PDF слой върху `tools/pdfnorm/lib/parser.mjs` (шрифтове, subsetting, `/ToUnicode`) |
 | `lib/pdf/layout.mjs` | Абсолютно позициониране, колони, пренос на редове, футър с `totalPages` |
 | `lib/fonts.mjs` | Избор на системни TrueType шрифтове (Arial / Times New Roman) |
@@ -44,9 +44,9 @@ Python генераторът изисква интерпретатор, `pytz`,
 | `lib/archive.mjs` | `archiveReport` (неизменяема папка + SQLite), `readArchivedFile`, `renameWithRetry` |
 | `test/core.test.mjs` | 7 unit теста: филтри, откриване, агрегация, класификация, идентичност, формати, политика |
 | `test/workflow.test.mjs` | 8 интеграционни теста: пълен отчет, филтриран + SINGLE, невалидни аргументи, архив, самоизключване, per-file |
-| `test/api.test.mjs` | 7 теста на програмния API: преобразуване на опциите, създаване на папка, SINGLE/COMBO, изолация на грешка, валидация |
-| `test/embed.test.mjs` | 7 теста на вградения изходен PDF: геометрия и прикачен оригинал, отказ за не-PDF, отказ при повече от един файл, отказ за чужд профил, отказ на типа `single_pdf` без вграждане, пълен `single_pdf` отчет, per-file с вграждане |
-| `test/reports.test.mjs` | 9 теста на шестте типа: по един модул на профил без сираци, всички секции се резолвват, редът на секциите, хешовете във футъра се преизчисляват от нарисувания текст, обхватът на документа, приложението не хешира себе си, съдържание на двата специални типа, шестте маркера, изключване на хешовете |
+| `test/api.test.mjs` | 8 теста на програмния API: преобразуване на опциите, двата пътя на вграждането (`--embed-pdf` със и без стойност), създаване на папка, SINGLE/COMBO, изолация на грешка, валидация |
+| `test/embed.test.mjs` | 17 теста на вградения изходен PDF: геометрия и прикачен оригинал, отказ за не-PDF, отказ при повече от един файл, отказ за чужд профил, отказ на трите вградени типа без вграждане, пълен `single_pdf` отчет, `combo_pdf` и `combo_all_pdf` отчет, позиция `before`, per-file с вграждане, отказ на позиция извън `before`/`after`, забрана да се включи самата доказателствена папка, кодове за грешка по име на типа |
+| `test/reports.test.mjs` | 10 теста на осемте типа: по един модул на профил без сираци, всички секции се резолвват, редът на секциите, хешовете във футъра се преизчисляват от нарисувания текст, обхватът на документа, приложението не хешира себе си, съдържание на специалните типове, осемте маркера, `_PDF` остава последен при рекурсия, изключване на хешовете |
 
 ## 3. CLI
 
@@ -62,9 +62,10 @@ node js/cli.mjs --files <file[,file...]> [--output <folder>]
 | `--filter <pattern>` | Повтарящ се филтър, същата граматика като GUI (`*.pdf`, `*eml.pdf`) |
 | `--files <list>` | Явен избор, разделен със запетая или нов ред; филтрите не важат |
 | `--output <folder>` | Къде се публикува готовият отчет (по подразбиране: папката-източник) |
-| `--profile <id>` | Профил от `hash_report_generator/report_profiles` — `single`, `single_pdf`, `combo`, `combo_all`, `volume`, `file_information_report` (по подразбиране `single` за един файл, иначе `combo`) |
+| `--profile <id>` | Профил от `hash_report_generator/report_profiles` — `single`, `single_pdf`, `combo`, `combo_pdf`, `combo_all`, `combo_all_pdf`, `volume`, `file_information_report` (по подразбиране `single` за един файл, иначе `combo`) |
 | `--per-file` | По един самостоятелен SINGLE отчет за всеки избран файл — собствен номер, доказателствена папка и архивен ред |
-| `--embed-pdf` | Само за един PDF вход и само за профил `single` / `single_pdf`: страниците на изходния PDF се добавят след отчета, а оригиналът се прикачва байт по байт (паритет с `single_pdf`). Без него `--profile single_pdf` се отказва, защото името би описало съдържание, което документът не носи |
+| `--embed-pdf` | Вгражда изходен PDF: страниците му влизат в документа, а оригиналът се прикачва байт по байт. **Без стойност** — вгражда се единственият вход (профил `single` / `single_pdf`, паритет с Python `single_pdf`). **Със стойност** — избраният PDF се вгражда в отчет за папка (`combo_pdf`, рекурсивно `combo_all_pdf`). Без него всеки от трите вградени профила се отказва, защото името би описало съдържание, което документът не носи |
+| `--embed-position <p>` | `after` (по подразбиране) — вградените страници идват след отчета; `before` — преди него. Изисква `--embed-pdf`, иначе се отказва с `--embed-position needs --embed-pdf` |
 | `--archive` / `--no-archive` | Принудително включва/изключва архива независимо от конфигурацията |
 | `--no-normalise` | Оставя PDF-а без PDF/A-2b етапа |
 | `--require-layout-pass` | Блокира публикуването при `REVIEW` от layout гейта |
@@ -85,7 +86,7 @@ node js/cli.mjs --files <file[,file...]> [--output <folder>]
 2. **Хеширане.** Всеки файл се описва с `sha256`, размер и тип; счита се `aggregate_proof =
    sha256(concat(sha256_hex_lower + relative_name))`.
 3. **Отчет.** Триминаващ рендер (виж раздел 4.1). Името е
-   `{report_id}_HASHREPORT_TYP_{SINGLE|SINGLE_PDF|COMBO|COMBO_ALL|VOLUME|FILE_INFORMATION}.pdf`.
+   `{report_id}_HASHREPORT_TYP_{SINGLE|SINGLE_PDF|COMBO|COMBO_PDF|COMBO_ALL|COMBO_ALL_PDF|VOLUME|FILE_INFORMATION}.pdf`.
 4. **PDF/A-2b.** `normalizeReport` вгражда подмножества на шрифтовете, добавя sRGB output intent, XMP с
    `pdfaid:part=2`/`pdfaid:conformance=B` и поправя xref; `inspectPdf` прочита обратно страници,
    метаданни и output intent.
@@ -94,7 +95,7 @@ node js/cli.mjs --files <file[,file...]> [--output <folder>]
 6. **Архив.** `archiveReport` копира отчета и доказателствата в неизменяема папка, записва редовете в
    SQLite (`node:sqlite`) и отказва повторен `report_id` (`refusing overwrite`).
 
-### 4.1 Шестте типа отчети
+### 4.1 Осемте типа отчети
 
 Всеки тип живее в собствен модул под `lib/reports/` и описва само своя ред на секции; съдържанието на
 секциите е общо, за да не се разминават типовете едно от друго.
@@ -104,12 +105,29 @@ node js/cli.mjs --files <file[,file...]> [--output <folder>]
 | `single` | `_TYP_SINGLE` | `timestamp_record`, `generation_note`, `legal_documentation`, `text_checksums` |
 | `single_pdf` | `_TYP_SINGLE_PDF` | `timestamp_record`, `source_pdf_evidence`, `generation_note`, `legal_documentation`, `text_checksums` |
 | `combo` | `_TYP_COMBO` | `timestamp_record`, `generation_note`, `legal_documentation`, `text_checksums` |
+| `combo_pdf` | `_TYP_COMBO_PDF` | `timestamp_record`, `source_pdf_evidence`, `generation_note`, `legal_documentation`, `text_checksums` |
 | `combo_all` (рекурсивен `combo`) | `_TYP_COMBO_ALL` | `timestamp_record`, `volume_breakdown`, `generation_note`, `legal_documentation`, `text_checksums` |
+| `combo_all_pdf` (рекурсивен `combo_pdf`) | `_TYP_COMBO_ALL_PDF` | `timestamp_record`, `source_pdf_evidence`, `volume_breakdown`, `generation_note`, `legal_documentation`, `text_checksums` |
 | `volume` | `_TYP_VOLUME` | `volume_breakdown`, `generation_note`, `legal_documentation`, `text_checksums` |
 | `file_information_report` | `_TYP_FILE_INFORMATION` | `timestamp_record`, `generation_note`, `text_checksums` (без правния препечат) |
 
-Маркерът е и самоличност: `isGeneratedHashReport` разпознава точно тези шест имена, затова отчет,
+Маркерът е и самоличност: `isGeneratedHashReport` разпознава точно тези осем имена, затова отчет,
 публикуван от клонинга, никога не влиза в доказателствения набор на следващ отчет.
+
+#### 4.1.1 Вграден изходен PDF
+
+Трите типа `single_pdf`, `combo_pdf` и `combo_all_pdf` описват документ, който е включен в самия отчет.
+Един изходен PDF се вгражда по два начина едновременно: страниците му влизат в документа, а файлът се
+прикачва байт по байт. Секцията `source_pdf_evidence` носи името, `sha256`, размера, броя видими
+страници, първата видима страница, позицията и резултата от проверката за подпис.
+
+`--embed-position before` поставя страниците на източника **преди** страниците на отчета, `after`
+(по подразбиране) — **след** тях. Позицията не променя маркера, името или броя на страниците на отчета;
+тя определя само къде в готовия PDF стоят чуждите страници. Приложението с текстовите хешове описва
+само страниците на отчета — както при `single_pdf`, където вградените страници също не се хешират.
+
+Маркерът може да носи и `_ALL`, и `_PDF` едновременно; `_ALL` винаги стои преди `_PDF`, защото `_ALL`
+е суфикс на типа (рекурсия), а `_PDF` — на вграждането. Затова съществува само `COMBO_ALL_PDF`.
 
 ### 4.2 Триминаващ рендер и текстови хешове
 
@@ -129,9 +147,10 @@ node js/cli.mjs --files <file[,file...]> [--output <folder>]
 `pageTexts`. Така съдържанието на футъра никога не влиза в собствения си хеш, а публикуваните стойности
 могат да се преизчислят от нарисувания документ — точно това проверява `test/reports.test.mjs`.
 
-Около рендера работи цикъл на сходимост: при `single_pdf` вградените страници добавят височина, което
-може да смени броя страници, затова `runPass()` се повтаря до 3 пъти, докато
-`context.embeddedPdf.reportPages === pass.pageCount`.
+Около рендера работи цикъл на сходимост: при `single_pdf`, `combo_pdf` и `combo_all_pdf` секцията с
+доказателствата за източника добавя височина, което може да смени броя страници, затова `runPass()` се
+повтаря до 3 пъти, докато `context.embeddedPdf.reportPages === pass.pageCount`. Самите вградени страници
+влизат в PDF-а след този цикъл, така че публикуваните хешове описват само страниците на отчета.
 
 `generateReport({ textChecksums: false })` изключва стъпка 2 и 3 и връща `textChecksums: null` — тогава
 отчетът е лек, но не носи доказателство за собствения си текст. Това е вътрешна опция на генератора;
@@ -141,8 +160,8 @@ CLI и `js/api.mjs` нарочно не я подават, защото публ
 
 | Аспект | Python | Клонинг |
 | --- | --- | --- |
-| Име на отчета | `{id}_HASHREPORT_TYP_{COMBO,COMBO_ALL,SINGLE,SINGLE_PDF,VOLUME,FILE_INFORMATION}.pdf` | същото, включително `_ALL` |
-| Самоизключване | `_is_generated_hash_report` (регекс за всички шест маркера) | `isGeneratedHashReport` (същият набор) |
+| Име на отчета | `{id}_HASHREPORT_TYP_{COMBO,COMBO_ALL,COMBO_PDF,COMBO_ALL_PDF,SINGLE,SINGLE_PDF,VOLUME,FILE_INFORMATION}.pdf` | същото, включително `_ALL` и `_PDF` в този ред |
+| Самоизключване | `_is_generated_hash_report` (регекс за всички осем маркера) | `isGeneratedHashReport` (същият набор) |
 | Текстови хешове | MD5/SHA-1/224/256/384/512/SHA3-224/256/384/512/RIPEMD-160 на текста на всяка страница, плюс блок във футъра | същото, `lib/reports/checksums.mjs` |
 | `report_id` | `RPT-YYYYMMDD-HHMMSSmmm-XXXXXXXX` | същото |
 | Хеш | `sha256` на файла, lowercase hex | същото |
@@ -199,16 +218,17 @@ CLI и `js/api.mjs` нарочно не я подават, защото публ
 | `reportForFiles keeps the good reports when one file cannot be read` | липсващ файл → `failed 1`, `status ERROR`, двата четими файла са публикувани; при `continueOnError: false` грешката се хвърля |
 | `the API validates its inputs instead of publishing an empty report` | липсващ файл/папка, файл вместо папка, папка вместо файл, празен списък |
 
-Резултат: **38/38 клонинг** (7 core + 8 workflow + 7 API + 7 embedded PDF + 9 типа, ~30 s), **75/75**
-съществуващи JS тестове (`tools/pdfnorm/test/`, `tools/jsx/test/`), **122/122** Python теста в
-модулите, засегнати от разширеното самоизключване (`tests/test_hardening.py`,
-`tests/test_file_selection.py`, `tests/test_ui_selection_filters.py`, `tests/test_report_archive.py`,
-`hash_report_generator/tests/test_migration_contracts.py`) — всички минават.
+Резултат: **50/50 клонинг** (7 core + 8 workflow + 8 API + 17 embedded PDF + 10 типа, ~60 s),
+**75/75** съществуващи JS тестове (`tools/pdfnorm/test/`, `tools/jsx/test/`) и **513** Python теста
+(326 в `tests/`, 133 в `hash_report_generator/tests/`, 54 само с `pytest`) — общо **638**, всички минават.
 
 Проверка на самите типове извън тестовете: `single`, `combo`, `combo_all`, `volume` и
 `file_information_report` бяха пуснати през CLI върху реална папка и публикуваха съответно
 `_TYP_SINGLE`, `_TYP_COMBO_ALL`, `_TYP_COMBO_ALL`, `_TYP_VOLUME`, `_TYP_FILE_INFORMATION` — нито един
-тип не се представя за друг.
+тип не се представя за друг. Вградените типове бяха проверени по същия начин върху реален PDF:
+`single_pdf`, `combo_pdf` и `combo_all_pdf` публикуваха `_TYP_SINGLE_PDF`, `_TYP_COMBO_PDF` и
+`_TYP_COMBO_ALL_PDF`, броят страници нарасна точно с изходните страници, а при `--embed-position before`
+първата страница на готовия PDF е страницата на източника.
 
 ### Измерен резултат
 
@@ -234,8 +254,9 @@ CLI и `js/api.mjs` нарочно не я подават, защото публ
 | `reportForFiles(files, options)` | `{exitCode, status, files, failed, reports[], elapsed_seconds}` — по един отчет на файл |
 
 Опции: `source`, `files`, `filters`, `recursive`, `output`, `profile`, `archive` (`true` / `false` /
-`null` = по конфигурация), `normalise`, `requireLayoutPass`, `perFile`, `quiet`, `log`,
-`continueOnError`, `repoRoot`. `log: true` връща конзолния изход на CLI, иначе API-то мълчи.
+`null` = по конфигурация), `embedPdf` (`true` за собствения вход, или път до PDF за вграждане в отчет за
+папка), `embedPosition` (`before` / `after`, `after` по подразбиране), `normalise`, `requireLayoutPass`,
+`perFile`, `quiet`, `log`, `continueOnError`, `repoRoot`. `log: true` връща конзолния изход на CLI, иначе API-то мълчи.
 
 ```js
 import { reportForFiles } from './js/api.mjs';
@@ -268,8 +289,10 @@ console.log(batch.status, batch.failed, batch.reports.map((r) => r.summary.repor
 | 7 | Архив: `config` (по конфигурация), `on`, `off` |
 | 8 | Строг layout гейт (`--require-layout-pass`) |
 | 9 | Явен списък файлове, по един път на ред |
-| 10 | Вграден изходен PDF (`--embed-pdf`): отчетът и оригиналът в един файл, само за един PDF вход |
-| 11 | Тип отчет (`--profile`): `auto` → `single` → `combo` → `combo_all` → `volume` → `file_information_report` → `single_pdf` → `auto` |
+| 10 | Вграждане (`--embed-pdf` без стойност): собственият вход се вгражда в отчета — един PDF, тип `single_pdf` |
+| 11 | Тип отчет (`--profile`): `auto` → `single` → `combo` → `combo_all` → `combo_pdf` → `combo_all_pdf` → `volume` → `file_information_report` → `single_pdf` → `auto` |
+| 12 | PDF за вграждане (`--embed-pdf <pdf>`): избран PDF към отчет за папка — `combo_pdf` / `combo_all_pdf` |
+| 13 | Къде отива вграденият PDF (`--embed-position`): `after` → `before` (по подразбиране `after`) |
 | R / H / Q | Стартиране / помощ / изход |
 
 Преди стартиране менюто отпечатва точната команда, за да може същата линия да се използва в скрипт.
@@ -285,8 +308,12 @@ console.log(batch.status, batch.failed, batch.reports.map((r) => r.summary.repor
 - Кавичките от път, получен чрез влачене, се премахват, а изходната папка се създава предварително.
 - `--profile` се добавя към командата само когато `%PROFILE%` не е `auto` и не е включен per-file режим
   (per-file винаги публикува `SINGLE` отчети). Така `auto` остава поведението на CLI по подразбиране.
-- Точка 11 само превключва стойността — менюто не проверява комбинации; несъвместима комбинация (например
+- Точки 10–13 само събират стойности — менюто не проверява комбинации; несъвместима комбинация (например
   `--embed-pdf` с `--profile combo`) се отказва от CLI преди да е записан файл, с ясно съобщение.
+- Точка 12 проверява избора предварително: липсващ файл дава `BLOCKED: no such file`, файл без `.pdf`
+  — `BLOCKED: the included file must be a .pdf`, и менюто се връща към избора, без да стартира нищо.
+- `--embed-position` се добавя към командата само когато стойността е `before` и нещо наистина се
+  вгражда, за да остане `after` поведението по подразбиране на CLI.
 
 ## 9. Ограничения
 
@@ -296,8 +323,12 @@ console.log(batch.status, batch.failed, batch.reports.map((r) => r.summary.repor
   `node js/cli.mjs` и `node --test js/test/` директно или работете от монтирано устройство.
 - Клонингът пише само в `--output` и в `%TEMP%` по време на тестовете; в репозиторито не се създават
   `*.sqlite3`, `*.db` или `RPT-*.pdf` (изискване на `.github/workflows/repo-guard.yml`).
-- `--embed-pdf` (тип `single_pdf`) работи само с **един** PDF вход и само с профил `single`; всичко друго
-  се отказва с грешка преди писане. Отчетът расте с размера на изходния файл, защото оригиналът се
-  прикачва байт по байт — неподходящо за много големи източници.
+- Вграждането има два режима и всеки има своите граници. Без стойност (`single_pdf`) работи само с
+  **един** PDF вход и само с профил `single`. Със стойност (`combo_pdf` / `combo_all_pdf`) изисква
+  отчет за папка (`--source <folder>` или `--files`) и отказва профил, който не вгражда (`combo`,
+  `volume`, `single`), както и `--per-file` — един включен PDF не може да стане част от много отчети.
+  Доказателствената папка на самия отчет никога не може да бъде включена в него.
+- Отчетът расте с размера на изходния файл, защото оригиналът се прикачва байт по байт — неподходящо за
+  много големи източници; при `combo_all_pdf` това важи и за броя страници.
 - Хешовете на текста доказват **съдържанието на страниците**, а не авторство или време. Те не заменят
   TSA маркер; затова редовете за времеви печат остават `NOT APPLIED` / `NOT VERIFIED` / `NOT SEALED`.

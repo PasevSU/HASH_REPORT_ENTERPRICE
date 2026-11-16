@@ -7,7 +7,7 @@ folder can still be proven later, on another machine, without the original data.
 
 |  |  |
 |---|---|
-| Version | 5.7.0 |
+| Version | 5.7.1 |
 | Platform | Windows 10 / 11 (x64) |
 | Runtime | Python 3.12+ and Node.js 22.12+ |
 | Interface | Tkinter desktop GUI (6 pages) and a headless CLI |
@@ -106,7 +106,7 @@ Python, Node.js and OpenSSL, installs `requirements-integration.txt`, locks and
 verifies the Node dependency and runs `chronoseal.selfheal`.
 `Run_Diagnostics.bat` reports the state of every required component at any time.
 No browser, WebView or HTTP channel is used for the interface.
-`js\HashReport.bat` is the launcher of the pure JavaScript clone: it collects the folder, recursion, filter patterns, per-file mode, archive, layout gate, embedded source PDF and report type in a menu and then calls `node js/cli.mjs`, so it needs Node.js only. See `docu/JS_CLONE_BG.md`.
+`js\HashReport.bat` is the launcher of the pure JavaScript clone: it collects the folder, recursion, filter patterns, per-file mode, archive, layout gate, report type, the embedded source PDF, the PDF to include and where that PDF goes (`before` / `after`) in a menu and then calls `node js/cli.mjs`, so it needs Node.js only. See `docu/JS_CLONE_BG.md`.
 
 ## The six pages
 
@@ -381,7 +381,7 @@ With the GitHub CLI the same reads need no token plumbing:
 
 ```powershell
 gh api repos/PasevSU/HASH_REPORT_ENTERPRICE/contents/js/api.mjs --jq '.sha'
-gh release download chronoseal-v5.7.0 --pattern '*.zip' -D .
+gh release download chronoseal-v5.7.1 --pattern '*.zip' -D .
 ```
 
 ### Running the clone you downloaded
@@ -424,7 +424,7 @@ input (the evidence set must not grow with the program's own output), and
 embedded pages come first or last.
 
 Two version numbers appear in the output, and they move independently.
-`package.json` and `chronoseal/branding.py` carry the product version (5.7.0 in
+`package.json` and `chronoseal/branding.py` carry the product version (5.7.1 in
 this release); `js/cli.mjs` exports `CLONE_VERSION` (1.0.0), the version of the
 JavaScript re-implementation, which `--version` prints and which is stamped into
 the `implementation: chronoseal-js-clone/1.0.0` field of every report the clone
@@ -436,7 +436,7 @@ As a package-manager source it also works - the name is `chronoseal-python-rfc31
 resolve). The example pins the release tag so the build is reproducible:
 
 ```powershell
-npm install github:PasevSU/HASH_REPORT_ENTERPRICE#chronoseal-v5.7.0 --no-audit --no-fund
+npm install github:PasevSU/HASH_REPORT_ENTERPRICE#chronoseal-v5.7.1 --no-audit --no-fund
 ```
 
 ```js

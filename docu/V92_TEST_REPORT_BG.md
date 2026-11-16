@@ -7,15 +7,15 @@
 
 | Набор | Команда | Резултат |
 |---|---|---|
-| Python (основен) | `python -m unittest discover -s tests` | **326 OK** |
+| Python (основен) | `python -m unittest discover -s tests` | **327 OK** |
 | Генератор | `python -m unittest discover -s hash_report_generator/tests` | **133 OK** |
 | JS клонинг | `node --test js/test/` | **50 pass / 0 fail** |
 | PDF нормализация + JSX | `node --test tools/pdfnorm/test/ tools/jsx/test/` | **65 pass / 10 skipped / 0 fail** |
-| GUI приемане (pytest) | `python -m pytest tests/test_ui_selection_filters.py -q` | **35 passed** |
+| GUI приемане (pytest) | `python -m pytest tests/test_ui_selection_filters.py tests/test_branding.py -q` | **54 passed** |
 | Vendor интегритет | `node tests/vendor_integrity.mjs` | **PASS** |
 | Ръчна проверка single_pdf | `python tests/real_single_pdf_attachment_check.py` | **PASS** |
 
-Общо: **574 автоматични теста** без нито един провал.
+Общо: **629 автоматични теста** без нито един провал.
 
 ## 2. Итерации и отстранени дефекти
 
@@ -89,6 +89,34 @@
 
 `python -m unittest discover -s tests` → **OK, 326 теста**. 100% зелен резултат.
 
+### Итерация 8 — менюто на JS клонинга не достига новите профили
+
+Функционален пропуск, открит след публикуването: `js/HashReport.bat` (единственият вход за
+потребител без командна линия) не можеше да избере `combo_pdf` / `combo_all_pdf` и не можеше да
+подаде нито PDF за вграждане, нито позиция. Профилите бяха достъпни само през `node js/cli.mjs`.
+
+* Симптом: точка 11 въртеше `auto → single → combo → combo_all → volume →
+  file_information_report → single_pdf`, а `--embed-position` изобщо липсваше в аргументите.
+* Поправка: нови точки **12** (PDF за вграждане) и **13** (позиция), двата профила в цикъла,
+  подпрограми `:SETEMBEDPDF` / `:TOGEMBEDPOS`, предварителна проверка на избора и нови редове в
+  `ARGS`. Менюто не стартира нищо при невалиден избор: `BLOCKED: no such file` за липсващ път и
+  `BLOCKED: the included file must be a .pdf` за чуждо разширение.
+* Ръчни проверки: невалиден път → `BLOCKED` и връщане в менюто; `--embed-pdf` с PDF върху папка →
+  `RPT-…_HASHREPORT_TYP_COMBO_PDF.pdf`, 9 страници, първата е страницата на източника при
+  `before`; фалшив PDF → `BLOCKED / COMBO_PDF_SOURCE_NOT_PDF: orig.pdf: no startxref`.
+
+### Итерация 9 — първата версия на guard теста беше грешна
+
+`tests/test_distribution_safety.py::test_js_launcher_reaches_every_report_type_and_both_embedding_routes`
+падна с **9 провала** (по един на профил).
+
+* Симптом: `set "PROFILE=combo_pdf"` не се намираше в изрязания блок.
+* Причина: `text.index(":CYCLEPROFILE")` съвпадаше с **препратката** `goto :CYCLEPROFILE` в
+  диспечера на менюто, затова изрязаният блок свършваше на следващия `goto :MENU`.
+* Поправка: котвата е началото на ред (`"\n:CYCLEPROFILE"`), тоест самата етикет-линия.
+
+Повторно пускане: **4 OK**. След това целият набор беше пуснат от начало — таблицата в §1.
+
 ## 3. Покрити сценарии на новото поведение
 
 | Сценарий | Python | JS |
@@ -105,6 +133,8 @@
 | `per-file` + избран PDF → отказ | — | да |
 | Пропускане на флаговете през CLI | да | да |
 | Обвивки `COMBO_PDF.bat` / `COMBO_ALL_PDF.bat` | да | — |
+| Менюто на JS клонинга стига до всичките осем типа | — | да (guard тест) |
+| Проверка на избора за вграждане преди старт | — | да (ръчно) |
 
 ## 4. Ръчни проверки на обвивките
 
@@ -113,6 +143,9 @@ COMBO_PDF.bat                      → exit 2, Usage
 COMBO_ALL_PDF.bat                  → exit 2, Usage
 COMBO_PDF.bat a b c middle         → exit 2, "position must be before or after"
 COMBO_PDF.bat a b c after          → exit 2, "embedded PDF not found"
+js\HashReport.bat → 12 → липсващ път  → BLOCKED: no such file
+js\HashReport.bat → 12 → бележки.txt  → BLOCKED: the included file must be a .pdf
+js\HashReport.bat → 12 + папка → R    → RPT-…_HASHREPORT_TYP_COMBO_PDF.pdf
 ```
 
 ## 5. Какво не е тествано автоматично

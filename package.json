@@ -1,6 +1,6 @@
 {
   "name": "chronoseal-python-rfc3161-addon",
-  "version": "5.7.0",
+  "version": "5.7.1",
   "private": true,
   "type": "module",
   "engines": {
