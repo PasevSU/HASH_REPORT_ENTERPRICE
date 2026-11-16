@@ -28,6 +28,8 @@ KIND = {
     'combo': (Section('files', 'Evidence Package Files Information'),),
     'combo_all': (Section('files', 'Evidence Package Files Information'),),
     'single_pdf': (Section('file', 'File Information'),),
+    'combo_pdf': (Section('files', 'Evidence Package Files Information'),),
+    'combo_all_pdf': (Section('files', 'Evidence Package Files Information'),),
     'volume': (),
     'automation': (),
     'verification': (),

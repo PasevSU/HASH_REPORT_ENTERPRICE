@@ -7,7 +7,7 @@ folder can still be proven later, on another machine, without the original data.
 
 |  |  |
 |---|---|
-| Version | 5.6.0 |
+| Version | 5.7.0 |
 | Platform | Windows 10 / 11 (x64) |
 | Runtime | Python 3.12+ and Node.js 22.12+ |
 | Interface | Tkinter desktop GUI (6 pages) and a headless CLI |
@@ -27,6 +27,57 @@ folder can still be proven later, on another machine, without the original data.
 The report is only published when every file in the selected folder could be
 read. A hash report that silently omits evidence is worse than no report, so a
 partial run ends as `BLOCKED` with the offending paths and the remedy.
+
+## Embedding a PDF in the report
+
+The report can carry an original PDF inside it - visible pages for a human
+reader and a byte-exact copy as an attachment. Which file is embedded depends on
+the report type, and the choice is visible in the published name:
+
+| Report type | Embedded file | Published as |
+|---|---|---|
+| `SINGLE_PDF` | the single input file | `..._HASHREPORT_TYP_SINGLE_PDF.pdf` |
+| `COMBO_PDF` | one PDF chosen by the operator | `..._HASHREPORT_TYP_COMBO_PDF.pdf` |
+| `COMBO_ALL_PDF` | one PDF chosen, folder scanned recursively | `..._HASHREPORT_TYP_COMBO_ALL_PDF.pdf` |
+
+`_ALL` always sits before `_PDF`, because the generator emits `..._SINGLE` /
+`..._COMBO` and the suffixes are added at publication. A name such as
+`..._COMBO_PDF_ALL.pdf` never exists, and the JavaScript clone uses the same rule.
+
+`--embed-position before|after` (default `after`) places the embedded pages in
+front of the hash report or behind it. The run records the decision in
+`embedded-original.json` (`embed_position`, `first_visible_page`, `visible_pages`)
+and prints `First source page in file` in the report itself, so a reader can find
+the attachment without guessing.
+
+```powershell
+python chronoseal_cli.py C:\cases\2026-08 \
+  --embed-pdf C:\cases\2026-08\Ergaenzungspflegschaft.pdf \
+  --embed-position before --recursive
+```
+
+The GUI offers the same three controls in the run page (`Вгради PDF в отчета`, the
+`PDF…` button and the `преди` / `след` pair); everything rarer - ERLAEUTERUNG,
+including subfolders, another output folder - lives in the `Още опции…` dialog so
+the run panel stays readable at 125% scaling.
+
+Embedding fails closed, with a code per type:
+
+| Code | Meaning |
+|---|---|
+| `EMBED_POSITION_INVALID` | position is neither `before` nor `after` |
+| `EMBED_PDF_SOURCE_MISSING` | the chosen PDF does not exist |
+| `EMBED_PDF_SOURCE_INVALID` | the chosen path is not a readable PDF |
+| `{SINGLE_PDF,COMBO_PDF}_SOURCE_ENCRYPTED` | an encrypted source is never opened silently |
+| `{SINGLE_PDF,COMBO_PDF}_SOURCE_SIGNATURE_AUDIT_FAILED` | the source signature could not be audited |
+
+Only one PDF can be embedded per report: the attachment is the one original, and
+two originals would make the report ambiguous. The embedded file is never
+re-compressed or re-sampled, and it can never be the evidence target itself.
+
+Two wrappers drive the sealed path for the new types:
+`automation\COMBO_PDF.bat` and `automation\COMBO_ALL_PDF.bat`, both taking
+`INPUT_PATH OUTPUT_DIR EMBED_PDF [before|after]`.
 
 ## Requirements
 
@@ -209,17 +260,17 @@ npm run verify  # release gate: syntax, vendor integrity, self-check, doctor, te
 Current state on a real SMB tree:
 
 ```
-260 tests OK   unittest discover -s tests                       (73.31 s)
-133 tests OK   unittest discover -s hash_report_generator/tests  (68.24 s)
+326 tests OK   unittest discover -s tests                       (63.45 s)
+133 tests OK   unittest discover -s hash_report_generator/tests  (51.66 s)
  35 passed     UI acceptance, every step driven through Tk widgets only
  21 passed     JS rule loader and style cache contract
  19 passed     brand tokens, glyph geometry, no colour literals in the GUI
 ```
 
-The JavaScript clone has its own suite, `node --test js/test/` (38 tests: 7 core,
-8 workflow, 7 API, 7 embedded PDF, 9 report type), which needs no Python and no
-network, and covers the six report types, the three-pass page-text hashing and
-the published marker of every type.
+The JavaScript clone has its own suite, `node --test js/test/` (50 tests: 7 core,
+8 workflow, 8 API, 17 embedded PDF, 10 report type), which needs no Python and no
+network, and covers the eight report types, the three-pass page-text hashing, the
+embedded-PDF position and the published marker of every type.
 
 Run the suites with `python -m unittest` / `python -m pytest` from the checkout.
 Do not use `npm test` or `npm run verify` from a UNC path: Windows starts
@@ -330,7 +381,7 @@ With the GitHub CLI the same reads need no token plumbing:
 
 ```powershell
 gh api repos/PasevSU/HASH_REPORT_ENTERPRICE/contents/js/api.mjs --jq '.sha'
-gh release download chronoseal-v5.6.0 --pattern '*.zip' -D .
+gh release download chronoseal-v5.7.0 --pattern '*.zip' -D .
 ```
 
 ### Running the clone you downloaded
@@ -367,10 +418,13 @@ so callers never parse console text. `reportForFile` takes exactly one file and
 `reportForFiles` gives every file its own report, report number and archive row. The
 API enforces two rules callers should expect: a generated report is never accepted as
 input (the evidence set must not grow with the program's own output), and
-`--embed-pdf` accepts exactly one PDF under the `single` / `single_pdf` profiles.
+`--embed-pdf` accepts exactly one PDF: with no value it embeds the single input file
+(`single_pdf`), with a path it embeds that file into a combo report (`combo_pdf`,
+`combo_all_pdf` when recursive). `--embed-position before|after` decides whether the
+embedded pages come first or last.
 
 Two version numbers appear in the output, and they move independently.
-`package.json` and `chronoseal/branding.py` carry the product version (5.6.0 in
+`package.json` and `chronoseal/branding.py` carry the product version (5.7.0 in
 this release); `js/cli.mjs` exports `CLONE_VERSION` (1.0.0), the version of the
 JavaScript re-implementation, which `--version` prints and which is stamped into
 the `implementation: chronoseal-js-clone/1.0.0` field of every report the clone
@@ -382,7 +436,7 @@ As a package-manager source it also works - the name is `chronoseal-python-rfc31
 resolve). The example pins the release tag so the build is reproducible:
 
 ```powershell
-npm install github:PasevSU/HASH_REPORT_ENTERPRICE#chronoseal-v5.6.0 --no-audit --no-fund
+npm install github:PasevSU/HASH_REPORT_ENTERPRICE#chronoseal-v5.7.0 --no-audit --no-fund
 ```
 
 ```js

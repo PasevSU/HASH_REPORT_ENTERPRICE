@@ -9,7 +9,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { run, EXIT_OK } from '../cli.mjs';
-import { EMBED_CODES, EmbedError, embedSourcePdf, readAttachment } from '../lib/embed.mjs';
+import {
+  EMBED_CODES,
+  EMBED_POSITIONS,
+  EmbedError,
+  embedCodes,
+  embedSourcePdf,
+  readAttachment,
+} from '../lib/embed.mjs';
 import { inspectPdf } from '../lib/normalize.mjs';
 import { PdfReportBuilder } from '../lib/pdf/builder.mjs';
 import { sha256Bytes } from '../lib/util.mjs';
@@ -175,4 +182,159 @@ test('per-file mode can embed every selected PDF', async () => {
     assert.equal(report.embedded_pdf.attachment_sha256, report.embedded_pdf.sha256);
   }
   assert.notEqual(result.summary.reports[0].report_id, result.summary.reports[1].report_id);
+});
+
+/* ------------------------------------------------------------------ */
+/* COMBO embedding: one chosen PDF inside a folder report              */
+/* ------------------------------------------------------------------ */
+
+test('a folder report can include a chosen PDF as a COMBO_PDF report', async () => {
+  const { source, output } = fixture();
+  const evidence = path.join(source, 'note.txt');
+  const chosen = path.join(source, 'signed.pdf');
+  const original = tinyPdf({ lines: ['SIGNED ORIGINAL'] });
+  fs.writeFileSync(evidence, 'folder evidence payload');
+  fs.writeFileSync(chosen, original);
+
+  const result = await run(
+    ['--source', source, '--output', output, '--embed-pdf', chosen, '--no-archive', '--quiet'],
+    { repoRoot },
+  );
+  assert.equal(result.exitCode, EXIT_OK);
+  const { summary } = result;
+  assert.equal(summary.kind, 'COMBO_PDF');
+  assert.match(path.basename(summary.published), /_TYP_COMBO_PDF\.pdf$/);
+  assert.equal(summary.pdf_pages, summary.pages + 1);
+  assert.equal(summary.embedded_pdf.source, 'signed.pdf');
+  assert.equal(summary.embedded_pdf.sha256, sha256Bytes(original));
+  assert.equal(summary.embedded_pdf.position, 'after');
+  assert.equal(summary.embedded_pdf.first_visible_page, summary.pages + 1);
+
+  const published = fs.readFileSync(summary.published);
+  const attachment = readAttachment(published, 'signed.pdf');
+  assert.ok(attachment, 'the chosen PDF travels inside the report');
+  assert.equal(sha256Bytes(attachment.data), sha256Bytes(original));
+
+  const audit = JSON.parse(fs.readFileSync(summary.embedded_pdf.audit, 'utf8'));
+  assert.equal(audit.report_kind, 'COMBO_PDF');
+  assert.equal(audit.embed_position, 'after');
+  assert.equal(audit.checks.source_unchanged, true);
+});
+
+test('the chosen PDF can precede the report pages', async () => {
+  const { source, output } = fixture();
+  fs.writeFileSync(path.join(source, 'note.txt'), 'folder evidence payload');
+  fs.writeFileSync(path.join(source, 'signed.pdf'), tinyPdf({ lines: ['SIGNED ORIGINAL'] }));
+
+  const result = await run([
+    '--source', source, '--output', output,
+    '--embed-pdf', path.join(source, 'signed.pdf'), '--embed-position', 'before',
+    '--no-archive', '--quiet',
+  ], { repoRoot });
+  assert.equal(result.exitCode, EXIT_OK);
+  const { summary } = result;
+  assert.equal(summary.kind, 'COMBO_PDF');
+  assert.equal(summary.embedded_pdf.position, 'before');
+  assert.equal(summary.embedded_pdf.first_visible_page, 1);
+  assert.equal(summary.pdf_pages, summary.pages + 1);
+  // The source page keeps its own geometry; it is neither reflowed nor scaled to A4.
+  const audit = JSON.parse(fs.readFileSync(summary.embedded_pdf.audit, 'utf8'));
+  assert.deepEqual(audit.source.geometry[0].media, [0, 0, 400, 300]);
+  assert.equal(audit.checks.geometry_preserved, true);
+});
+
+test('a recursive folder report with an included PDF publishes as COMBO_ALL_PDF', async () => {
+  const { source, output } = fixture();
+  const nested = path.join(source, 'nested');
+  fs.mkdirSync(nested);
+  fs.writeFileSync(path.join(nested, 'deep.txt'), 'nested evidence');
+  fs.writeFileSync(path.join(source, 'signed.pdf'), tinyPdf());
+
+  const result = await run([
+    '--source', source, '--output', output,
+    '--embed-pdf', path.join(source, 'signed.pdf'), '--recursive', '--no-archive', '--quiet',
+  ], { repoRoot });
+  assert.equal(result.exitCode, EXIT_OK);
+  assert.equal(result.summary.kind, 'COMBO_ALL_PDF');
+  assert.match(path.basename(result.summary.published), /_TYP_COMBO_ALL_PDF\.pdf$/);
+});
+
+test('--embed-position needs something to include', async () => {
+  const { source, output } = fixture();
+  fs.writeFileSync(path.join(source, 'note.txt'), 'evidence');
+  await assert.rejects(
+    run(['--source', source, '--output', output, '--embed-position', 'before', '--no-archive', '--quiet'], { repoRoot }),
+    /--embed-position needs --embed-pdf/,
+  );
+});
+
+test('an included PDF is refused for a single-file report profile', async () => {
+  const { source, output } = fixture();
+  fs.writeFileSync(path.join(source, 'note.txt'), 'evidence');
+  fs.writeFileSync(path.join(source, 'signed.pdf'), tinyPdf());
+  await assert.rejects(
+    run([
+      '--source', source, '--output', output,
+      '--embed-pdf', path.join(source, 'signed.pdf'), '--profile', 'single', '--no-archive', '--quiet',
+    ], { repoRoot }),
+    /only supports a combo report profile/,
+  );
+});
+
+test('an included PDF must exist and must be a PDF', async () => {
+  const { source, output } = fixture();
+  fs.writeFileSync(path.join(source, 'note.txt'), 'evidence');
+  const text = path.join(source, 'notpdf.txt');
+  fs.writeFileSync(text, 'plain text');
+  await assert.rejects(
+    run(['--source', source, '--output', output, '--embed-pdf', text, '--no-archive', '--quiet'], { repoRoot }),
+    /--embed-pdf needs a PDF to include/,
+  );
+  await assert.rejects(
+    run(['--source', source, '--output', output, '--embed-pdf', path.join(source, 'gone.pdf'), '--no-archive', '--quiet'], { repoRoot }),
+    /PDF to include does not exist/,
+  );
+});
+
+test('the evidence target can never be included inside its own report', async () => {
+  const { source, output } = fixture();
+  const pdf = path.join(source, 'only.pdf');
+  fs.writeFileSync(pdf, tinyPdf());
+  await assert.rejects(
+    run(['--source', pdf, '--output', output, '--embed-pdf', pdf, '--no-archive', '--quiet'], { repoRoot }),
+    /cannot include the evidence target inside the report/,
+  );
+});
+
+test('per-file reports never share one included PDF', async () => {
+  const { source, output } = fixture();
+  const first = path.join(source, 'one.pdf');
+  fs.writeFileSync(first, tinyPdf());
+  fs.writeFileSync(path.join(source, 'two.pdf'), tinyPdf());
+  await assert.rejects(
+    run([
+      '--files', first, '--output', output,
+      '--per-file', '--embed-pdf', first, '--no-archive', '--quiet',
+    ], { repoRoot }),
+    /--per-file/,
+  );
+});
+
+test('an embed position outside before/after is refused before any work', () => {
+  const report = tinyPdf();
+  const source = tinyPdf();
+  assert.deepEqual(EMBED_POSITIONS, ['before', 'after']);
+  assert.throws(
+    () => embedSourcePdf(report, { sourceBytes: source, sourceName: 'a.pdf', position: 'middle' }),
+    (error) => error instanceof EmbedError && error.code === EMBED_CODES.POSITION_INVALID,
+  );
+});
+
+test('the included-document error codes are named after the report type', () => {
+  const single = embedCodes('SINGLE_PDF');
+  const combo = embedCodes('COMBO_PDF');
+  assert.equal(single.SOURCE_ENCRYPTED, 'SINGLE_PDF_SOURCE_ENCRYPTED');
+  assert.equal(combo.SOURCE_ENCRYPTED, 'COMBO_PDF_SOURCE_ENCRYPTED');
+  assert.equal(combo.POSITION_INVALID, 'EMBED_POSITION_INVALID');
+  assert.equal(EMBED_CODES.SOURCE_ENCRYPTED, 'SINGLE_PDF_SOURCE_ENCRYPTED');
 });

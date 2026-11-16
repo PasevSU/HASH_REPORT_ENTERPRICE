@@ -133,6 +133,7 @@ class App(tk.Tk):
   f=self.run_tab; ttk.Label(f,text='Input source, folder, or already generated PDF').pack(anchor='w'); r=ttk.Frame(f); r.pack(fill='x',pady=(2,8)); ttk.Entry(r,textvariable=self.target).pack(side='left',fill='x',expand=True); ttk.Button(r,text='File…',command=self.file).pack(side='left',padx=3); ttk.Button(r,text='Folder…',command=self.folder).pack(side='left')
   m=ttk.Frame(f); m.pack(fill='x'); self.mode_label=ttk.Label(m,text='Report type: automatic (File → SINGLE / Folder → COMBO)'); self.mode_label.pack(side='left'); self.rec_check=ttk.Checkbutton(m,text='Recursive (folders only)',variable=self.rec); self.rec_check.pack(side='left',padx=18)
   o=ttk.Frame(f); o.pack(fill='x',pady=(7,0)); ttk.Checkbutton(o,text='Save in another folder (default: working folder)',variable=self.custom_output).pack(side='left'); ttk.Entry(o,textvariable=self.output_folder).pack(side='left',fill='x',expand=True,padx=6); ttk.Button(o,text='Browse…',command=lambda:self._dir(self.output_folder)).pack(side='left')
+  e=ttk.Frame(f); e.pack(fill='x',pady=(7,0)); ev=self._embed_vars(); ttk.Checkbutton(e,text='Вгради PDF в отчета',variable=ev['enabled']).pack(side='left'); ttk.Entry(e,textvariable=ev['path']).pack(side='left',fill='x',expand=True,padx=6); ttk.Button(e,text='PDF…',command=self._choose_embed_pdf).pack(side='left'); ttk.Radiobutton(e,text='преди',value='before',variable=ev['position']).pack(side='left',padx=(10,0)); ttk.Radiobutton(e,text='след',value='after',variable=ev['position']).pack(side='left'); ttk.Button(e,text='Още опции…',command=self._embed_dialog).pack(side='left',padx=(10,0))
   self.go=ttk.Button(f,text='ONE BUTTON — REPORT → RFC3161 → FINAL VERIFY → EVIDENCE',command=self.start,style='Accent.TButton'); self.go.pack(fill='x',pady=(12,4)); self.stop=ttk.Button(f,text='Stop / Cancel',command=self.cancel_run,state='disabled'); self.stop.pack(fill='x'); self.pb=ttk.Progressbar(f,maximum=100); self.pb.pack(fill='x',pady=(10,2)); ttk.Label(f,textvariable=self.status).pack(anchor='w'); self.log=tk.Text(f,height=25,wrap='none',background=branding.PALETTE['console_bg'],foreground=branding.PALETTE['console_fg'],insertbackground=branding.PALETTE['on_accent'],font=_brand_font(self,10,role='mono'),relief='flat'); self.log.pack(fill='both',expand=True,pady=(6,0)); lb=ttk.Frame(f); lb.pack(fill='x',pady=(4,0)); ttk.Button(lb,text='Copy selected',command=lambda:self._copy_text_widget(self.log,False)).pack(side='left'); ttk.Button(lb,text='Copy all log',command=lambda:self._copy_text_widget(self.log,True)).pack(side='left',padx=5); self._settings_ui(); self._diag_ui()
  def _row(self,parent,label,var,browse=None):
   x=ttk.Frame(parent); x.pack(fill='x',pady=3); ttk.Label(x,text=label,width=25).pack(side='left'); ttk.Entry(x,textvariable=var).pack(side='left',fill='x',expand=True); ttk.Button(x,text='Browse…',command=browse).pack(side='left',padx=4)
@@ -141,6 +142,53 @@ class App(tk.Tk):
   ttk.Label(f,text='Windows integration, report archive and independent TSA trust',font=_brand_font(self,11,'bold')).pack(anchor='w',pady=(0,8)); ttk.Checkbutton(f,text='Archive each sealed report, manifest, log and evidence in a numbered folder and SQLite database',variable=self.v_archive_enabled).pack(anchor='w',pady=(0,4)); self._row(f,'Report archive folder',self.v_archive_dir,lambda:self._dir(self.v_archive_dir)); self._row(f,'SQLite archive database',self.v_archive_db,lambda:self._database_file(self.v_archive_db)); self._row(f,'Hash generator package',self.v_gen,lambda:self._dir(self.v_gen)); self._row(f,'Node.js / node.exe',self.v_node,lambda:self._exe(self.v_node)); self._row(f,'OpenSSL / openssl.exe',self.v_ssl,lambda:self._exe(self.v_ssl)); ttk.Separator(f).pack(fill='x',pady=10); cat=list((self.cfg.get('provider_catalog') or {}).keys()); self.v_sprofile=tk.StringVar(value=(p.get('start') or [{}])[0].get('name','FreeTSA')); self.v_tprofile=tk.StringVar(value=(p.get('stop') or [{}])[0].get('name','DigiCert')); pr=ttk.Frame(f); pr.pack(fill='x',pady=3); ttk.Label(pr,text='START provider preset',width=25).pack(side='left'); ttk.Combobox(pr,textvariable=self.v_sprofile,values=cat,state='readonly').pack(side='left',fill='x',expand=True); ttk.Button(pr,text='Apply',command=lambda:self.apply_provider('start')).pack(side='left',padx=4); pr2=ttk.Frame(f); pr2.pack(fill='x',pady=3); ttk.Label(pr2,text='STOP provider preset',width=25).pack(side='left'); ttk.Combobox(pr2,textvariable=self.v_tprofile,values=cat,state='readonly').pack(side='left',fill='x',expand=True); ttk.Button(pr2,text='Apply',command=lambda:self.apply_provider('stop')).pack(side='left',padx=4); self._row(f,'START TSA URL',self.v_surl,lambda:None); self._row(f,'START trust cert(s)',self.v_scert,lambda:self._certs(self.v_scert)); self._row(f,'STOP TSA URL',self.v_turl,lambda:None); self._row(f,'STOP trust cert(s)',self.v_tcert,lambda:self._certs(self.v_tcert)); b=ttk.Frame(f); b.pack(fill='x',pady=12); ttk.Button(b,text='Auto-detect Windows tools',command=self.autodetect).pack(side='left'); ttk.Button(b,text='Save settings',command=self.save_settings).pack(side='left',padx=6); ttk.Button(b,text='Run preflight',command=self.preflight_only).pack(side='left'); ttk.Button(b,text='Bootstrap TSA trust',command=self.bootstrap_trust).pack(side='left',padx=6); ttk.Label(f,text='Trust certificates must be approved certificates/chains for the external TSA. ChronoSeal does not generate production TSA certificates.',wraplength=900).pack(anchor='w',pady=8)
  def _diag_ui(self):
   f=self.diag_tab; ttk.Label(f,text='Diagnostics and complete log package',font=_brand_font(self,11,'bold')).pack(anchor='w'); self.diag=tk.Text(f,height=28,background=branding.PALETTE['console_bg'],foreground=branding.PALETTE['console_fg'],insertbackground=branding.PALETTE['on_accent'],font=_brand_font(self,10,role='mono'),relief='flat'); self.diag.pack(fill='both',expand=True,pady=8); b=ttk.Frame(f); b.pack(fill='x'); ttk.Button(b,text='Refresh diagnostics',command=self.diagnostics).pack(side='left'); ttk.Button(b,text='Open latest log folder',command=self.open_logs).pack(side='left',padx=5); ttk.Button(b,text='Open evidence folder',command=self.open_evidence).pack(side='left'); ttk.Button(b,text='Copy selected',command=lambda:self._copy_text_widget(self.diag,False)).pack(side='left',padx=5); ttk.Button(b,text='Copy all',command=lambda:self._copy_text_widget(self.diag,True)).pack(side='left')
+ def _embed_vars(self):
+  # One shared state for the panel row and the options dialog; created lazily so
+  # every shell (legacy window and the page-based desktop) uses the same values.
+  if getattr(self,'_embed_state',None) is None:
+   self._embed_state={'enabled':tk.BooleanVar(master=self,value=False),'path':tk.StringVar(master=self,value=''),'position':tk.StringVar(master=self,value='after'),'explanation':tk.BooleanVar(master=self,value=False)}
+  return self._embed_state
+ def _choose_embed_pdf(self):
+  x=filedialog.askopenfilename(title='PDF за вграждане',filetypes=[('PDF','*.pdf'),('All files','*.*')])
+  if x:self._embed_vars()['path'].set(x)
+ def _resolve_embed(self):
+  # Turns the panel state into the three pipeline arguments plus ERLAEUTERUNG.
+  # Raises ValueError with an operator-facing message instead of guessing.
+  st=self._embed_vars(); target=Path(self.target.get()).expanduser() if self.target.get() else None
+  position=st['position'].get() or 'after'
+  if position not in ('before','after'):raise ValueError('Позицията трябва да е „преди“ или „след“ хеш отчета.')
+  out={'explanation':bool(st['explanation'].get()),'source_pdf':False,'pdf':None,'position':position}
+  if not st['enabled'].get():return out
+  if target is not None and target.is_file():
+   if target.suffix.lower()!='.pdf':raise ValueError('Вграждане на самия входен файл е възможно само за PDF. За друг файл изберете COMBO папка и отделен PDF за вграждане.')
+   out['source_pdf']=True; return out
+  chosen=(st['path'].get() or '').strip()
+  if not chosen:raise ValueError('Изберете PDF файл за вграждане или изключете вграждането.')
+  pdf=Path(chosen).expanduser()
+  if not pdf.is_file() or pdf.suffix.lower()!='.pdf':raise ValueError('Избраният за вграждане файл не е четим PDF: '+chosen)
+  out['pdf']=pdf; return out
+ def _embed_dialog(self):
+  # Options that do not fit the one-row panel control; the row stays the summary.
+  st=self._embed_vars(); d=tk.Toplevel(self); d.title('ChronoSeal — PDF вграждане и опции'); d.transient(self); d.geometry('820x430'); d.columnconfigure(0,weight=1)
+  snap=(st['enabled'].get(),st['path'].get(),st['position'].get(),st['explanation'].get(),self.rec.get(),self.custom_output.get(),self.output_folder.get())
+  def cancel():
+   st['enabled'].set(snap[0]); st['path'].set(snap[1]); st['position'].set(snap[2]); st['explanation'].set(snap[3]); self.rec.set(snap[4]); self.custom_output.set(snap[5]); self.output_folder.set(snap[6]); d.destroy()
+  b=ttk.Frame(d,padding=16); b.pack(fill='both',expand=True); b.columnconfigure(1,weight=1); row=0
+  ttk.Label(b,text='Вграждане на PDF в отчета',font=_brand_font(self,11,'bold')).grid(row=row,column=0,columnspan=3,sticky='w',pady=(0,12)); row+=1
+  ttk.Checkbutton(b,text='Вгради PDF страниците и оригинала като приложение',variable=st['enabled']).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
+  ttk.Label(b,text='Позиция спрямо хеш отчета').grid(row=row,column=0,sticky='w',pady=6)
+  pos=ttk.Frame(b); pos.grid(row=row,column=1,columnspan=2,sticky='w'); ttk.Radiobutton(pos,text='Преди отчета',value='before',variable=st['position']).pack(side='left'); ttk.Radiobutton(pos,text='След отчета (по подразбиране)',value='after',variable=st['position']).pack(side='left',padx=14); row+=1
+  ttk.Label(b,text='PDF за вграждане (COMBO)').grid(row=row,column=0,sticky='w')
+  ttk.Entry(b,textvariable=st['path']).grid(row=row,column=1,sticky='ew',padx=8); ttk.Button(b,text='PDF…',command=self._choose_embed_pdf).grid(row=row,column=2); row+=1
+  ttk.Label(b,text='При SINGLE вход (един PDF файл) се вгражда самият входен файл, независимо от това поле.',wraplength=760).grid(row=row,column=0,columnspan=3,sticky='w',pady=(4,12)); row+=1
+  ttk.Separator(b).grid(row=row,column=0,columnspan=3,sticky='ew',pady=8); row+=1
+  ttk.Label(b,text='Останали опции на отчета',font=_brand_font(self,11,'bold')).grid(row=row,column=0,columnspan=3,sticky='w',pady=(0,8)); row+=1
+  ttk.Checkbutton(b,text='ERLAEUTERUNG.pdf като страници в отчета (когато файлът е наличен)',variable=st['explanation']).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
+  ttk.Checkbutton(b,text='Включи подпапките (при папка)',variable=self.rec).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
+  ttk.Checkbutton(b,text='Запази отчета и доказателствата в друга папка',variable=self.custom_output).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
+  ttk.Entry(b,textvariable=self.output_folder).grid(row=row,column=0,columnspan=2,sticky='ew',pady=(4,0)); ttk.Button(b,text='Browse…',command=lambda:self._dir(self.output_folder)).grid(row=row,column=2); row+=1
+  act=ttk.Frame(b); act.grid(row=row,column=0,columnspan=3,sticky='e',pady=(16,0)); ttk.Button(act,text='OK',command=d.destroy).pack(side='right'); ttk.Button(act,text='Отказ',command=cancel).pack(side='right',padx=8)
+  d.bind('<Escape>',lambda e:cancel()); d.grab_set(); return d
  def _sync_input_mode(self):
   p=Path(self.target.get()).expanduser() if self.target.get() else None
   if p and p.is_file(): self.mode.set('single'); self.rec.set(False); self.mode_label.config(text='Report type: SINGLE (file selected)'); self.rec_check.config(state='disabled')
@@ -208,13 +256,11 @@ class App(tk.Tk):
   if not self.startup_ready:return messagebox.showerror('ChronoSeal','Startup qualification has not passed. Resolve Setup/Diagnostics blockers first.')
   if not self.target.get():return messagebox.showerror('ChronoSeal','Select input first.')
   self._sync_input_mode()
-  self.include_explanation=messagebox.askyesno('ChronoSeal — ERLAEUTERUNG','ERLAEUTERUNG.pdf като страници в основния отчет?')
-  self.include_source_pdf=False
-  selected=Path(self.target.get())
-  if selected.is_file() and selected.suffix.lower()=='.pdf':
-   self.include_source_pdf=messagebox.askyesno('ChronoSeal — PDF вграждане','Да се премине ли към отделния PDF режим за вграждане на страниците?\n\nДА: SINGLE отчет + ERLAEUTERUNG (ако е избран) + PDF страници и оригинал като приложение.\nНЕ: стандартен SINGLE хеш отчет.')
   if self.custom_output.get() and not Path(self.output_folder.get()).expanduser().is_dir():return messagebox.showerror('ChronoSeal','Select an existing output folder.')
-  self.save_settings_silent(); self.log.delete('1.0','end'); self.pb['value']=0; self.cancel.clear(); self._run_args=(self.target.get(),self.mode.get(),self.rec.get(),self.include_explanation,self.include_source_pdf,self.output_folder.get().strip() if self.custom_output.get() else None,(getattr(self,'file_filters',[]) or []) if self.mode.get()=='combined' else [],(getattr(self,'file_selection',[]) or [])); self._run_ssl=self.v_ssl.get(); self.go.config(state='disabled'); self.stop.config(state='normal'); threading.Thread(target=self.worker,daemon=True).start()
+  try:embed=self._resolve_embed()
+  except ValueError as exc:return messagebox.showerror('ChronoSeal — PDF вграждане',str(exc))
+  self.include_explanation=embed['explanation']; self.include_source_pdf=embed['source_pdf']; self.embed_pdf=embed['pdf']; self.embed_position=embed['position']
+  self.save_settings_silent(); self.log.delete('1.0','end'); self.pb['value']=0; self.cancel.clear(); self._run_args=(self.target.get(),self.mode.get(),self.rec.get(),self.include_explanation,self.include_source_pdf,self.output_folder.get().strip() if self.custom_output.get() else None,(getattr(self,'file_filters',[]) or []) if self.mode.get()=='combined' else [],(getattr(self,'file_selection',[]) or []),self.embed_pdf,self.embed_position); self._run_ssl=self.v_ssl.get(); self.go.config(state='disabled'); self.stop.config(state='normal'); threading.Thread(target=self.worker,daemon=True).start()
  def cancel_run(self):self.cancel.set(); self.status.set('Cancellation requested…')
  def worker(self):
   logroot=BASE/'logs'; self.session=SessionLogger(logroot,self.write); self.session.snapshot(BASE,self.cfg)

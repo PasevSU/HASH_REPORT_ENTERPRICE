@@ -5,7 +5,8 @@ from dataclasses import dataclass
 _root = Path(__file__).resolve().parents[1] / "hash_report_generator"
 if str(_root) not in sys.path: sys.path.insert(0,str(_root))
 from pdf_object_rules import PAGE, COLORS, FONTS, LEADING, css_text as _canonical_css
-REPORT_KINDS = ("single", "combo", "combo_all", "single_pdf", "volume", "automation", "verification")
+REPORT_KINDS = ("single", "combo", "combo_all", "single_pdf", "combo_pdf", "combo_all_pdf",
+                "volume", "automation", "verification")
 @dataclass(frozen=True)
 class Theme:
     page_width_mm:int=PAGE["width_mm"]

@@ -25,15 +25,35 @@ import { decodeStream } from '../../tools/pdfnorm/lib/filters.mjs';
 import { writePdf } from '../../tools/pdfnorm/lib/writer.mjs';
 import { sha256Bytes } from './util.mjs';
 
-export const EMBED_CODES = Object.freeze({
-  SOURCE_NOT_PDF: 'SINGLE_PDF_SOURCE_NOT_PDF',
-  SOURCE_ENCRYPTED: 'SINGLE_PDF_SOURCE_ENCRYPTED',
-  SOURCE_EMPTY: 'SINGLE_PDF_SOURCE_EMPTY',
-  EMBED_HASH_MISMATCH: 'SINGLE_PDF_EMBED_HASH_MISMATCH',
-  SOURCE_GEOMETRY_CHANGED: 'SINGLE_PDF_SOURCE_GEOMETRY_CHANGED',
-  SOURCE_CHANGED: 'SINGLE_PDF_SOURCE_CHANGED_DURING_COMPOSE',
-  SOURCE_MISSING: 'SINGLE_PDF_SOURCE_MISSING',
+const CODE_SUFFIXES = Object.freeze({
+  SOURCE_NOT_PDF: 'SOURCE_NOT_PDF',
+  SOURCE_ENCRYPTED: 'SOURCE_ENCRYPTED',
+  SOURCE_EMPTY: 'SOURCE_EMPTY',
+  EMBED_HASH_MISMATCH: 'EMBED_HASH_MISMATCH',
+  SOURCE_GEOMETRY_CHANGED: 'SOURCE_GEOMETRY_CHANGED',
+  SOURCE_CHANGED: 'SOURCE_CHANGED_DURING_COMPOSE',
+  SOURCE_MISSING: 'SOURCE_MISSING',
 });
+
+/** The only two documented placements of the included document. */
+export const EMBED_POSITIONS = Object.freeze(['before', 'after']);
+
+/**
+ * Codes carry the report type, so an operator reads COMBO_PDF_SOURCE_MISSING and
+ * knows which report failed without opening the log.
+ */
+export function embedCodes(kind = 'SINGLE_PDF') {
+  const prefix = String(kind || 'SINGLE_PDF').toUpperCase();
+  const codes = {
+    POSITION_INVALID: 'EMBED_POSITION_INVALID',
+    SOURCE_INVALID: 'EMBED_PDF_SOURCE_INVALID',
+  };
+  for (const [key, suffix] of Object.entries(CODE_SUFFIXES)) codes[key] = `${prefix}_${suffix}`;
+  return Object.freeze(codes);
+}
+
+/** Single-document codes; kept for callers that embed the input file itself. */
+export const EMBED_CODES = embedCodes('SINGLE_PDF');
 
 export class EmbedError extends Error {
   constructor(code, detail) {
@@ -138,8 +158,13 @@ function sameGeometry(a, b) {
   return same(a.media, b.media) && same(a.crop, b.crop) && (a.rotate || 0) === (b.rotate || 0);
 }
 
-/** Append every page of `source` to `target`, preserving geometry and annotations. */
-export function importPages(target, source) {
+/**
+ * Copy every page of `source` into `target`, preserving geometry and annotations.
+ *
+ * `at === null` appends the pages; an index inserts them, which is how the
+ * "source document first" placement is built.
+ */
+export function importPages(target, source, { at = null } = {}) {
   const pagesRef = target.root.get('Pages');
   const pagesDict = target.resolve(pagesRef);
   const existing = Array.isArray(pagesDict.get('Kids')) ? [...pagesDict.get('Kids')] : [];
@@ -164,8 +189,13 @@ export function importPages(target, source) {
     target.extra.set(ref.num, clone);
     imported.push({ ref, page, geometry: geometryOf(source, page) });
   }
-  pagesDict.set('Kids', [...existing, ...imported.map((entry) => entry.ref)]);
-  pagesDict.set('Count', existing.length + imported.length);
+  const index = at === null
+    ? existing.length
+    : Math.max(0, Math.min(Math.trunc(Number(at) || 0), existing.length));
+  const kids = [...existing];
+  kids.splice(index, 0, ...imported.map((entry) => entry.ref));
+  pagesDict.set('Kids', kids);
+  pagesDict.set('Count', kids.length);
   return imported;
 }
 
@@ -245,31 +275,39 @@ function fail(code, detail) {
   throw new EmbedError(code, detail);
 }
 
+function loadSource(bytes, codes, name) {
+  try {
+    return PdfDocument.load(Buffer.from(bytes));
+  } catch (error) {
+    const code = /encrypt/i.test(error.message) ? codes.SOURCE_ENCRYPTED : codes.SOURCE_NOT_PDF;
+    fail(code, name + ': ' + error.message);
+  }
+  return null;
+}
+
 /**
  * Facts about a source PDF that are known before composition: name, byte size,
  * SHA-256 and page count. The report body needs them while it is being drawn,
- * the way the Python SINGLE_PDF report describes the file it appends.
+ * the way the Python report describes the file it includes.
  */
-export function describeSourcePdf(sourcePath, { sourceName = null } = {}) {
+export function describeSourcePdf(sourcePath, { sourceName = null, kind = 'SINGLE_PDF' } = {}) {
+  const codes = embedCodes(kind);
   const name = sourceName || path.basename(sourcePath);
-  if (!/\.pdf$/i.test(name)) fail(EMBED_CODES.SOURCE_NOT_PDF, 'not a PDF file: ' + name);
-  if (!fs.existsSync(sourcePath)) fail(EMBED_CODES.SOURCE_MISSING, sourcePath);
+  if (!/\.pdf$/i.test(name)) fail(codes.SOURCE_NOT_PDF, 'not a PDF file: ' + name);
+  if (!fs.existsSync(sourcePath)) fail(codes.SOURCE_MISSING, sourcePath);
   const bytes = fs.readFileSync(sourcePath);
-  let doc;
-  try {
-    doc = PdfDocument.load(Buffer.from(bytes));
-  } catch (error) {
-    const code = /encrypt/i.test(error.message) ? EMBED_CODES.SOURCE_ENCRYPTED : EMBED_CODES.SOURCE_NOT_PDF;
-    fail(code, error.message);
-  }
+  const doc = loadSource(bytes, codes, name);
   const pages = pageRefs(doc).length;
-  if (!pages) fail(EMBED_CODES.SOURCE_EMPTY, name + ' has no pages');
+  if (!pages) fail(codes.SOURCE_EMPTY, name + ' has no pages');
   return { name, path: sourcePath, bytes: bytes.length, sha256: sha256Bytes(bytes), pages };
 }
 
 /**
- * Compose `reportBytes` + optional source pages + optional attachment.
+ * Compose `reportBytes` + the included document + optional attachment.
  *
+ * @param {object} options
+ * @param {'before'|'after'} [options.position] where the source pages go.
+ * @param {string} [options.kind] report type, so the audit and the codes name it.
  * @returns {{bytes: Uint8Array, sha256: string, audit: object}}
  */
 export function embedSourcePdf(reportBytes, {
@@ -281,27 +319,28 @@ export function embedSourcePdf(reportBytes, {
   description = 'Original document, attached unchanged',
   now = new Date(),
   expectedReportPages = null,
+  position = 'after',
+  kind = 'SINGLE_PDF',
 } = {}) {
+  const codes = embedCodes(kind);
+  const place = String(position || 'after').trim().toLowerCase();
+  if (!EMBED_POSITIONS.includes(place)) {
+    fail(codes.POSITION_INVALID, 'expected before or after, got ' + JSON.stringify(position));
+  }
   const name = sourceName || (sourcePath ? path.basename(sourcePath) : 'source.pdf');
   let bytes = sourceBytes;
   let before = null;
   if (!bytes) {
     if (!sourcePath) throw new Error('embedSourcePdf needs sourcePath or sourceBytes');
-    if (!fs.existsSync(sourcePath)) fail(EMBED_CODES.SOURCE_MISSING, sourcePath);
+    if (!fs.existsSync(sourcePath)) fail(codes.SOURCE_MISSING, sourcePath);
     before = fs.statSync(sourcePath);
     bytes = fs.readFileSync(sourcePath);
   }
-  if (!/\.pdf$/i.test(name)) fail(EMBED_CODES.SOURCE_NOT_PDF, 'not a PDF file: ' + name);
+  if (!/\.pdf$/i.test(name)) fail(codes.SOURCE_NOT_PDF, 'not a PDF file: ' + name);
 
-  let sourceDoc;
-  try {
-    sourceDoc = PdfDocument.load(Buffer.from(bytes));
-  } catch (error) {
-    const code = /encrypt/i.test(error.message) ? EMBED_CODES.SOURCE_ENCRYPTED : EMBED_CODES.SOURCE_NOT_PDF;
-    fail(code, error.message);
-  }
+  const sourceDoc = loadSource(bytes, codes, name);
   const sourcePages = pageRefs(sourceDoc);
-  if (!sourcePages.length) fail(EMBED_CODES.SOURCE_EMPTY, name + ' has no pages');
+  if (!sourcePages.length) fail(codes.SOURCE_EMPTY, name + ' has no pages');
 
   const target = PdfDocument.load(Buffer.from(reportBytes));
   const reportPages = target.pages.length;
@@ -309,7 +348,7 @@ export function embedSourcePdf(reportBytes, {
     throw new Error(`Report has ${reportPages} pages, expected ${expectedReportPages}`);
   }
 
-  const imported = includePages ? importPages(target, sourceDoc) : [];
+  const imported = includePages ? importPages(target, sourceDoc, { at: place === 'before' ? 0 : null }) : [];
   const attachment = attach ? attachFile(target, { name, bytes, description, now }) : null;
 
   const written = writePdf(target, {
@@ -328,10 +367,13 @@ export function embedSourcePdf(reportBytes, {
     throw new Error(`Composed PDF has ${check.pages.length} pages, expected ${expectedPages}`);
   }
   const checkPages = pageRefs(check);
+  // Where the source pages start depends on the chosen placement, so the geometry
+  // audit reads the position that was actually written.
+  const sourceFirstIndex = place === 'before' ? 0 : reportPages;
   imported.forEach((entry, index) => {
-    const geometry = geometryOf(check, check.resolve(checkPages[reportPages + index]));
+    const geometry = geometryOf(check, check.resolve(checkPages[sourceFirstIndex + index]));
     if (!sameGeometry(geometry, entry.geometry)) {
-      fail(EMBED_CODES.SOURCE_GEOMETRY_CHANGED,
+      fail(codes.SOURCE_GEOMETRY_CHANGED,
         `${name} page ${index + 1} changed geometry: ${JSON.stringify(geometry)} vs ${JSON.stringify(entry.geometry)}`);
     }
   });
@@ -339,10 +381,10 @@ export function embedSourcePdf(reportBytes, {
   let attachmentAudit = null;
   if (attachment) {
     const read = readAttachment(data, name);
-    if (!read) fail(EMBED_CODES.EMBED_HASH_MISMATCH, `attachment ${name} is missing from the composed PDF`);
+    if (!read) fail(codes.EMBED_HASH_MISMATCH, `attachment ${name} is missing from the composed PDF`);
     const digest = sha256Bytes(read.data);
     if (digest !== sha256Bytes(bytes)) {
-      fail(EMBED_CODES.EMBED_HASH_MISMATCH, `attachment sha256 ${digest} does not match the source`);
+      fail(codes.EMBED_HASH_MISMATCH, `attachment sha256 ${digest} does not match the source`);
     }
     attachmentAudit = {
       name,
@@ -357,13 +399,14 @@ export function embedSourcePdf(reportBytes, {
   if (before && sourcePath) {
     const after = fs.statSync(sourcePath);
     if (after.size !== before.size || after.mtimeMs !== before.mtimeMs) {
-      fail(EMBED_CODES.SOURCE_CHANGED, sourcePath + ' changed while the report was composed');
+      fail(codes.SOURCE_CHANGED, sourcePath + ' changed while the report was composed');
     }
   }
 
   const audit = {
     schema: 'chronoseal-source-pdf-audit/1',
     status: 'PASS',
+    report_kind: String(kind || 'SINGLE_PDF').toUpperCase(),
     generated_utc: now.toISOString(),
     source: {
       name,
@@ -371,11 +414,13 @@ export function embedSourcePdf(reportBytes, {
       bytes: bytes.length,
       sha256: sha256Bytes(bytes),
       pages: sourcePages.length,
+      first_visible_page: imported.length ? sourceFirstIndex + 1 : null,
       geometry: imported.map((entry, index) => ({ page: index + 1, ...entry.geometry })),
     },
     report: { pages: reportPages, sha256: sha256Bytes(reportBytes) },
     composed: { pages: expectedPages, bytes: data.length, sha256: sha256Bytes(data) },
     include_pages: Boolean(includePages),
+    embed_position: place,
     attachment: attachmentAudit,
     checks: {
       page_count: expectedPages,
@@ -388,5 +433,13 @@ export function embedSourcePdf(reportBytes, {
 }
 
 export default {
-  EMBED_CODES, EmbedError, describeSourcePdf, embedSourcePdf, importPages, attachFile, readAttachment,
+  EMBED_CODES,
+  EMBED_POSITIONS,
+  EmbedError,
+  describeSourcePdf,
+  embedCodes,
+  embedSourcePdf,
+  importPages,
+  attachFile,
+  readAttachment,
 };

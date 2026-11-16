@@ -71,8 +71,12 @@ Options
   --per-file              One SINGLE report per file instead of one combined report.
                           Each report gets its own report number, evidence case and
                           archive row.
-  --embed-pdf             Only for one PDF input: append the pages of that PDF and
-                          attach the original file byte-for-byte (single_pdf parity).
+  --embed-pdf [<pdf>]     Include a document in the report: its pages inside the
+                          document plus the file itself byte-for-byte. Without a
+                          value the single input file is included (single_pdf);
+                          with a path that PDF is included in a folder report
+                          (combo_pdf / combo_all_pdf).
+  --embed-position <p>    before or after the report pages (default: after).
   --no-normalise          Keep the generated PDF without the PDF/A-2b stage.
   --require-layout-pass   Block publication when the layout gate reports REVIEW.
   --json                  Print a machine-readable summary on stdout.
@@ -94,6 +98,7 @@ export function parseArgs(argv) {
     requireLayoutPass: false,
     perFile: false,
     embedPdf: false,
+    embedPosition: 'after',
     json: false,
     quiet: false,
     help: false,
@@ -117,7 +122,19 @@ export function parseArgs(argv) {
       case '--no-archive': options.archive = false; break;
       case '--no-normalise': options.normalise = false; break;
       case '--per-file': options.perFile = true; break;
-      case '--embed-pdf': options.embedPdf = true; break;
+      case '--embed-pdf': {
+        // Boolean form includes the single input file; a value names the PDF to
+        // include in a folder report, the way the Python CLI takes a path.
+        const value = argv[index + 1];
+        if (value !== undefined && !value.startsWith('--')) {
+          options.embedPdf = value;
+          index += 1;
+        } else {
+          options.embedPdf = true;
+        }
+        break;
+      }
+      case '--embed-position': options.embedPosition = take(index, arg); index += 1; break;
       case '--require-layout-pass': options.requireLayoutPass = true; break;
       case '--json': options.json = true; break;
       case '--quiet': options.quiet = true; break;
@@ -175,6 +192,13 @@ export async function run(argv, { repoRoot = REPO_ROOT } = {}) {
   if (options.help) return { help: USAGE, exitCode: EXIT_OK };
   if (options.version) return { version: CLONE_VERSION, exitCode: EXIT_OK };
   if (!options.files.length && !options.source) throw new Error('Either --source or --files is required');
+  if (!['before', 'after'].includes(String(options.embedPosition).toLowerCase())) {
+    throw new Error('--embed-position expects before or after, got ' + options.embedPosition);
+  }
+  options.embedPosition = String(options.embedPosition).toLowerCase();
+  // A recursive profile means recursion by definition: its name is the record that
+  // subfolders were included, so choosing it implies the scan.
+  if (options.profile === 'combo_all' || options.profile === 'combo_all_pdf') options.recursive = true;
 
   const logger = makeLogger(options.quiet);
   const config = loadConfig(path.join(repoRoot, 'config', 'config.json'));
@@ -234,6 +258,10 @@ export async function run(argv, { repoRoot = REPO_ROOT } = {}) {
     if (options.profile) {
       throw new Error('--per-file cannot be combined with --profile: every file gets its own SINGLE report');
     }
+    if (typeof options.embedPdf === 'string') {
+      throw new Error('--per-file cannot combine with --embed-pdf <pdf>: '
+        + 'each per-file report includes its own file');
+    }
     const perFileOutput = options.output
       ? path.resolve(options.output)
       : (sourceIsFolder ? sourcePath : path.dirname(sourcePath));
@@ -287,7 +315,15 @@ export async function run(argv, { repoRoot = REPO_ROOT } = {}) {
   // An explicit --files selection is always a SINGLE report when it names one file,
   // even though --source may still point at a folder that only anchors the root.
   const explicit = options.files.length > 0;
-  if (options.embedPdf) {
+  // Two documented ways to include a document: a single-file report includes the
+  // input file itself, a folder report includes one chosen PDF. The report type
+  // names the difference, so the published file never has to be opened to know.
+  const embedPath = typeof options.embedPdf === 'string' ? path.resolve(options.embedPdf) : null;
+  const embedRequested = options.embedPdf !== false;
+  if (options.embedPosition !== 'after' && !embedRequested) {
+    throw new Error('--embed-position needs --embed-pdf: nothing is included in this report');
+  }
+  if (embedRequested && !embedPath) {
     if (candidates.length !== 1) {
       throw new Error(`--embed-pdf needs exactly one input file (the selection has ${candidates.length})`);
     }
@@ -298,20 +334,40 @@ export async function run(argv, { repoRoot = REPO_ROOT } = {}) {
       throw new Error('--embed-pdf only supports the single report profile');
     }
   }
-  // The embedded type promises an appended source PDF; renaming a plain report to
-  // it would make the file name describe something the document does not contain.
-  if (!options.embedPdf && options.profile === 'single_pdf') {
-    throw new Error('--profile single_pdf needs --embed-pdf: that type documents an embedded source PDF');
+  if (embedPath) {
+    if (!sourceIsFolder && !explicit) {
+      throw new Error('--embed-pdf <pdf> needs a folder or an explicit --files selection; '
+        + 'a single file report includes the file itself');
+    }
+    if (!/\.pdf$/i.test(embedPath)) {
+      throw new Error('--embed-pdf needs a PDF to include: ' + embedPath);
+    }
+    if (!fs.existsSync(embedPath)) throw new Error('PDF to include does not exist: ' + embedPath);
+    if (embedPath === sourcePath) {
+      throw new Error('--embed-pdf cannot include the evidence target inside the report');
+    }
+    if (options.profile && !['combo', 'combo_all', 'combo_pdf', 'combo_all_pdf'].includes(options.profile)) {
+      throw new Error('--embed-pdf <pdf> only supports a combo report profile, not ' + options.profile);
+    }
   }
-  // The embedded original is a single-document feature: the report type is the
-  // one that documents an appended source PDF.
+  // The embedded types promise an included document; renaming a plain report to one
+  // of them would make the file name describe something the document does not hold.
+  const EMBEDDED_PROFILES = ['single_pdf', 'combo_pdf', 'combo_all_pdf'];
+  if (!embedRequested && EMBEDDED_PROFILES.includes(options.profile)) {
+    throw new Error(`--profile ${options.profile} needs --embed-pdf: that type documents an included PDF`);
+  }
+  const embedKind = embedPath ? 'COMBO_PDF' : 'SINGLE_PDF';
   const profileId = options.profile
-    || (options.embedPdf
-      ? 'single_pdf'
-      : (candidates.length === 1 && (!sourceIsFolder || explicit) ? 'single' : 'combo'));
-  // Facts the report body prints about the appended original; they are known
+    || (embedPath
+      ? (options.recursive ? 'combo_all_pdf' : 'combo_pdf')
+      : (embedRequested
+        ? 'single_pdf'
+        : (candidates.length === 1 && (!sourceIsFolder || explicit) ? 'single' : 'combo')));
+  // Facts the report body prints about the included document; they are known
   // before composition because the attachment is the source bytes unchanged.
-  const embedSourceFacts = options.embedPdf ? describeSourcePdf(candidates[0]) : null;
+  const embedSourceFacts = embedRequested
+    ? describeSourcePdf(embedPath || candidates[0], { kind: embedKind })
+    : null;
   // loadStyles() validates the mandatory sections of the packaged rule folder.
   const styles = loadStyles();
   const outputDir = options.output ? path.resolve(options.output) : (sourceIsFolder ? sourcePath : path.dirname(sourcePath));
@@ -343,6 +399,7 @@ export async function run(argv, { repoRoot = REPO_ROOT } = {}) {
         pages: embedSourceFacts.pages,
         attachment: embedSourceFacts.name,
         attachmentSha256: embedSourceFacts.sha256,
+        position: options.embedPosition,
         auditStatus: 'composition audit written after the PDF/A-2b and embed stages',
       }
       : null,
@@ -378,18 +435,22 @@ export async function run(argv, { repoRoot = REPO_ROOT } = {}) {
     logger.warn('PDF/A-2b stage skipped (--no-normalise): the published file is not PDF/A-2b');
   }
   let embeddedSource = null;
-  if (options.embedPdf) {
-    const source = candidates[0];
+  if (embedRequested) {
+    const source = embedPath || candidates[0];
     const embedded = embedSourcePdf(finalBytes, {
       sourcePath: source,
       sourceName: path.basename(source),
       description: 'Original document ' + path.basename(source) + ', attached unchanged',
       expectedReportPages: report.pageCount,
+      position: options.embedPosition,
+      kind: embedKind,
       now: generatedAt,
     });
     finalBytes = embedded.bytes;
     embeddedSource = embedded.audit;
-    logger.log(`embed: ${embeddedSource.source.pages} source page(s), `
+    logger.log(`embed: ${embeddedSource.source.pages} source page(s) `
+      + `${embeddedSource.embed_position === 'before' ? 'before' : 'after'} `
+      + `${embeddedSource.report.pages} report page(s), `
       + `${embeddedSource.attachment.bytes} bytes attached byte-for-byte`);
     logger.log('embed: attachment sha256 ' + embeddedSource.attachment.sha256);
   }
@@ -503,6 +564,8 @@ export async function run(argv, { repoRoot = REPO_ROOT } = {}) {
         source: embeddedSource.source.name,
         sha256: embeddedSource.source.sha256,
         pages: embeddedSource.source.pages,
+        position: embeddedSource.embed_position,
+        first_visible_page: embeddedSource.source.first_visible_page,
         attachment_sha256: embeddedSource.attachment.sha256,
         audit: sourcePdfAudit,
       }

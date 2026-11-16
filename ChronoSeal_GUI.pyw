@@ -279,7 +279,7 @@ class ChronoSealDesktop(original.App):
         self.file_filters = []
         page = self.run_tab
         page.columnconfigure(0, weight=1)
-        page.rowconfigure(3, weight=1)
+        page.rowconfigure(4, weight=1)
         self._page_heading(
             page, "Evidence pipeline", "Create and verify a report",
             "Select a file or folder. ChronoSeal generates the report, applies configured "
@@ -328,8 +328,33 @@ class ChronoSealDesktop(original.App):
             command=lambda: self._select_page("filter_tab"),
         ).pack(side="left", padx=(6, 0))
 
-        output = ttk.LabelFrame(page, text="  2  ·  Output  ", style="Panel.TLabelframe")
-        output.grid(row=2, column=0, sticky="ew", pady=(12, 0))
+        # Only the options used on every run stay on the panel; the rest live in
+        # the options dialog so the run page never grows a second column.
+        embed = ttk.LabelFrame(page, text="  2  ·  PDF embedding  ", style="Panel.TLabelframe")
+        embed.grid(row=2, column=0, sticky="ew", pady=(12, 0))
+        embed.columnconfigure(2, weight=1)
+        state = self._embed_vars()
+        ttk.Checkbutton(
+            embed, text="Embed a PDF in the report", variable=state["enabled"]
+        ).grid(row=0, column=0, sticky="w")
+        ttk.Radiobutton(
+            embed, text="Before report", value="before", variable=state["position"]
+        ).grid(row=0, column=1, padx=(14, 0), sticky="w")
+        ttk.Radiobutton(
+            embed, text="After report", value="after", variable=state["position"]
+        ).grid(row=0, column=2, padx=(10, 0), sticky="w")
+        ttk.Button(
+            embed, text="More options…", command=self._embed_dialog
+        ).grid(row=0, column=3, sticky="e")
+        ttk.Entry(embed, textvariable=state["path"]).grid(
+            row=1, column=0, columnspan=3, sticky="ew", pady=(8, 0)
+        )
+        ttk.Button(
+            embed, text="Choose PDF", command=self._choose_embed_pdf
+        ).grid(row=1, column=3, padx=(8, 0), pady=(8, 0))
+
+        output = ttk.LabelFrame(page, text="  3  ·  Output  ", style="Panel.TLabelframe")
+        output.grid(row=3, column=0, sticky="ew", pady=(12, 0))
         output.columnconfigure(1, weight=1)
         ttk.Checkbutton(
             output, text="Save report and evidence in a different folder",
@@ -343,9 +368,9 @@ class ChronoSealDesktop(original.App):
         ).grid(row=0, column=2)
 
         workspace = ttk.LabelFrame(
-            page, text="  3  ·  Run and monitor  ", style="Panel.TLabelframe"
+            page, text="  4  ·  Run and monitor  ", style="Panel.TLabelframe"
         )
-        workspace.grid(row=3, column=0, sticky="nsew", pady=(12, 0))
+        workspace.grid(row=4, column=0, sticky="nsew", pady=(12, 0))
         workspace.columnconfigure(0, weight=1)
         workspace.rowconfigure(2, weight=1)
         action_row = ttk.Frame(workspace)

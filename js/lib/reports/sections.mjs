@@ -319,6 +319,12 @@ define('text_checksums', (layout, context) => {
 define('source_pdf_evidence', (layout, context) => {
   const embedded = context.embeddedPdf;
   if (!embedded) return layout;
+  // `reportPages` is settled by the composition fixed-point in generate.mjs, so the
+  // printed page number is the one the published file really has.
+  const reportPages = Number(embedded.reportPages) || 0;
+  const firstSourcePage = embedded.position === 'before'
+    ? '1'
+    : (reportPages ? String(reportPages + 1) : 'first page after the report pages');
   layout.pageBreak();
   layout.heading('EMBEDDED SOURCE PDF:', 'section');
   layout.keyValues([
@@ -328,12 +334,17 @@ define('source_pdf_evidence', (layout, context) => {
     ['Attachment name', embedded.attachment || ''],
     ['Attachment SHA-256', displayDigest(embedded.attachmentSha256 || '')],
     ['Attachment mode', 'byte-for-byte /EmbeddedFiles attachment, no re-encoding'],
-    ['Page order', embedded.reportPages
-      ? `source pages follow the ${embedded.reportPages} report page(s)`
-      : "source pages are appended after this report's pages"],
+    ['Page order', embedded.position === 'before'
+      ? (embedded.reportPages
+        ? `source pages precede the ${embedded.reportPages} report page(s)`
+        : "source pages precede this report's pages")
+      : (embedded.reportPages
+        ? `source pages follow the ${embedded.reportPages} report page(s)`
+        : "source pages are appended after this report's pages")],
+    ['First source page in file', firstSourcePage],
     ['Signature inventory', embedded.auditStatus || 'not recorded'],
   ]);
-  small(layout, 'The source pages are appended unchanged; the footer strip of a source page is '
+  small(layout, 'The source pages are included unchanged; the footer strip of a source page is '
     + 'drawn in an extra bottom band so no original glyph is covered. The attachment and the '
     + 'visible pages are the same bytes, so a reader can extract the original file and compare '
     + 'it with the digest above.');

@@ -15,7 +15,11 @@ import { formatUtc, pad } from './util.mjs';
 export const REPORT_PREFIX = 'RPT';
 
 /** Generation kinds the pipeline recognises (the SINGLE/COMBO marker in the name). */
-export const KINDS = Object.freeze(['SINGLE', 'SINGLE_PDF', 'COMBO', 'VOLUME', 'FILE_INFORMATION']);
+export const KINDS = Object.freeze([
+  'SINGLE', 'SINGLE_PDF',
+  'COMBO', 'COMBO_ALL', 'COMBO_PDF', 'COMBO_ALL_PDF',
+  'VOLUME', 'FILE_INFORMATION',
+]);
 
 /** RPT-YYYYMMDD-HHMMSSmmm-XXXXXXXX, local time, as hash_report_core.py builds it. */
 export function reportId(now = new Date()) {
@@ -37,14 +41,20 @@ export function reportFileName(id) {
  */
 export function documentName({ id, kind, recursive = false }) {
   if (!KINDS.includes(kind)) throw new Error('Unsupported report kind: ' + kind);
-  const suffix = kind === 'COMBO' && recursive ? '_ALL' : '';
-  return `${id}_HASHREPORT_TYP_${kind}${suffix}.pdf`;
+  // `_ALL` records recursion and `_PDF` records an embedded document. A recursive
+  // report carries both markers, and Python splices `_ALL` between the type and
+  // `_PDF`, so a recursive COMBO_PDF publishes as COMBO_ALL_PDF, never COMBO_PDF_ALL.
+  const marker = recursive && kind === 'COMBO' ? 'COMBO_ALL'
+    : recursive && kind === 'COMBO_PDF' ? 'COMBO_ALL_PDF'
+      : kind;
+  return `${id}_HASHREPORT_TYP_${marker}.pdf`;
 }
 
 const MODERN_REPORT = new RegExp(
   '(?:\\d{4}-\\d{2}-\\d{2}-\\d{9}_-_)?'
   + 'RPT-\\d{8}-\\d{9}-[0-9A-Fa-f]{8}'
-  + '(?:-HASHREPORT|_HASHREPORT_TYP_(?:COMBO|SINGLE|SINGLE_PDF|VOLUME|FILE_INFORMATION)(?:_ALL)?)\\.pdf$',
+  + '(?:-HASHREPORT|_HASHREPORT_TYP_(?:COMBO_ALL_PDF|COMBO_ALL|COMBO_PDF|COMBO|SINGLE_PDF|SINGLE'
+  + '|VOLUME|FILE_INFORMATION))\\.pdf$',
   'i',
 );
 

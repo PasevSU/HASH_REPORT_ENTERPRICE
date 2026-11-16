@@ -6,7 +6,7 @@ import argparse, hashlib, json, os, tempfile
 from pathlib import Path
 from verification_gate import verify as verify_pdf
 
-PROFILES = frozenset({'single','single_pdf','combo','combo_all'})
+PROFILES = frozenset({'single','single_pdf','combo','combo_all','combo_pdf','combo_all_pdf'})
 
 def digest(path):
     h=hashlib.sha256()

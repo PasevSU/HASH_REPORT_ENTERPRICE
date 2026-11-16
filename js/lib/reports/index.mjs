@@ -11,11 +11,13 @@ import single from './single.mjs';
 import singlePdf from './single_pdf.mjs';
 import combo from './combo.mjs';
 import comboAll from './combo_all.mjs';
+import comboPdf from './combo_pdf.mjs';
+import comboAllPdf from './combo_all_pdf.mjs';
 import volume from './volume.mjs';
 import fileInformation from './file_information_report.mjs';
 import { getSection, sectionIds } from './sections.mjs';
 
-const MODULES = [single, singlePdf, combo, comboAll, volume, fileInformation];
+const MODULES = [single, singlePdf, combo, comboAll, comboPdf, comboAllPdf, volume, fileInformation];
 
 export const REPORT_MODULES = new Map(MODULES.map((module) => [module.id, module]));
 

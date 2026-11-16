@@ -724,7 +724,7 @@ class HashGeneratorCore:
         name = file_path.name
         modern = re.fullmatch(
             r'(?:\d{4}-\d{2}-\d{2}-\d{9}_-_)?RPT-\d{8}-\d{9}-[0-9A-Fa-f]{8}'
-            r'(?:-HASHREPORT|_HASHREPORT_TYP_(?:COMBO|SINGLE|SINGLE_PDF|VOLUME|FILE_INFORMATION)(?:_ALL)?)\.pdf',
+            r'(?:-HASHREPORT|_HASHREPORT_TYP_(?:COMBO_ALL_PDF|COMBO_PDF|COMBO|SINGLE_PDF|SINGLE|VOLUME|FILE_INFORMATION)(?:_ALL)?)\.pdf',
             name,
             flags=re.IGNORECASE,
         )

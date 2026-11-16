@@ -31,6 +31,8 @@ export const REPORT_TYPE_LABELS = Object.freeze({
   SINGLE_PDF: 'Single PDF Hash Report (Embedded Source PDF)',
   COMBO: 'Combined File Hash Report (Evidence Package)',
   COMBO_ALL: 'Combined File Hash Report (Evidence Package, recursive)',
+  COMBO_PDF: 'Combined PDF Hash Report (Embedded Source PDF)',
+  COMBO_ALL_PDF: 'Combined PDF Hash Report (Embedded Source PDF, recursive)',
   VOLUME: 'Volume Hash Report (Bytes Per Folder)',
   FILE_INFORMATION: 'File Information Report (SHA-256 Sheet)',
 });
@@ -72,6 +74,11 @@ export function reportType(profile, { recursive = false } = {}) {
   // The dedicated profiles name their own published type; the generic ones are
   // derived from input_scope the way the Python generator does it.
   if (profile?.id === 'single_pdf') return 'SINGLE_PDF';
+  // An embedded combo report is its own type: the published name must say that a
+  // document is inside, so neither the archive nor a reviewer can mistake it for a
+  // plain combo report.
+  if (profile?.id === 'combo_pdf') return recursive ? 'COMBO_ALL_PDF' : 'COMBO_PDF';
+  if (profile?.id === 'combo_all_pdf') return 'COMBO_ALL_PDF';
   if (profile?.id === 'volume') return 'VOLUME';
   if (profile?.id === 'file_information_report') return 'FILE_INFORMATION';
   const kind = (profile?.input_scope || 'single_file');

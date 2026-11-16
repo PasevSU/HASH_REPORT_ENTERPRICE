@@ -286,9 +286,17 @@ class Pipeline:
              else 'Automatic repair is disabled in config (repair.enabled).'
         return {'ok':False,'state':'MISSING','detail':state['detail'],
                 'message':f'Node dependency pdf-rfc3161 is not installed ({state["detail"]}). {hint}'}
-    def preflight(self,target,mode='combined',pdf_embed=False):
+    def preflight(self,target,mode='combined',pdf_embed=False,combo_embed=False):
         t=Path(target).expanduser().resolve(); issues=[]; warnings=[]
-        info={'target':str(t),'input_kind':'pdf_embed' if pdf_embed and t.is_file() and t.suffix.lower()=='.pdf' else 'source'}
+        # input_kind decides the published report name: only an embedded document
+        # turns a SINGLE/COMBO report into its _PDF variant.
+        if pdf_embed and t.is_file() and t.suffix.lower()=='.pdf':
+            input_kind='pdf_embed'
+        elif combo_embed:
+            input_kind='combo_embed'
+        else:
+            input_kind='source'
+        info={'target':str(t),'input_kind':input_kind}
         if not t.exists():issues.append(f'Input does not exist: {t}')
         try:
             evidence_policy(self.cfg)
@@ -585,31 +593,86 @@ class Pipeline:
                     q.get('trusted_list_service_status')!='granted'):
                 raise PipelineError('Qualified STOP audit evidence is missing or does not match the configured Trusted List service and timestamp policy.')
         return out,audit
-    def _compose(self, report, target, case, include_explanation=False, include_source_pdf=False):
+    def _compose(self, report, target, case, include_explanation=False, include_source_pdf=False,
+                 embed_pdf=None, embed_position='after'):
         from pypdf import PdfReader, PdfWriter
         from .page_identity import apply_footer
         report=Path(report); target=Path(target)
+        position=str(embed_position or 'after').strip().lower()
+        if position not in ('before','after'):
+            raise PipelineError('EMBED_POSITION_INVALID: expected before or after, got '+repr(embed_position))
         sections=[('report',report)]
         if include_explanation:
             explanations=sorted(report.parent.glob(report.stem+'*ERLAEUTERUNG.pdf'))
             if len(explanations)!=1:
                 raise PipelineError('Requested ERLAEUTERUNG missing or ambiguous: '+str(explanations))
             sections.append(('explanation',explanations[0]))
+        # Two documented routes embed a document: the single-file report carries the
+        # input file itself, a combo report carries one chosen PDF. Both keep the
+        # original byte-exact as an attachment and show its pages unmodified.
+        embedded=None; embed_kind=None
         if include_source_pdf:
             if not target.is_file() or target.suffix.lower()!='.pdf':
                 raise PipelineError('Original PDF inclusion requires a single PDF file input')
-            if target.resolve()==report.resolve():
-                raise PipelineError('Cannot embed input report inside itself')
-            # Keep source pages as visible PDF pages AND embed original byte-exact file.
-            # Footer is applied only to report pages before source pages are appended.
+            embedded=target.resolve(); embed_kind='pdf_embed'
+        elif embed_pdf is not None and str(embed_pdf).strip():
+            embedded=Path(str(embed_pdf)).expanduser()
+            try:embedded=embedded.resolve()
+            except OSError:pass
+            if not embedded.is_file() or embedded.suffix.lower()!='.pdf':
+                raise PipelineError('EMBED_PDF_SOURCE_INVALID: not a readable PDF: '+str(embedded))
+            embed_kind='combo_embed'
+        if embedded is not None and embedded==report.resolve():
+            raise PipelineError('Cannot embed input report inside itself')
+        prefix='SINGLE_PDF' if embed_kind=='pdf_embed' else 'COMBO_PDF'
         writer=PdfWriter(); spans=[]
-        for kind,fp in sections:
-            first=len(writer.pages)+1
-            if kind!='source_pdf':
+        source_bytes=None; source_hash=None; source_reader=None
+        source_signature_audit=None; source_first_index=0; source_page_count=0
+        def append_authored():
+            for kind,fp in sections:
+                first=len(writer.pages)+1
                 reader=PdfReader(str(fp),strict=True)
                 if reader.is_encrypted:raise PipelineError('Encrypted report section not supported: '+str(fp))
                 for page in reader.pages:writer.add_page(page,excluded_keys=['/Annots'])
-            spans.append({'kind':kind,'source':str(fp),'first_page':first,'last_page':len(writer.pages),'sha256':sha256(fp)})
+                spans.append({'kind':kind,'source':str(fp),'first_page':first,
+                              'last_page':len(writer.pages),'sha256':sha256(fp)})
+        def append_source():
+            nonlocal source_bytes,source_hash,source_reader,source_signature_audit
+            nonlocal source_first_index,source_page_count
+            source_bytes=embedded.read_bytes()
+            source_hash=sha256(embedded)
+            # Encryption is decided before signature inspection: an encrypted
+            # document can be neither copied nor audited, and the operator needs
+            # that reason instead of a raw library traceback.
+            try:
+                source_reader=PdfReader(str(embedded),strict=True)
+            except Exception as exc:
+                raise PipelineError(prefix+'_SOURCE_UNREADABLE: '+str(exc)) from exc
+            if source_reader.is_encrypted:
+                raise PipelineError(prefix+'_SOURCE_ENCRYPTED: cannot copy source pages')
+            from .pdf_preflight import inspect_pdf
+            try:
+                source_signature_audit=inspect_pdf(embedded)
+            except ValueError as exc:
+                raise PipelineError(prefix+'_SOURCE_SIGNATURE_AUDIT_FAILED: '+str(exc)) from exc
+            source_page_count=len(source_reader.pages)
+            if source_page_count==0:
+                raise PipelineError(prefix+'_SOURCE_EMPTY: original has no pages')
+            source_first_index=len(writer.pages)
+            for source_page in source_reader.pages:
+                writer.add_page(source_page)
+            spans.append({'kind':'source_pdf','source':str(embedded),
+                          'first_page':source_first_index+1,'last_page':len(writer.pages),
+                          'sha256':source_hash,'geometry_policy':'preserve_original',
+                          'page_count':source_page_count,'placement':position})
+        # "before" puts the original on the first pages and numbers the hash report
+        # after them; "after" keeps the established single-file order.
+        if embedded is not None and position=='before':
+            append_source(); append_authored()
+        else:
+            append_authored()
+            if embedded is not None:append_source()
+        spans.sort(key=lambda section:section['first_page'])
         # Diagnose source provenance before writing/rewriting assembled content.
         # Never normalize a non-A4 source silently or discard evidence pages.
         from hash_report_generator.style_loader import load_styles
@@ -618,6 +681,9 @@ class Pipeline:
         expected_width = canonical['width_mm'] * pt_per_mm
         expected_height = canonical['height_mm'] * pt_per_mm
         for section in spans:
+            if section['kind']=='source_pdf':
+                # The imported document keeps its own geometry on purpose.
+                continue
             for page_number in range(section['first_page'], section['last_page'] + 1):
                 candidate = writer.pages[page_number - 1]
                 media = candidate.mediabox
@@ -633,32 +699,8 @@ class Pipeline:
                         f'actual={actual_width:.3f}x{actual_height:.3f}pt; '
                         f'expected={expected_width:.3f}x{expected_height:.3f}pt; '
                         'fix the upstream section; no implicit resizing')
-        source_bytes = None
-        source_hash = None
-        source_reader = None
-        source_signature_audit = None
-        report_page_count = len(writer.pages)
-        source_first_page = None
-        source_page_count = 0
-        preserve_source_indexes = []
-        if include_source_pdf:
-            source_bytes=target.read_bytes()
-            source_hash=sha256(target)
-            from .pdf_preflight import inspect_pdf
-            source_signature_audit=inspect_pdf(target)
-            source_reader=PdfReader(str(target),strict=True)
-            if source_reader.is_encrypted:
-                raise PipelineError('SINGLE_PDF_SOURCE_ENCRYPTED: cannot copy source pages')
-            source_page_count=len(source_reader.pages)
-            if source_page_count==0:
-                raise PipelineError('SINGLE_PDF_SOURCE_EMPTY: original has no pages')
-            source_first_page=report_page_count+1
-            for source_page in source_reader.pages:
-                writer.add_page(source_page)
-            preserve_source_indexes=list(range(report_page_count, len(writer.pages)))
-            spans.append({'kind':'source_pdf','source':str(target),'first_page':source_first_page,
-                          'last_page':len(writer.pages),'sha256':source_hash,
-                          'geometry_policy':'preserve_original','page_count':source_page_count})
+        preserve_source_indexes = list(range(source_first_index, source_first_index + source_page_count)) \
+            if embedded is not None else []
         composed=case/'assembled-before-footer.UNSEALED.pdf'
         with composed.open('wb') as f:writer.write(f)
         match=re.search(r'(RPT-\d{8}-\d+-[A-Fa-f0-9]+)',report.name)
@@ -669,37 +711,40 @@ class Pipeline:
                                    preserve_pages=preserve_source_indexes,
                                    source_pdf_signature_audit=source_signature_audit)
         page_count=len(PdfReader(str(ready)).pages)
-        if include_source_pdf:
+        if embedded is not None:
             # Source pages are part of the identity pass but remain untouched.
-            # Their page-specific text hashes are printed on paired appendix pages.
+            # Their page-specific text hashes are printed on the paired appendix page.
             final_writer=PdfWriter(clone_from=str(ready))
-            final_writer.add_attachment(filename=target.name,data=source_bytes)
+            final_writer.add_attachment(filename=embedded.name,data=source_bytes)
             attached=case/'combined-before-rfc3161.UNSEALED.pdf'
             with attached.open('wb') as f:
                 final_writer.write(f)
             reopened=PdfReader(str(attached),strict=True)
             if len(reopened.pages)!=page_count:
-                raise PipelineError('SINGLE_PDF_VISIBLE_PAGES_OR_IDENTITY_APPENDICES_MISSING')
-            embedded=reopened.attachments.get(target.name)
-            if isinstance(embedded,(bytes,bytearray)):
-                embedded=[bytes(embedded)]
-            if not embedded or len(embedded)!=1 or hashlib.sha256(bytes(embedded[0])).hexdigest()!=source_hash:
-                raise PipelineError('SINGLE_PDF_EMBED_HASH_MISMATCH')
+                raise PipelineError(prefix+'_VISIBLE_PAGES_OR_IDENTITY_APPENDICES_MISSING')
+            embedded_copies=reopened.attachments.get(embedded.name)
+            if isinstance(embedded_copies,(bytes,bytearray)):
+                embedded_copies=[bytes(embedded_copies)]
+            if not embedded_copies or len(embedded_copies)!=1 \
+                    or hashlib.sha256(bytes(embedded_copies[0])).hexdigest()!=source_hash:
+                raise PipelineError(prefix+'_EMBED_HASH_MISMATCH')
             for index,original in enumerate(source_reader.pages):
-                copied=reopened.pages[report_page_count+index]
-                ext=float(page_manifest[report_page_count+index].get('footer_extension_pt',0))
+                copied_index=source_first_index+index
+                copied=reopened.pages[copied_index]
+                ext=float(page_manifest[copied_index].get('footer_extension_pt',0))
                 ow,oh=(float(original.mediabox.width),float(original.mediabox.height))
                 if int(original.get('/Rotate',0))%180: ow,oh=oh,ow
                 if abs(float(copied.mediabox.width)-ow)>0.01 or abs(float(copied.mediabox.height)-oh-ext)>0.01:
-                    raise PipelineError(f'SINGLE_PDF_SOURCE_GEOMETRY_CHANGED page={index+1}')
-            if hashlib.sha256(target.read_bytes()).hexdigest()!=source_hash:
-                raise PipelineError('SINGLE_PDF_SOURCE_CHANGED_DURING_COMPOSE')
+                    raise PipelineError(f'{prefix}_SOURCE_GEOMETRY_CHANGED page={index+1}')
+            if hashlib.sha256(embedded.read_bytes()).hexdigest()!=source_hash:
+                raise PipelineError(prefix+'_SOURCE_CHANGED_DURING_COMPOSE')
             os.replace(attached,ready)
             signature_audit_path=case/'source-pdf-signature-audit.json'
             atomic_json(signature_audit_path,{
-                'source_filename':target.name,
+                'source_filename':embedded.name,
                 'source_pdf_sha256':source_hash,
                 'attachment_sha256_verified':True,
+                'embed_position':position,
                 'source_signature_audit':source_signature_audit,
                 'visible_page_copy_note':(
                     'Visible pages are a derived presentation copy with added footer space. '
@@ -707,9 +752,9 @@ class Pipeline:
                     'not these derived visible pages or the composed report.'
                 ),
             })
-            atomic_json(case/'embedded-original.json',{'filename':target.name,'sha256':source_hash,
+            atomic_json(case/'embedded-original.json',{'filename':embedded.name,'sha256':source_hash,
                         'size':len(source_bytes),'verification':'PASS','visible_pages':source_page_count,
-                        'first_visible_page':source_first_page,
+                        'first_visible_page':source_first_index+1,'embed_position':position,
                         'text_identity_appendix_pages':1,
                         'signature_audit':str(signature_audit_path),
                         'source_signature_status':source_signature_audit['verification_status']})
@@ -733,8 +778,27 @@ class Pipeline:
                 'named ChronoSeal_Evidence block evidence capture, so choose a writable output directory.') from exc
         return case
 
-    def run(self,target,mode='combined',recursive=False,include_explanation=False,include_source_pdf=False,output_dir=None,filters=None,files=None):
+    def run(self,target,mode='combined',recursive=False,include_explanation=False,include_source_pdf=False,output_dir=None,filters=None,files=None,embed_pdf=None,embed_position='after'):
         started=time.time(); target=Path(target).expanduser().resolve(); mode=self._input_mode(target); recursive=bool(recursive and target.is_dir()); self.progress(0,'Preflight')
+        embed_position=str(embed_position or 'after').strip().lower()
+        if embed_position not in ('before','after'):
+            raise PipelineError('EMBED_POSITION_INVALID: expected before or after, got '+repr(embed_position))
+        # A combo report may carry one chosen PDF. The single-file route embeds the
+        # input file itself, so asking for both at once would be ambiguous.
+        embedded=None
+        if embed_pdf is not None and str(embed_pdf).strip():
+            if include_source_pdf:
+                raise PipelineError('EITHER the single-file PDF or a chosen PDF can be embedded; not both.')
+            if mode!='combined':
+                raise PipelineError('COMBO+PDF requires a folder or an explicit file list; '
+                                    'a single-file report embeds the file itself.')
+            embedded=Path(str(embed_pdf)).expanduser()
+            try:embedded=embedded.resolve()
+            except OSError:pass
+            if not embedded.is_file() or embedded.suffix.lower()!='.pdf':
+                raise PipelineError('EMBED_PDF_SOURCE_INVALID: not a readable PDF: '+str(embedded))
+            if embedded==target:
+                raise PipelineError('Cannot embed the evidence target inside the report')
         filters=file_filters.parse(filters or [])
         # v5.5.2: the operator may name the exact evidence files. The chosen list is
         # the evidence set; the target folder only anchors relative paths, the
@@ -759,7 +823,8 @@ class Pipeline:
                                 'a single-file report has nothing to filter.')
         if include_source_pdf and (not target.is_file() or target.suffix.lower() != '.pdf'):
             raise PipelineError('SINGLE+PDF requires an original PDF file; cannot silently ignore the requested embedding.')
-        info,issues,warnings=self.preflight(target,mode,pdf_embed=include_source_pdf); self.log('0/5 Preflight')
+        info,issues,warnings=self.preflight(target,mode,pdf_embed=include_source_pdf,
+                                           combo_embed=embedded is not None); self.log('0/5 Preflight')
         for k,v in info.items():self.log(f'  {k}: {v}')
         try:
             storage_preflight=inspect_storage(target)
@@ -794,6 +859,12 @@ class Pipeline:
             if not base.upper().endswith('_SINGLE'):
                 raise PipelineError('PDF inclusion requires a SINGLE hash report')
             suffix='_PDF.pdf'
+        elif info['input_kind']=='combo_embed':
+            # COMBO/COMBO_ALL with an embedded document: the name says so, so the
+            # archive and the published file never look like a plain combo report.
+            if not base.upper().endswith('_COMBO'):
+                raise PipelineError('PDF inclusion requires a COMBO hash report')
+            suffix='_PDF.pdf'
         else:
             suffix='.pdf'
         destination=Path(output_dir).expanduser().resolve() if output_dir else (target if target.is_dir() else target.parent)
@@ -801,6 +872,8 @@ class Pipeline:
         if recursive and mode=='combined':base += '_ALL'
         publish_path=destination/(base+suffix)
         if publish_path.resolve()==target.resolve():raise PipelineError('Output path would overwrite original')
+        if embedded is not None and publish_path.resolve()==embedded:
+            raise PipelineError('Output path would overwrite the embedded PDF')
         # The generator writes SINGLE/COMBO at the final pathname. Stage it inside
         # the private case before sealing; the final name must never hold an UNSEALED PDF.
         staged=case/report.name
@@ -820,7 +893,9 @@ class Pipeline:
                                 f"{len(generated_state['signatures'])} existing signatures; "
                                 'refusing composition and repeat timestamping.')
         if publish_path.exists():raise PipelineError('Output already exists; refusing overwrite: '+str(publish_path))
-        working=self._compose(report,target,case,include_explanation,info['input_kind']=='pdf_embed')
+        working=self._compose(report,target,case,include_explanation,info['input_kind']=='pdf_embed',
+                              embed_pdf=None if include_source_pdf else embedded,
+                              embed_position=embed_position)
         self.log('Prepared independent PDF copy: '+str(working))
         self.progress(45,'RFC3161'); self.log('2/5 Independent RFC3161 START + STOP + embedded TSA validation material'); sealed,audit=self.stamp(working,case)
         self.progress(80,'Final verification'); self.log('3/5 Final PDF reopened; exactly two ChronoSeal DocTimeStamp revisions independently reverified')
@@ -836,7 +911,7 @@ class Pipeline:
         manifest={'schema':'chronoseal.onebutton/v4-dualstamp','source':str(target),'input_kind':info['input_kind'],'mode':mode,'recursive':recursive,'selection_filters':filters or None,
             'selection_files':[str(item) for item in selected] or None,
             'selection_root':str(file_selection.root(selected)) if selected else None,
-            'selection_paths':file_selection.relative(selected) if selected else None,'output_directory':str(destination),'include_explanation':include_explanation,'include_source_pdf':include_source_pdf,'page_identity':str(case/'page-identity.json'),'storage_identity':str(case/'storage-identity.json'),'generator':info.get('generator'),'generated_report':str(working),'report_sha256':original_hash,'final_pdf':str(final),'final_sha256':final_hash,'rfc3161_audit':str(audit),'elapsed_seconds':round(time.time()-started,3),'status':'PASS'}
+            'selection_paths':file_selection.relative(selected) if selected else None,'output_directory':str(destination),'include_explanation':include_explanation,'include_source_pdf':include_source_pdf,'page_identity':str(case/'page-identity.json'),'storage_identity':str(case/'storage-identity.json'),'generator':info.get('generator'),'generated_report':str(working),'report_sha256':original_hash,'final_pdf':str(final),'final_sha256':final_hash,'rfc3161_audit':str(audit),'embed_pdf':str(embedded) if embedded is not None else None,'embed_position':embed_position if (embedded is not None or include_source_pdf) else None,'elapsed_seconds':round(time.time()-started,3),'status':'PASS'}
         # Never hide an evidence exclusion: when the operator allowed unreadable
         # files, the generator's audit becomes part of the published manifest.
         discovery_audit=case/'discovery-unreadable.json'

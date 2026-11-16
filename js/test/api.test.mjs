@@ -29,6 +29,21 @@ function fixture() {
   return { root, source, output };
 }
 
+test('buildArgv distinguishes the two inclusion routes', () => {
+  // `true` includes the single input file (single_pdf); a path includes one chosen
+  // PDF inside a folder report (combo_pdf / combo_all_pdf).
+  assert.deepEqual(buildArgv({ files: ['a.pdf'], output: 'D:\\out', embedPdf: true }),
+    ['--files', 'a.pdf', '--output', 'D:\\out', '--embed-pdf']);
+  assert.deepEqual(
+    buildArgv({ source: 'D:\\case', output: 'D:\\out', embedPdf: 'D:\\case\\signed.pdf', embedPosition: 'before' }),
+    ['--source', 'D:\\case', '--output', 'D:\\out', '--embed-pdf', 'D:\\case\\signed.pdf',
+      '--embed-position', 'before'],
+  );
+  // The default placement needs no flag: the CLI already means "after".
+  assert.deepEqual(buildArgv({ source: 'D:\\case', embedPdf: 'D:\\case\\s.pdf' }),
+    ['--source', 'D:\\case', '--embed-pdf', 'D:\\case\\s.pdf']);
+});
+
 test('buildArgv maps every option onto the CLI grammar', () => {
   assert.deepEqual(buildArgv({
     source: 'D:\\case',

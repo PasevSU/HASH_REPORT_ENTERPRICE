@@ -181,14 +181,30 @@ test('every type publishes under its own marker and never becomes evidence', () 
   const sampleId = 'RPT-20260804-091500000-ABCDEF12';
   const kinds = reportModuleIds().map((id) => reportType(loadProfile(id)));
   assert.deepEqual([...kinds].sort(), [
-    'COMBO', 'COMBO_ALL', 'FILE_INFORMATION', 'SINGLE', 'SINGLE_PDF', 'VOLUME',
+    'COMBO', 'COMBO_ALL', 'COMBO_ALL_PDF', 'COMBO_PDF', 'FILE_INFORMATION', 'SINGLE', 'SINGLE_PDF', 'VOLUME',
   ]);
   for (const kind of kinds) {
-    const recursive = kind === 'COMBO_ALL';
-    const name = documentName({ id: sampleId, kind: kind.replace(/_ALL$/, ''), recursive });
+    const recursive = /_ALL(_PDF)?$/.test(kind);
+    const name = documentName({ id: sampleId, kind: kind.replace('_ALL', ''), recursive });
     assert.equal(name, `${sampleId}_HASHREPORT_TYP_${kind}.pdf`);
     assert.ok(isGeneratedHashReport(name), `${name} is never hashed as evidence`);
   }
+});
+
+test('a recursive embedded report keeps _PDF at the end of its name', () => {
+  const sampleId = 'RPT-20260804-091500000-ABCDEF12';
+  // Python splices _ALL between the type and _PDF, so the embedded marker can never
+  // be buried: a COMBO_ALL_PDF never publishes as COMBO_PDF_ALL.
+  assert.equal(
+    documentName({ id: sampleId, kind: 'COMBO_PDF', recursive: true }),
+    `${sampleId}_HASHREPORT_TYP_COMBO_ALL_PDF.pdf`,
+  );
+  assert.equal(
+    documentName({ id: sampleId, kind: 'COMBO_PDF', recursive: false }),
+    `${sampleId}_HASHREPORT_TYP_COMBO_PDF.pdf`,
+  );
+  const recursiveName = documentName({ id: sampleId, kind: 'COMBO_ALL_PDF', recursive: true });
+  assert.ok(!recursiveName.includes('COMBO_PDF_ALL'), recursiveName);
 });
 test('text checksums can be turned off for a lightweight document', () => {
   const result = build('single', { textChecksums: false });

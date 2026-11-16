@@ -31,6 +31,9 @@ def parse(argv):
     p.add_argument('--log-dir', default=str(BASE / 'logs'), help='where session logs are written')
     p.add_argument('--explanation', action='store_true', help='embed ERLAEUTERUNG.pdf into the report')
     p.add_argument('--source-pdf', action='store_true', help='embed the original PDF (SINGLE only)')
+    p.add_argument('--embed-pdf', help='embed this PDF into a COMBO report (visible pages + byte-exact attachment)')
+    p.add_argument('--embed-position', choices=['before', 'after'], default='after',
+                   help='place the embedded PDF before or after the hash report (default: after)')
     p.add_argument('--output-dir')
     p.add_argument('--preflight', action='store_true', help='run checks only, then exit')
     p.add_argument('--self-check', action='store_true', help='verify and repair dependencies only, then exit')
@@ -99,7 +102,9 @@ def main(argv=None):
         if not args.target:
             raise PipelineError('No target given. Pass a file or directory, or use --preflight / --self-check / --bootstrap-trust.')
         if args.preflight:
-            info, issues, warnings = pipeline.preflight(Path(args.target).expanduser(), pdf_embed=args.source_pdf)
+            info, issues, warnings = pipeline.preflight(Path(args.target).expanduser(),
+                                                       pdf_embed=args.source_pdf,
+                                                       combo_embed=bool(args.embed_pdf))
             for key, value in info.items():
                 emit(f'  {key}: {value}')
             for warning in warnings:
@@ -127,7 +132,9 @@ def main(argv=None):
             session.write('[TRUST] ' + json.dumps(report, ensure_ascii=False))
             session.write('[TRUST] automatic bootstrap PASS')
         summary = pipeline.run(Path(args.target).expanduser(), args.mode or 'combined', args.recursive,
-                               args.explanation, args.source_pdf, args.output_dir)
+                               args.explanation, args.source_pdf, args.output_dir,
+                               embed_pdf=Path(args.embed_pdf).expanduser() if args.embed_pdf else None,
+                               embed_position=args.embed_position)
         session.write('FINAL PASS')
         result.update(status='PASS', final_pdf=summary.get('final_pdf'), summary=summary)
         code = EXIT_PASS

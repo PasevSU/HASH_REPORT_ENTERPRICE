@@ -21,6 +21,7 @@ export function buildArgv({
   requireLayoutPass = false,
   perFile = false,
   embedPdf = false,
+  embedPosition = 'after',
   quiet = false,
 } = {}) {
   const argv = [];
@@ -35,7 +36,11 @@ export function buildArgv({
   if (!normalise) argv.push('--no-normalise');
   if (requireLayoutPass) argv.push('--require-layout-pass');
   if (perFile) argv.push('--per-file');
-  if (embedPdf) argv.push('--embed-pdf');
+  // A string names the PDF to include in a folder report; `true` includes the single
+  // input file itself, which is the single_pdf route.
+  if (typeof embedPdf === 'string' && embedPdf) argv.push('--embed-pdf', embedPdf);
+  else if (embedPdf) argv.push('--embed-pdf');
+  if (embedPdf && embedPosition !== 'after') argv.push('--embed-position', embedPosition);
   if (quiet) argv.push('--quiet');
   return argv;
 }
