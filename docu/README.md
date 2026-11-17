@@ -1,26 +1,61 @@
-# ChronoSeal — единен GUI
+# ChronoSeal — CLI издание (5.10.0-cli)
+
+Това е **CLI изданието** (`release/cli`): без графичен интерфейс, с оркестратор на
+отчетите по име и със задължителен QR блок в края на всеки отчет. Графичното издание,
+без QR код и подходящо за бързи действия и изпращане по имейл, е в клона
+`release/gui`. Подробности — `V95_CLI_EDITION_BG.md`.
 
 ## Стартиране
 
-Стартирайте `Start_ChronoSeal.bat` от главната папка. Единственият основен графичен вход е `ChronoSeal_GUI.pyw`.
+```powershell
+:: от главната папка; Run_Report.bat обвива chronoseal_report.py
+Run_Report.bat list
+Run_Report.bat --information
+Run_Report.bat SINGLE      D:\cases\letter.pdf
+Run_Report.bat COMBO       D:\cases\2026-08
+Run_Report.bat COMBO_ALL_PDF D:\cases\2026-08 --pdf D:\cases\Anlage.pdf --position before --url https://example.net/static/
+```
 
-## Функционални раздели
+`Install_Windows.bat` не стартира нищо — отпечатва имената на отчетите и пример за
+употреба.
 
-- **Report & TSA** — оригиналният генератор и задължителните RFC 3161 START/STOP и проверки.
-- **Automatic Reports** — самостоятелен функционален блок с избор на операция по описание, динамични настройки, избор на файлове, план, Старт, Спри и логове.
-- **Settings & Trust** — настройки на генератора, Node.js, OpenSSL, TSA доставчици и доверени сертификати.
-- **Diagnostics & Logs** — оригиналната диагностика и логове.
-- **Selection** — избор на папка (с включени подпапки) и верижни филтри за тип
-  файлове: въвеждате `*.eml.pdf` и веднага се появява следващо поле за филтър.
-  Обхватът и филтрите се предават на генератора, така че отчетът съдържа точно
-  файловете, които операторът вижда в прегледа.
+## Имена на отчетите
 
-Бързи клавиши: Ctrl+1 … Ctrl+5 (Report & TSA, Automation, Settings & Trust,
-Diagnostics, Selection).
+| Отчет | Вход | Какво публикува |
+|---|---|---|
+| `SINGLE` | един файл | подпечатан отчет за файла |
+| `SINGLE_PDF` | един PDF | същият, с вграден входен файл байт-за-байт |
+| `COMBO` | папка или изричен набор файлове | отчет за набора |
+| `COMBO_PDF` | папка + `--pdf` | отчет с вграден PDF преди/след отчета |
+| `COMBO_ALL` | папка | отчет за папката и всички подпапки |
+| `COMBO_ALL_PDF` | папка + `--pdf` | рекурсивният отчет с вграден PDF |
+
+## Функционални блокове
+
+- **Отчет и RFC 3161** — генераторът, задължителните START/STOP печати и проверките;
+  извиква се през `chronoseal_cli.py <файл-или-папка>`.
+- **Автоматични отчети** — `automation/*.bat` (SINGLE, SINGLE_PDF, COMBO,
+  COMBO_ALL, COMBO_PDF, COMBO_ALL_PDF); неподпечатаните изискват
+  `--allow-unsealed-diagnostics`.
+- **Настройки и доверие** — `config/config.json`, TSA доставчици и доверени
+  сертификати; `chronoseal_cli.py --bootstrap-trust` и `--self-check`.
+- **Диагностика и логове** — `Run_Diagnostics.bat`, `--preflight`, `--log-dir`.
+- **Избор на доказателства** — `--filter '*.eml' --filter '*.pdf'` (верижни филтри,
+  код `3` при нула съвпадения) и `--file` за изричен набор.
+
+## Договор за връзката от QR кода
+
+Кодът не създава `.ots` и не качва нищо. Отпечатва връзката (базов адрес от `--url`,
+`CHRONOSEAL_EVIDENCE_BASE_URL` или `config['verification']['base_url']` плюс генериран
+код) и я записва в case папката. Сървърът на внедряващия трябва да пренасочи тази
+една връзка към **два** документа: отчета и пакета с доказателствата.
 
 ## Инсталиране и диагностика
 
-Инсталирайте Python 3.12+, Node.js 22.12+ и OpenSSL. Стартирайте `Install_Windows.bat` за Python и Node зависимостите, след което `Start_ChronoSeal.bat`. `Run_Diagnostics.bat` проверява npm/runtime целостта, импорти, и двата Python test suite-а. Той не изпраща заявка към TSA.
+Инсталирайте Python 3.12+, Node.js 22.12+ и OpenSSL. `Install_Windows.bat` проверява
+инструментите, инсталира зависимостите, заключва и проверява Node пакета и пуска
+`chronoseal.selfheal`. `Run_Diagnostics.bat` проверява npm/runtime цялостта, импорти,
+и двата Python test suite-а. Той не изпраща заявка към TSA.
 
 Тестовете се пускат директно с `python -m unittest discover -s tests` и `python -m unittest discover -s hash_report_generator/tests` (или с pytest). Не използвайте `npm test` / `npm run verify`, когато работната папка е UNC път (`\\СЪРВЪР\дял\...`): Windows стартира `cmd.exe` в `C:\Windows`, `-s tests` се резолвва през `sys.path` към чужд пакет `tests` от `site-packages` и гейтът измерва чужди тестове. `npm run doctor` и `npm run verify:vendor` падат по същата причина.
 
