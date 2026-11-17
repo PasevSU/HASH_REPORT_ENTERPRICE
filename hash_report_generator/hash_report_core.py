@@ -2060,6 +2060,18 @@ class HashGeneratorCore:
         )
         story.append(Paragraph(text, style))
 
+    def _add_verification_qr_section(self, story, is_combined=False):
+        """Close the report with the pointer to the electronic timestamp evidence.
+
+        Off unless ``CHRONOSEAL_VERIFICATION_QR`` carries a target URL, so every
+        existing case keeps byte-identical presentation. Returns the applied URL.
+        """
+        try:
+            from hash_report_generator import verification_qr
+        except ImportError:
+            import verification_qr
+        return verification_qr.add_section(story, is_combined=is_combined)
+
     def _add_footer(self, story, styles, now, timezone_str, is_combined=False):
         """Добавя footer на документа"""
         small_style = styles['small_style']

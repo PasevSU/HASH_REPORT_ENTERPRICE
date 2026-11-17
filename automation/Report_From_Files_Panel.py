@@ -28,6 +28,10 @@ for _path in (str(HERE), str(BASE)):
         sys.path.insert(0, _path)
 
 from chronoseal import i18n
+from chronoseal.embed_options import EmbedOptionError, resolve_embed_options, summary_text
+from chronoseal.verification_qr import QrOptionError
+from chronoseal.verification_qr import base_url as qr_base_url
+from chronoseal.verification_qr import summary_text as qr_summary_text
 
 i18n.install()
 
@@ -99,6 +103,12 @@ class App:
         self.root_hint = tk.StringVar(value="")
         self.summary = tk.StringVar(value="No files selected.")
         self.status = tk.StringVar(value="Ready.")
+        self.embed_summary = tk.StringVar(value="")
+        self.embed_supported = False
+        self._embed_state = None
+        self.qr_summary = tk.StringVar(value="")
+        self.qr_supported = False
+        self._qr_state = None
         self.selected_files = []
         self.problems = []
         self.warnings = []
@@ -107,6 +117,7 @@ class App:
         self.btn_remove = None
         self.btn_clear = None
         self.btn_preview = None
+        self.btn_embed = None
         self.btn_check = None
         self.btn_hand = None
         self.btn_create = None
@@ -114,6 +125,8 @@ class App:
         self._preview_tree = None
         self._hashes = {}
         self._hash_thread = None
+        self._bind_embed_state()
+        self._bind_qr_state()
         self._build()
         self.evidence_root.trace_add("write", lambda *_a: self._refresh_root_hint())
         self._refresh()
@@ -200,8 +213,60 @@ class App:
         scroll.grid(row=0, column=1, sticky="ns")
         self.tree.configure(yscrollcommand=scroll.set)
 
+        # A combo report can carry a PDF exactly like a folder report; the option
+        # belongs next to "Create combo report", not on another page. Only the
+        # switch and the position stay here - the file itself is chosen in the
+        # dialog, so this page keeps one readable row.
+        embed = ttk.LabelFrame(
+            page, text="  3  -  PDF embedding (optional)  ", style="Panel.TLabelframe"
+        )
+        embed.grid(row=5, column=0, sticky="ew", pady=(12, 0))
+        embed.columnconfigure(4, weight=1)
+        state = self._embed_state
+        ttk.Checkbutton(
+            embed, text="Embed a PDF in this combo report", variable=state["enabled"]
+        ).grid(row=0, column=0, sticky="w")
+        ttk.Radiobutton(
+            embed, text="Before report", value="before", variable=state["position"]
+        ).grid(row=0, column=1, padx=(14, 0), sticky="w")
+        ttk.Radiobutton(
+            embed, text="After report", value="after", variable=state["position"]
+        ).grid(row=0, column=2, padx=(10, 0), sticky="w")
+        self.btn_embed = ttk.Button(
+            embed, text="PDF embedding…", command=self.open_embed_dialog
+        )
+        self.btn_embed.grid(row=0, column=3, padx=(16, 0), sticky="w")
+        ttk.Label(
+            embed, textvariable=self.embed_summary, style="Muted.TLabel"
+        ).grid(row=1, column=0, columnspan=5, sticky="w", pady=(8, 0))
+        ttk.Separator(embed, orient="horizontal").grid(
+            row=2, column=0, columnspan=5, sticky="ew", pady=(10, 8)
+        )
+        ttk.Label(
+            embed,
+            text="QR code at the end of the report: mandatory, the link is "
+                 "generated per report",
+        ).grid(row=3, column=0, columnspan=5, sticky="w")
+        ttk.Label(
+            embed,
+            text="Link base: " + (self.qr_base or "-"),
+            style="Muted.TLabel",
+        ).grid(row=4, column=0, columnspan=5, sticky="w", pady=(6, 0))
+        ttk.Label(embed, textvariable=self.qr_summary, style="Muted.TLabel").grid(
+            row=5, column=0, columnspan=5, sticky="w", pady=(6, 0)
+        )
+        ttk.Label(
+            embed,
+            text="Each report ends with the QR block that leads to the electronic "
+                 "documents for checking the timestamps, the TSA chain and the "
+                 "OpenTimestamps proof (.ots). The link is base address plus a "
+                 "random code and is recorded in the evidence case, so the report "
+                 "and its verification documents download together.",
+            style="Muted.TLabel", wraplength=900, justify="left",
+        ).grid(row=6, column=0, columnspan=5, sticky="w", pady=(6, 0))
+
         handover = ttk.Frame(page)
-        handover.grid(row=5, column=0, sticky="ew", pady=(12, 0))
+        handover.grid(row=6, column=0, sticky="ew", pady=(12, 0))
         handover.columnconfigure(2, weight=1)
         self.btn_check = ttk.Button(
             handover, text="Check selection", command=self.check_selection
@@ -218,6 +283,135 @@ class App:
         ttk.Label(handover, textvariable=self.status, style="Muted.TLabel").grid(
             row=0, column=3, sticky="e"
         )
+
+    # ------------------------------------------------------------- embedding
+    def _bind_embed_state(self):
+        """Reuse the shell's embedding state so both pages describe one run.
+
+        The switch, the position and the chosen PDF are the same variables the
+        Report & TSA page writes into ``_run_args``; nothing is duplicated here.
+        """
+        getter = getattr(self.root, "_embed_vars", None)
+        state = None
+        if callable(getter):
+            try:
+                state = getter()
+            except tk.TclError:
+                state = None
+        self.embed_supported = isinstance(state, dict) and "enabled" in state
+        if not self.embed_supported:
+            state = {
+                "enabled": tk.BooleanVar(value=False),
+                "path": tk.StringVar(value=""),
+                "position": tk.StringVar(value="after"),
+            }
+        self._embed_state = state
+        for key in ("enabled", "path", "position"):
+            variable = state.get(key)
+            if variable is None:
+                continue
+            try:
+                variable.trace_add("write", lambda *_a: self._refresh_embed_summary())
+            except tk.TclError:
+                pass
+        self._refresh_embed_summary()
+
+    def _refresh_embed_summary(self):
+        """Read back what "Create combo report" will do with the PDF."""
+        if not self.embed_supported:
+            text = "PDF embedding is not available in this window."
+            self.embed_summary.set(text)
+            return text
+        state = self._embed_state
+        try:
+            resolved = resolve_embed_options(
+                enabled=bool(state["enabled"].get()),
+                position=state["position"].get(),
+                path=state["path"].get(),
+                target=self.evidence_root.get(),
+                file_list=True,
+                recursive=False,
+            )
+            text = summary_text(resolved)
+        except EmbedOptionError as exc:
+            text = str(exc)
+        self.embed_summary.set(text)
+        return text
+
+    # -------------------------------------------------------------------- QR
+    def _bind_qr_state(self):
+        """The closing QR block is never optional, so this page only reads it back."""
+        self.qr_base = ""
+        getter = getattr(self.root, "_qr_vars", None)
+        state = None
+        if callable(getter):
+            try:
+                state = getter()
+            except tk.TclError:
+                state = None
+        self.qr_supported = isinstance(state, dict) and "summary" in state
+        self._qr_state = state if self.qr_supported else {"summary": self.qr_summary}
+        shell = self._qr_state.get("summary")
+        if shell is not None and shell is not self.qr_summary:
+            try:
+                shell.trace_add("write", lambda *_a: self._refresh_qr_summary())
+            except tk.TclError:
+                pass
+        self._refresh_qr_summary()
+
+    def _refresh_qr_summary(self):
+        """Read back where the closing QR block of the combo report will point."""
+        try:
+            self.qr_base = qr_base_url(getattr(self.root, "cfg", None))
+        except QrOptionError as exc:
+            # A base address that cannot resolve is reported here: the page shows
+            # why no link can be printed instead of failing later during the run.
+            self.qr_base = ""
+            text = str(exc)
+        else:
+            text = ""
+            shell = (self._qr_state or {}).get("summary")
+            if shell is not None and shell is not self.qr_summary:
+                try:
+                    text = str(shell.get())
+                except tk.TclError:
+                    text = ""
+            text = text or qr_summary_text({"url": self.qr_base}, "en")
+        self.qr_summary.set(text)
+        return text
+
+    def open_embed_dialog(self):
+        """Open the shell's PDF-embedding dialog for this page's report."""
+        if not self.embed_supported:
+            self.status.set("This window cannot edit the PDF embedding options.")
+            return None
+        opener = getattr(self.root, "_embed_dialog", None)
+        if not callable(opener):
+            self.status.set("This window cannot edit the PDF embedding options.")
+            return None
+        # Hand the selection over first: the dialog reads the shell's state, and
+        # only a handed-over list makes it describe a combo report of these files.
+        if not self.selected_files:
+            self.status.set(
+                "Add the files for the combo report first, then choose the PDF to embed."
+            )
+            return None
+        self.hand_over()
+        try:
+            dialog = opener()
+        except tk.TclError as exc:
+            self.status.set(f"Could not open the PDF embedding options: {exc}")
+            return None
+        self._refresh_embed_summary()
+        if dialog is not None:
+            def release(event):
+                if event.widget is dialog:
+                    self._refresh_embed_summary()
+            try:
+                dialog.bind("<Destroy>", release, add="+")
+            except tk.TclError:
+                pass
+        return dialog
 
     # --------------------------------------------------------------- selection
     def anchor(self):
@@ -426,6 +620,8 @@ class App:
                 self.status.set(f"{len(missing)} selected file(s) are no longer readable.")
         self._refresh_root_hint()
         self._sync_buttons()
+        self._refresh_embed_summary()
+        self._refresh_qr_summary()
         return records
 
     def _refresh_root_hint(self):
@@ -462,6 +658,14 @@ class App:
                 continue
             try:
                 button.configure(state="disabled" if empty else "normal")
+            except tk.TclError:
+                pass
+        if self.btn_embed is not None:
+            # Configuring the embedding does not need a selection yet.
+            try:
+                self.btn_embed.configure(
+                    state="normal" if self.embed_supported else "disabled"
+                )
             except tk.TclError:
                 pass
 

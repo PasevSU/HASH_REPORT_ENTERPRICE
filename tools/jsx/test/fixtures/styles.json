@@ -1473,6 +1473,28 @@
      "size_pt": 11,
      "uppercase": true
     }
+   },
+   "VERIFICATION_QR": {
+    "block_border_pt": 0.5,
+    "block_padding_pt": 8,
+    "body_font_size_pt": 8,
+    "body_leading_pt": 10.5,
+    "caption_font_size_pt": 6.5,
+    "caption_leading_pt": 8.5,
+    "colors": {
+     "background": "paper",
+     "body": "ink",
+     "border": "grid",
+     "caption": "muted",
+     "heading": "accent"
+    },
+    "heading_font_size_pt": 11,
+    "heading_leading_pt": 14,
+    "qr_cell_padding_pt": 8,
+    "qr_column_width_pt": 104,
+    "qr_size_mm": 30,
+    "space_after_pt": 6,
+    "space_before_pt": 14
    }
   },
   "required": [
@@ -1545,7 +1567,8 @@
    "TABLE_PRESENTATION_VARIANTS",
    "TABLE_RELIEF",
    "TIMESTAMP_CELL_TYPOGRAPHY",
-   "TITLE_HIERARCHY"
+   "TITLE_HIERARCHY",
+   "VERIFICATION_QR"
   ]
  },
  "pagination": {

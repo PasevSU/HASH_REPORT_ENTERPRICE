@@ -9,13 +9,23 @@ from chronoseal.startup import startup_check, write_startup_report
 from chronoseal.provider_bootstrap import bootstrap_providers, BootstrapError
 from chronoseal.provider_catalog import apply_profile
 from chronoseal.tk_support import init_root
+from chronoseal.embed_options import (DEFAULT_EMBED_POSITION, EmbedOptionError,
+                                      resolve_embed_options, summary_text)
+from chronoseal.verification_qr import QrOptionError
+from chronoseal.verification_qr import base_url as qr_base_url
+from chronoseal.verification_qr import summary_text as qr_summary_text
 from chronoseal import branding
 
 def _brand_font(widget,size=10,weight=None,role='ui'):
  return branding.FontBook(widget).font(size,weight,role=role)
 
 BASE=Path(__file__).resolve().parent; CFG_PATH=BASE/'config'/'config.json'
+# Operator-facing text for the two option dialogs. The language follows the shell
+# that opens them: the legacy window is Bulgarian, the page-based desktop is English.
+EMBED_TEXT={'bg':{'error_title':'ChronoSeal — PDF вграждане','embed_title':'ChronoSeal — PDF вграждане','embed_heading':'Вграждане на PDF в отчета','embed_check':'Вгради PDF страниците и оригинала като приложение','position':'Позиция спрямо хеш отчета','before':'Преди отчета','after':'След отчета (по подразбиране)','pdf_label':'PDF за вграждане (COMBO)','pdf_choose':'PDF…','single_hint':'При SINGLE вход (един PDF файл) се вгражда самият входен файл, независимо от това поле.','preview':'Какво ще се получи','other_hint':'Останалите опции са в „Отчет…“ на началния екран.','ok':'OK','cancel':'Отказ','report_title':'ChronoSeal — опции на отчета','report_heading':'Останали опции на отчета','explanation':'ERLAEUTERUNG.pdf като страници в отчета (когато файлът е наличен)','recursive':'Включи подпапките (при папка)','folder':'Запази отчета и доказателствата в друга папка','browse':'Browse…','qr_auto':'QR код: задължителен, генерира се автоматично за всеки отчет','qr_heading':'QR код в края на отчета','qr_base_label':'База на връзките','qr_hint':'Всеки отчет завършва с QR блок, който води към електронните документи за сверка на времевите печати, TSA веригата и OpenTimestamps доказателството (.ots файл). Връзката се генерира за всеки отчет — базов адрес плюс случаен код — и се записва в доказателствения пакет, така че отчетът и придружаващите го документи се изтеглят заедно. Оригиналните файлове не се променят.'},'en':{'error_title':'ChronoSeal — PDF embedding','embed_title':'ChronoSeal — PDF embedding','embed_heading':'Embed a PDF in the report','embed_check':'Embed the PDF pages and keep the original as an attachment','position':'Position relative to the hash report','before':'Before report','after':'After report (default)','pdf_label':'PDF to embed (COMBO)','pdf_choose':'PDF…','single_hint':'With a SINGLE input (one PDF file) the input file itself is embedded, whatever this field holds.','preview':'What the run will produce','other_hint':'The remaining options live in "Report options…" on the run page.','ok':'OK','cancel':'Cancel','report_title':'ChronoSeal — report options','report_heading':'Remaining report options','explanation':'ERLAEUTERUNG.pdf as pages in the report (when the file is present)','recursive':'Include subfolders (folder input)','folder':'Save the report and evidence in a different folder','browse':'Browse','qr_auto':'QR code: mandatory, generated automatically for every report','qr_heading':'QR code at the end of the report','qr_base_label':'Link base','qr_hint':'Every report ends with a QR block that leads to the electronic documents for verifying the timestamps, the TSA chain and the OpenTimestamps proof (a .ots file). The link is generated per report - base address plus a random code - and is recorded in the evidence case, so the report and its accompanying documents are downloaded together. The original evidence files are never modified.'}}
 class App(tk.Tk):
+ embed_language='bg'
+
  def __init__(self, *, auto_bootstrap=True):
   init_root(self); self._main_thread=threading.get_ident(); self._uiq=queue.Queue(); self._closed=False; self.after(20,self._pump_ui); self.title('ChronoSeal — Windows RFC3161 Control Center'); self.geometry('1040x760'); self.minsize(900,650)
   self.cfg=load(CFG_PATH); self.target=tk.StringVar(value=''); self.mode=tk.StringVar(value='combined'); self.rec=tk.BooleanVar(value=False); self.custom_output=tk.BooleanVar(value=False); self.output_folder=tk.StringVar(value=''); self.status=tk.StringVar(value='Ready'); self.file_filters=[]; self.cancel=threading.Event(); self.session=None; self.last_result=None; self.startup_ready=False
@@ -133,7 +143,10 @@ class App(tk.Tk):
   f=self.run_tab; ttk.Label(f,text='Input source, folder, or already generated PDF').pack(anchor='w'); r=ttk.Frame(f); r.pack(fill='x',pady=(2,8)); ttk.Entry(r,textvariable=self.target).pack(side='left',fill='x',expand=True); ttk.Button(r,text='File…',command=self.file).pack(side='left',padx=3); ttk.Button(r,text='Folder…',command=self.folder).pack(side='left')
   m=ttk.Frame(f); m.pack(fill='x'); self.mode_label=ttk.Label(m,text='Report type: automatic (File → SINGLE / Folder → COMBO)'); self.mode_label.pack(side='left'); self.rec_check=ttk.Checkbutton(m,text='Recursive (folders only)',variable=self.rec); self.rec_check.pack(side='left',padx=18)
   o=ttk.Frame(f); o.pack(fill='x',pady=(7,0)); ttk.Checkbutton(o,text='Save in another folder (default: working folder)',variable=self.custom_output).pack(side='left'); ttk.Entry(o,textvariable=self.output_folder).pack(side='left',fill='x',expand=True,padx=6); ttk.Button(o,text='Browse…',command=lambda:self._dir(self.output_folder)).pack(side='left')
-  e=ttk.Frame(f); e.pack(fill='x',pady=(7,0)); ev=self._embed_vars(); ttk.Checkbutton(e,text='Вгради PDF в отчета',variable=ev['enabled']).pack(side='left'); ttk.Entry(e,textvariable=ev['path']).pack(side='left',fill='x',expand=True,padx=6); ttk.Button(e,text='PDF…',command=self._choose_embed_pdf).pack(side='left'); ttk.Radiobutton(e,text='преди',value='before',variable=ev['position']).pack(side='left',padx=(10,0)); ttk.Radiobutton(e,text='след',value='after',variable=ev['position']).pack(side='left'); ttk.Button(e,text='Още опции…',command=self._embed_dialog).pack(side='left',padx=(10,0))
+  e=ttk.Frame(f); e.pack(fill='x',pady=(7,0)); ev=self._embed_vars(); ttk.Checkbutton(e,text='Вгради PDF в отчета',variable=ev['enabled']).pack(side='left'); ttk.Entry(e,textvariable=ev['path']).pack(side='left',fill='x',expand=True,padx=6); ttk.Button(e,text='PDF…',command=self._choose_embed_pdf).pack(side='left'); ttk.Radiobutton(e,text='преди',value='before',variable=ev['position']).pack(side='left',padx=(10,0)); ttk.Radiobutton(e,text='след',value='after',variable=ev['position']).pack(side='left'); ttk.Button(e,text='Вграждане…',command=self._embed_dialog).pack(side='left',padx=(10,0)); ttk.Button(e,text='Отчет…',command=self._report_options_dialog).pack(side='left',padx=(6,0))
+  ttk.Label(f,textvariable=ev['summary']).pack(anchor='w',pady=(3,0))
+  q=ttk.Frame(f); q.pack(fill='x',pady=(5,0)); qv=self._qr_vars(); ttk.Label(q,text=EMBED_TEXT[self.embed_language]['qr_auto']).pack(side='left')
+  ttk.Label(f,textvariable=qv['summary'],foreground=branding.PALETTE['muted'],wraplength=980).pack(anchor='w',pady=(2,0))
   self.go=ttk.Button(f,text='ONE BUTTON — REPORT → RFC3161 → FINAL VERIFY → EVIDENCE',command=self.start,style='Accent.TButton'); self.go.pack(fill='x',pady=(12,4)); self.stop=ttk.Button(f,text='Stop / Cancel',command=self.cancel_run,state='disabled'); self.stop.pack(fill='x'); self.pb=ttk.Progressbar(f,maximum=100); self.pb.pack(fill='x',pady=(10,2)); ttk.Label(f,textvariable=self.status).pack(anchor='w'); self.log=tk.Text(f,height=25,wrap='none',background=branding.PALETTE['console_bg'],foreground=branding.PALETTE['console_fg'],insertbackground=branding.PALETTE['on_accent'],font=_brand_font(self,10,role='mono'),relief='flat'); self.log.pack(fill='both',expand=True,pady=(6,0)); lb=ttk.Frame(f); lb.pack(fill='x',pady=(4,0)); ttk.Button(lb,text='Copy selected',command=lambda:self._copy_text_widget(self.log,False)).pack(side='left'); ttk.Button(lb,text='Copy all log',command=lambda:self._copy_text_widget(self.log,True)).pack(side='left',padx=5); self._settings_ui(); self._diag_ui()
  def _row(self,parent,label,var,browse=None):
   x=ttk.Frame(parent); x.pack(fill='x',pady=3); ttk.Label(x,text=label,width=25).pack(side='left'); ttk.Entry(x,textvariable=var).pack(side='left',fill='x',expand=True); ttk.Button(x,text='Browse…',command=browse).pack(side='left',padx=4)
@@ -143,57 +156,109 @@ class App(tk.Tk):
  def _diag_ui(self):
   f=self.diag_tab; ttk.Label(f,text='Diagnostics and complete log package',font=_brand_font(self,11,'bold')).pack(anchor='w'); self.diag=tk.Text(f,height=28,background=branding.PALETTE['console_bg'],foreground=branding.PALETTE['console_fg'],insertbackground=branding.PALETTE['on_accent'],font=_brand_font(self,10,role='mono'),relief='flat'); self.diag.pack(fill='both',expand=True,pady=8); b=ttk.Frame(f); b.pack(fill='x'); ttk.Button(b,text='Refresh diagnostics',command=self.diagnostics).pack(side='left'); ttk.Button(b,text='Open latest log folder',command=self.open_logs).pack(side='left',padx=5); ttk.Button(b,text='Open evidence folder',command=self.open_evidence).pack(side='left'); ttk.Button(b,text='Copy selected',command=lambda:self._copy_text_widget(self.diag,False)).pack(side='left',padx=5); ttk.Button(b,text='Copy all',command=lambda:self._copy_text_widget(self.diag,True)).pack(side='left')
  def _embed_vars(self):
-  # One shared state for the panel row and the options dialog; created lazily so
-  # every shell (legacy window and the page-based desktop) uses the same values.
+  # One shared state for every surface: the run page row, the PDF-embedding
+  # dialog and the Report-from-Files page read and write the same variables,
+  # so a choice made in one window is what the next run actually uses.
   if getattr(self,'_embed_state',None) is None:
-   self._embed_state={'enabled':tk.BooleanVar(master=self,value=False),'path':tk.StringVar(master=self,value=''),'position':tk.StringVar(master=self,value='after'),'explanation':tk.BooleanVar(master=self,value=False)}
+   self._embed_state={'enabled':tk.BooleanVar(master=self,value=False),'path':tk.StringVar(master=self,value=''),'position':tk.StringVar(master=self,value='after'),'explanation':tk.BooleanVar(master=self,value=False),'summary':tk.StringVar(master=self,value='')}
+   for key in ('enabled','path','position'):self._embed_state[key].trace_add('write',lambda *_a:self._sync_embed_summary())
+   self.rec.trace_add('write',lambda *_a:self._sync_embed_summary())
+   self.target.trace_add('write',lambda *_a:self._sync_embed_summary())
   return self._embed_state
  def _choose_embed_pdf(self):
   x=filedialog.askopenfilename(title='PDF за вграждане',filetypes=[('PDF','*.pdf'),('All files','*.*')])
   if x:self._embed_vars()['path'].set(x)
+ def _embed_selection(self):
+  # Non-raising view of the shared state: a half-finished choice is reported in
+  # the summary line instead of interrupting the operator with an error box.
+  st=self._embed_vars()
+  try:
+   return resolve_embed_options(enabled=bool(st['enabled'].get()),position=st['position'].get(),path=st['path'].get(),target=self.target.get(),file_list=bool(getattr(self,'file_selection',None)),recursive=bool(self.rec.get()),language=self.embed_language)
+  except EmbedOptionError as e:
+   return {'enabled':True,'position':st['position'].get() or DEFAULT_EMBED_POSITION,'report_type':'','source':None,'error':str(e)}
+ def _sync_embed_summary(self):
+  # Read-back published on every page: report type, position and the PDF name.
+  st=self._embed_vars(); r=self._embed_selection(); text=r.get('error') or summary_text(r,self.embed_language)
+  try:st['summary'].set(text)
+  except tk.TclError:pass
+  return r
  def _resolve_embed(self):
-  # Turns the panel state into the three pipeline arguments plus ERLAEUTERUNG.
-  # Raises ValueError with an operator-facing message instead of guessing.
-  st=self._embed_vars(); target=Path(self.target.get()).expanduser() if self.target.get() else None
-  position=st['position'].get() or 'after'
-  if position not in ('before','after'):raise ValueError('Позицията трябва да е „преди“ или „след“ хеш отчета.')
-  out={'explanation':bool(st['explanation'].get()),'source_pdf':False,'pdf':None,'position':position}
-  if not st['enabled'].get():return out
-  if target is not None and target.is_file():
-   if target.suffix.lower()!='.pdf':raise ValueError('Вграждане на самия входен файл е възможно само за PDF. За друг файл изберете COMBO папка и отделен PDF за вграждане.')
-   out['source_pdf']=True; return out
-  chosen=(st['path'].get() or '').strip()
-  if not chosen:raise ValueError('Изберете PDF файл за вграждане или изключете вграждането.')
-  pdf=Path(chosen).expanduser()
-  if not pdf.is_file() or pdf.suffix.lower()!='.pdf':raise ValueError('Избраният за вграждане файл не е четим PDF: '+chosen)
-  out['pdf']=pdf; return out
+  # Strict variant used by the run: raises ValueError with the operator message.
+  st=self._embed_vars(); r=self._embed_selection()
+  if r.get('error'):raise ValueError(r['error'])
+  return {'explanation':bool(st['explanation'].get()),'source_pdf':r['source_pdf'],'pdf':r['pdf'],'position':r['position'],'report_type':r['report_type']}
+ def _qr_vars(self):
+  # The closing QR block is mandatory, so there is no switch to store: the state is
+  # the read-back line every page publishes. The link itself is generated per report
+  # by the pipeline; previewing a code here would show one that no run would reuse.
+  if getattr(self,'_qr_state',None) is None:
+   self._qr_state={'summary':tk.StringVar(master=self,value='')}
+   self._sync_qr_summary()
+  return self._qr_state
+ def _qr_preview(self):
+  # Non-raising view of the configured base address. A malformed base is reported in
+  # the summary line instead of interrupting the operator with an error box.
+  try:return {'url':qr_base_url(self.cfg),'position':'document_end'}
+  except QrOptionError as e:return {'url':'','error':str(e)}
+ def _sync_qr_summary(self):
+  st=self._qr_vars(); r=self._qr_preview(); text=r.get('error') or qr_summary_text(r,self.embed_language)
+  try:st['summary'].set(text)
+  except tk.TclError:pass
+  return r
  def _embed_dialog(self):
-  # Options that do not fit the one-row panel control; the row stays the summary.
-  st=self._embed_vars(); d=tk.Toplevel(self); d.title('ChronoSeal — PDF вграждане и опции'); d.transient(self); d.geometry('820x430'); d.columnconfigure(0,weight=1)
-  snap=(st['enabled'].get(),st['path'].get(),st['position'].get(),st['explanation'].get(),self.rec.get(),self.custom_output.get(),self.output_folder.get())
+  # One dialog, one subject: what is embedded and where it goes. The report-wide
+  # switches moved to _report_options_dialog, so neither window needs scrolling.
+  T=EMBED_TEXT.get(self.embed_language,EMBED_TEXT['bg'])
+  st=self._embed_vars(); d=tk.Toplevel(self); d.title(T['embed_title']); d.transient(self); d.geometry('760x370'); d.columnconfigure(0,weight=1)
+  snap=(st['enabled'].get(),st['path'].get(),st['position'].get())
   def cancel():
-   st['enabled'].set(snap[0]); st['path'].set(snap[1]); st['position'].set(snap[2]); st['explanation'].set(snap[3]); self.rec.set(snap[4]); self.custom_output.set(snap[5]); self.output_folder.set(snap[6]); d.destroy()
+   st['enabled'].set(snap[0]); st['path'].set(snap[1]); st['position'].set(snap[2]); self._sync_embed_summary(); d.destroy()
+  def apply():
+   r=self._sync_embed_summary()
+   if r.get('error'):messagebox.showerror(T['error_title'],r['error'],parent=d); return
+   d.destroy()
   b=ttk.Frame(d,padding=16); b.pack(fill='both',expand=True); b.columnconfigure(1,weight=1); row=0
-  ttk.Label(b,text='Вграждане на PDF в отчета',font=_brand_font(self,11,'bold')).grid(row=row,column=0,columnspan=3,sticky='w',pady=(0,12)); row+=1
-  ttk.Checkbutton(b,text='Вгради PDF страниците и оригинала като приложение',variable=st['enabled']).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
-  ttk.Label(b,text='Позиция спрямо хеш отчета').grid(row=row,column=0,sticky='w',pady=6)
-  pos=ttk.Frame(b); pos.grid(row=row,column=1,columnspan=2,sticky='w'); ttk.Radiobutton(pos,text='Преди отчета',value='before',variable=st['position']).pack(side='left'); ttk.Radiobutton(pos,text='След отчета (по подразбиране)',value='after',variable=st['position']).pack(side='left',padx=14); row+=1
-  ttk.Label(b,text='PDF за вграждане (COMBO)').grid(row=row,column=0,sticky='w')
-  ttk.Entry(b,textvariable=st['path']).grid(row=row,column=1,sticky='ew',padx=8); ttk.Button(b,text='PDF…',command=self._choose_embed_pdf).grid(row=row,column=2); row+=1
-  ttk.Label(b,text='При SINGLE вход (един PDF файл) се вгражда самият входен файл, независимо от това поле.',wraplength=760).grid(row=row,column=0,columnspan=3,sticky='w',pady=(4,12)); row+=1
+  ttk.Label(b,text=T['embed_heading'],font=_brand_font(self,11,'bold')).grid(row=row,column=0,columnspan=3,sticky='w',pady=(0,12)); row+=1
+  ttk.Checkbutton(b,text=T['embed_check'],variable=st['enabled']).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
+  ttk.Label(b,text=T['position']).grid(row=row,column=0,sticky='w',pady=6)
+  pos=ttk.Frame(b); pos.grid(row=row,column=1,columnspan=2,sticky='w'); ttk.Radiobutton(pos,text=T['before'],value='before',variable=st['position']).pack(side='left'); ttk.Radiobutton(pos,text=T['after'],value='after',variable=st['position']).pack(side='left',padx=14); row+=1
+  ttk.Label(b,text=T['pdf_label']).grid(row=row,column=0,sticky='w')
+  ttk.Entry(b,textvariable=st['path']).grid(row=row,column=1,sticky='ew',padx=8); ttk.Button(b,text=T['pdf_choose'],command=self._choose_embed_pdf).grid(row=row,column=2); row+=1
+  ttk.Label(b,text=T['single_hint'],wraplength=700).grid(row=row,column=0,columnspan=3,sticky='w',pady=(4,10)); row+=1
   ttk.Separator(b).grid(row=row,column=0,columnspan=3,sticky='ew',pady=8); row+=1
-  ttk.Label(b,text='Останали опции на отчета',font=_brand_font(self,11,'bold')).grid(row=row,column=0,columnspan=3,sticky='w',pady=(0,8)); row+=1
-  ttk.Checkbutton(b,text='ERLAEUTERUNG.pdf като страници в отчета (когато файлът е наличен)',variable=st['explanation']).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
-  ttk.Checkbutton(b,text='Включи подпапките (при папка)',variable=self.rec).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
-  ttk.Checkbutton(b,text='Запази отчета и доказателствата в друга папка',variable=self.custom_output).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
-  ttk.Entry(b,textvariable=self.output_folder).grid(row=row,column=0,columnspan=2,sticky='ew',pady=(4,0)); ttk.Button(b,text='Browse…',command=lambda:self._dir(self.output_folder)).grid(row=row,column=2); row+=1
-  act=ttk.Frame(b); act.grid(row=row,column=0,columnspan=3,sticky='e',pady=(16,0)); ttk.Button(act,text='OK',command=d.destroy).pack(side='right'); ttk.Button(act,text='Отказ',command=cancel).pack(side='right',padx=8)
+  ttk.Label(b,text=T['preview'],font=_brand_font(self,10,'bold')).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
+  ttk.Label(b,textvariable=st['summary'],wraplength=700,foreground=branding.PALETTE['muted']).grid(row=row,column=0,columnspan=3,sticky='w',pady=(2,0)); row+=1
+  ttk.Label(b,text=T['other_hint'],wraplength=700,foreground=branding.PALETTE['muted']).grid(row=row,column=0,columnspan=3,sticky='w',pady=(10,0)); row+=1
+  act=ttk.Frame(b); act.grid(row=row,column=0,columnspan=3,sticky='e',pady=(16,0)); ttk.Button(act,text=T['ok'],command=apply).pack(side='right'); ttk.Button(act,text=T['cancel'],command=cancel).pack(side='right',padx=8)
+  d.bind('<Escape>',lambda e:cancel()); d.grab_set(); return d
+ def _report_options_dialog(self):
+  # Report-wide switches, separated from the embedding dialog that used to hold
+  # everything in one window: ERLAEUTERUNG pages, subfolders and the output folder.
+  T=EMBED_TEXT.get(self.embed_language,EMBED_TEXT['bg'])
+  st=self._embed_vars(); qv=self._qr_vars(); d=tk.Toplevel(self); d.title(T['report_title']); d.transient(self); d.geometry('760x430'); d.columnconfigure(0,weight=1)
+  snap=(st['explanation'].get(),self.rec.get(),self.custom_output.get(),self.output_folder.get())
+  def cancel():
+   st['explanation'].set(snap[0]); self.rec.set(snap[1]); self.custom_output.set(snap[2]); self.output_folder.set(snap[3]); d.destroy()
+  b=ttk.Frame(d,padding=16); b.pack(fill='both',expand=True); b.columnconfigure(1,weight=1); row=0
+  ttk.Label(b,text=T['report_heading'],font=_brand_font(self,11,'bold')).grid(row=row,column=0,columnspan=3,sticky='w',pady=(0,12)); row+=1
+  ttk.Checkbutton(b,text=T['explanation'],variable=st['explanation']).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
+  ttk.Checkbutton(b,text=T['recursive'],variable=self.rec).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
+  ttk.Checkbutton(b,text=T['folder'],variable=self.custom_output).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
+  ttk.Entry(b,textvariable=self.output_folder).grid(row=row,column=0,columnspan=2,sticky='ew',pady=(4,0)); ttk.Button(b,text=T['browse'],command=lambda:self._dir(self.output_folder)).grid(row=row,column=2); row+=1
+  ttk.Separator(b).grid(row=row,column=0,columnspan=3,sticky='ew',pady=10); row+=1
+  ttk.Label(b,text=T['qr_heading'],font=_brand_font(self,10,'bold')).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
+  ttk.Label(b,text=T['qr_auto']).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
+  _base=self._qr_preview(); ttk.Label(b,text=T['qr_base_label']+': '+(str(_base.get('url')) if _base.get('url') else str(_base.get('error') or '-'))).grid(row=row,column=0,columnspan=3,sticky='w',pady=(6,0)); row+=1
+  ttk.Label(b,text=T['qr_hint'],wraplength=700,foreground=branding.PALETTE['muted']).grid(row=row,column=0,columnspan=3,sticky='w',pady=(4,0)); row+=1
+  ttk.Label(b,textvariable=qv['summary'],wraplength=700,foreground=branding.PALETTE['muted']).grid(row=row,column=0,columnspan=3,sticky='w',pady=(4,0)); row+=1
+  act=ttk.Frame(b); act.grid(row=row,column=0,columnspan=3,sticky='e',pady=(16,0)); ttk.Button(act,text=T['ok'],command=d.destroy).pack(side='right'); ttk.Button(act,text=T['cancel'],command=cancel).pack(side='right',padx=8)
   d.bind('<Escape>',lambda e:cancel()); d.grab_set(); return d
  def _sync_input_mode(self):
   p=Path(self.target.get()).expanduser() if self.target.get() else None
   if p and p.is_file(): self.mode.set('single'); self.rec.set(False); self.mode_label.config(text='Report type: SINGLE (file selected)'); self.rec_check.config(state='disabled')
   elif p and p.is_dir(): self.mode.set('combined'); self.mode_label.config(text='Report type: COMBO (folder selected)'); self.rec_check.config(state='normal')
   else: self.mode_label.config(text='Report type: automatic (File → SINGLE / Folder → COMBO)'); self.rec_check.config(state='normal')
+  self._sync_embed_summary()
  def file(self):
   x=filedialog.askopenfilename(); self.target.set(x or self.target.get()); self._sync_input_mode()
  def folder(self):
@@ -259,8 +324,10 @@ class App(tk.Tk):
   if self.custom_output.get() and not Path(self.output_folder.get()).expanduser().is_dir():return messagebox.showerror('ChronoSeal','Select an existing output folder.')
   try:embed=self._resolve_embed()
   except ValueError as exc:return messagebox.showerror('ChronoSeal — PDF вграждане',str(exc))
-  self.include_explanation=embed['explanation']; self.include_source_pdf=embed['source_pdf']; self.embed_pdf=embed['pdf']; self.embed_position=embed['position']
-  self.save_settings_silent(); self.log.delete('1.0','end'); self.pb['value']=0; self.cancel.clear(); self._run_args=(self.target.get(),self.mode.get(),self.rec.get(),self.include_explanation,self.include_source_pdf,self.output_folder.get().strip() if self.custom_output.get() else None,(getattr(self,'file_filters',[]) or []) if self.mode.get()=='combined' else [],(getattr(self,'file_selection',[]) or []),self.embed_pdf,self.embed_position); self._run_ssl=self.v_ssl.get(); self.go.config(state='disabled'); self.stop.config(state='normal'); threading.Thread(target=self.worker,daemon=True).start()
+  try:qr_url=qr_base_url(self.cfg)
+  except QrOptionError as exc:return messagebox.showerror('ChronoSeal — QR код',str(exc))
+  self.include_explanation=embed['explanation']; self.include_source_pdf=embed['source_pdf']; self.embed_pdf=embed['pdf']; self.embed_position=embed['position']; self.qr_url=qr_url
+  self.save_settings_silent(); self.log.delete('1.0','end'); self.pb['value']=0; self.cancel.clear(); self._run_args=(self.target.get(),self.mode.get(),self.rec.get(),self.include_explanation,self.include_source_pdf,self.output_folder.get().strip() if self.custom_output.get() else None,(getattr(self,'file_filters',[]) or []) if self.mode.get()=='combined' else [],(getattr(self,'file_selection',[]) or []),self.embed_pdf,self.embed_position,''); self._run_ssl=self.v_ssl.get(); self.go.config(state='disabled'); self.stop.config(state='normal'); threading.Thread(target=self.worker,daemon=True).start()
  def cancel_run(self):self.cancel.set(); self.status.set('Cancellation requested…')
  def worker(self):
   logroot=BASE/'logs'; self.session=SessionLogger(logroot,self.write); self.session.snapshot(BASE,self.cfg)

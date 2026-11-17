@@ -93,6 +93,10 @@
     "keep_certificates": true,
     "keep_validation_json": true
   },
+  "verification": {
+    "base_url": "https://pasev.asuscomm.com/static/",
+    "code_groups": [10, 4, 4, 4, 15]
+  },
   "provider_catalog": {
     "FreeTSA": {
       "url": "https://freetsa.org/tsr",

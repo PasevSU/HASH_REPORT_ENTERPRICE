@@ -201,6 +201,9 @@ class SingleReportGenerator(HashGeneratorCore):
             # after the STOP timestamp section.
             self._add_legal_declaration(story, styles, now, timezone_str, is_combined=False)
             self._add_footer(story, styles, now, timezone_str, is_combined=False)
+            # Optional closing block: QR code plus the pointer to the electronic
+            # timestamp evidence. Off unless a target URL was provided.
+            self._add_verification_qr_section(story, is_combined=False)
             # v2.34: keep pages compact; embed the original TSA responses instead
             # of printing complete Base64 tokens in the visible report.
             doc.build(story, canvasmaker=NumberedCanvas)

@@ -17,7 +17,7 @@ from unittest.mock import patch
 
 from hash_report_generator import js_rules, style_loader
 
-GOLDEN_SHA256 = "8fc6eceba632695a8b7892306bc65e9a604686c92c0a2047ef8a4dcdda28ae66"
+GOLDEN_SHA256 = "84aaf6fada7f41992b9483b03076e3c7e0102191b2a3b731adee192db5d6d397"
 
 
 def _payload(styles):

@@ -411,5 +411,147 @@ def test_r17_create_report_hands_the_selection_to_the_pipeline(app, sample, no_w
     assert panel.status.get().startswith("Combo report started")
 
 
+# ------------------------------------------------------------ PDF embedding
+def _labelled(parent, kind, text):
+    for widget in _widgets(parent):
+        if not isinstance(widget, kind):
+            continue
+        try:
+            label = widget.cget("text")
+        except tk.TclError:
+            continue
+        if label == text:
+            return widget
+    raise AssertionError(f"widget not found: {kind.__name__} {text!r}")
+
+
+@pytest.fixture()
+def embed_boxes(app, monkeypatch):
+    """The embedding dialog lives in the legacy module; stub its modals too."""
+    shown = []
+
+    def record(*args, **kwargs):
+        shown.append(args)
+        return None
+
+    stub = SimpleNamespace(showinfo=record, showwarning=record, showerror=record)
+    monkeypatch.setitem(type(app)._embed_dialog.__globals__, "messagebox", stub)
+    return shown
+
+
+@pytest.fixture()
+def clean_embed(app):
+    yield
+    state = app._embed_vars()
+    state["enabled"].set(False)
+    state["path"].set("")
+    state["position"].set("after")
+    app.report_files_panel._refresh_embed_summary()
+    _pump(app, 0.05)
+
+
+def test_r18_the_combo_page_predicts_the_embedded_pdf(app, sample, dialogs, clean_embed):
+    panel = _add(app, sample / "a.pdf")
+    assert panel.embed_supported, "the page must share the shell's embedding state"
+    switch = _labelled(panel.frame, ttk.Checkbutton, "Embed a PDF in this combo report")
+    assert "no embedded PDF" in panel.embed_summary.get()
+    app._embed_vars()["path"].set(str(sample / "a.pdf"))
+    switch.invoke()
+    _pump(app, 0.2)
+    text = panel.embed_summary.get()
+    assert text.startswith("COMBO_PDF"), text
+    assert "after" in text and "a.pdf" in text
+    assert app._embed_vars()["enabled"].get() is True
+
+
+def test_r19_the_embedding_dialog_opens_from_the_combo_page(app, sample, dialogs,
+                                                            embed_boxes, clean_embed):
+    panel = _add(app, sample / "a.pdf", sample / "notes.txt")
+    assert panel.open_embed_dialog() is not None
+    assert not embed_boxes, "a valid choice must not raise a modal"
+    _reset(app)
+    assert panel.open_embed_dialog() is None, "an empty list has nothing to embed into"
+    assert panel.status.get().startswith("Add the files for the combo report")
+
+    panel = _add(app, sample / "a.pdf", sample / "notes.txt")
+    state = app._embed_vars()
+    state["enabled"].set(True)
+    state["path"].set(str(sample / "a.pdf"))
+    dialog = panel.open_embed_dialog()
+    assert isinstance(dialog, tk.Toplevel)
+    assert app.target.get() == str(sample), "the dialog describes the handed-over combo"
+    _labelled(dialog, ttk.Radiobutton, "Before report").invoke()
+    _labelled(dialog, ttk.Button, "OK").invoke()
+    _pump(app, 0.1)
+    assert state["position"].get() == "before"
+    assert panel.embed_summary.get() == "COMBO_PDF · before · a.pdf"
+    assert not dialog.winfo_exists()
+
+
+def test_r20_create_report_carries_the_pdf_and_its_position(app, sample, dialogs,
+                                                            no_worker, embed_boxes,
+                                                            clean_embed):
+    panel = _add(app, sample / "a.pdf", sample / "notes.txt")
+    state = app._embed_vars()
+    state["enabled"].set(True)
+    state["path"].set(str(sample / "a.pdf"))
+    state["position"].set("before")
+    app.startup_ready = True
+    _button(panel.frame, "Create combo report").invoke()
+    _pump(app, 0.2)
+    assert no_worker and no_worker[0].started
+    arguments = app._run_args
+    assert Path(arguments[8]) == sample / "a.pdf", "the chosen PDF travels with the run"
+    assert arguments[9] == "before", "so does the chosen side"
+    assert arguments[7] == [str(sample / "a.pdf"), str(sample / "notes.txt")]
+    assert arguments[2] is False, "a selection is never recursive"
+
+
+@pytest.fixture()
+def clean_qr(app):
+    """The block is not an option any more; this only refreshes the read-back line."""
+    yield
+    app.report_files_panel._refresh_qr_summary()
+    _pump(app, 0.05)
+
+
+def test_r21_the_closing_qr_block_is_read_back_not_offered(app, clean_qr):
+    from chronoseal import verification_qr
+
+    panel = app.report_files_panel
+    switches = [
+        widget.cget("text")
+        for widget in _widgets(panel.frame)
+        if isinstance(widget, ttk.Checkbutton)
+    ]
+    assert not [text for text in switches if "QR" in str(text)], \
+        "a mandatory block must not look like a switch"
+    assert panel.qr_base == verification_qr.base_url(app.cfg)
+    assert panel.qr_summary.get() == verification_qr.summary_text(
+        {"url": panel.qr_base}, "en"
+    )
+    assert panel.qr_summary.get().startswith("QR · ")
+
+
+def test_r22_a_malformed_base_address_is_reported_not_raised(app, monkeypatch, clean_qr):
+    monkeypatch.setitem(
+        app.cfg, "verification", {"base_url": "evidence.example.org/static"}
+    )
+    text = app.report_files_panel._refresh_qr_summary()
+    assert "http://" in text, "the operator must see why no link can be printed"
+    assert "QR ·" not in text
+
+
+def test_r23_the_run_leaves_the_link_to_the_pipeline(app, sample, dialogs, no_worker,
+                                                     embed_boxes, clean_qr):
+    panel = _add(app, sample / "a.pdf", sample / "notes.txt")
+    app.startup_ready = True
+    _button(panel.frame, "Create combo report").invoke()
+    _pump(app, 0.2)
+    assert no_worker and no_worker[0].started
+    assert app._run_args[10] == "", \
+        "no override: the pipeline generates one link per report"
+
+
 if __name__ == "__main__":
     unittest.main()  # pragma: no cover

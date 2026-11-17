@@ -34,6 +34,10 @@ def parse(argv):
     p.add_argument('--embed-pdf', help='embed this PDF into a COMBO report (visible pages + byte-exact attachment)')
     p.add_argument('--embed-position', choices=['before', 'after'], default='after',
                    help='place the embedded PDF before or after the hash report (default: after)')
+    p.add_argument('--qr-url', default='',
+                   help='override the generated closing-QR link with this http(s) address; '
+                        'the block itself is always printed and the link is otherwise '
+                        'generated from the configured base address plus a random code')
     p.add_argument('--output-dir')
     p.add_argument('--preflight', action='store_true', help='run checks only, then exit')
     p.add_argument('--self-check', action='store_true', help='verify and repair dependencies only, then exit')
@@ -134,7 +138,8 @@ def main(argv=None):
         summary = pipeline.run(Path(args.target).expanduser(), args.mode or 'combined', args.recursive,
                                args.explanation, args.source_pdf, args.output_dir,
                                embed_pdf=Path(args.embed_pdf).expanduser() if args.embed_pdf else None,
-                               embed_position=args.embed_position)
+                               embed_position=args.embed_position,
+                               qr_url=args.qr_url)
         session.write('FINAL PASS')
         result.update(status='PASS', final_pdf=summary.get('final_pdf'), summary=summary)
         code = EXIT_PASS

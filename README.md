@@ -7,7 +7,7 @@ folder can still be proven later, on another machine, without the original data.
 
 |  |  |
 |---|---|
-| Version | 5.7.1 |
+| Version | 5.10.0 |
 | Platform | Windows 10 / 11 (x64) |
 | Runtime | Python 3.12+ and Node.js 22.12+ |
 | Interface | Tkinter desktop GUI (6 pages) and a headless CLI |
@@ -56,10 +56,22 @@ python chronoseal_cli.py C:\cases\2026-08 \
   --embed-position before --recursive
 ```
 
-The GUI offers the same three controls in the run page (`Вгради PDF в отчета`, the
-`PDF…` button and the `преди` / `след` pair); everything rarer - ERLAEUTERUNG,
-including subfolders, another output folder - lives in the `Още опции…` dialog so
-the run panel stays readable at 125% scaling.
+The GUI offers the same three controls on the run page; everything rarer -
+ERLAEUTERUNG, including subfolders, another output folder - lives in a second
+dialog. The two subjects are split on purpose: `PDF embedding…` holds the switch,
+the position and the file, `Report options…` holds the rest of the run, and each
+window shows a one-line prediction (`COMBO_PDF · before · Anlage.pdf`). One
+dialog holding both subjects needed scrolling at 125% scaling and hid the
+prediction behind the fold.
+
+The Report from Files page carries the same switch and the same before / after
+pair, because a combo report built from an explicit file list is embedded exactly
+like a scanned folder (`COMBO_PDF`). Opening `PDF embedding…` there hands the
+selection over first, so the dialog and the summary describe the run the button
+will start. The web workspace lists all six report types and offers the same
+position choice for the ones ending in `_PDF`. Every surface reads its rules from
+`chronoseal/embed_options.py`, so the prediction an operator sees and the type the
+pipeline publishes cannot drift apart.
 
 Embedding fails closed, with a code per type:
 
@@ -78,6 +90,53 @@ re-compressed or re-sampled, and it can never be the evidence target itself.
 Two wrappers drive the sealed path for the new types:
 `automation\COMBO_PDF.bat` and `automation\COMBO_ALL_PDF.bat`, both taking
 `INPUT_PATH OUTPUT_DIR EMBED_PDF [before|after]`.
+
+## Verification QR at the end of the report
+
+A sealed report is verifiable only if the reader can reach the evidence, so the
+closing block is mandatory: every generated PDF ends with a QR code plus a
+bilingual (DE/EN) statement that the code leads to the electronic documents for
+the timestamps in this report: the RFC 3161 responses for START and STOP, the TSA
+certificates with their trust chains, CRL/OCSP status and the OpenTimestamps
+proof. The text says explicitly that the report documents one file or several
+files, that the link delivers the report and its verification files together
+(a single file or a ZIP archive, depending on what was archived), and what the
+`.ots` companion is - a separate small file anchoring the SHA-256 of this very
+PDF in the Bitcoin blockchain, created only after the report is sealed, starting
+as a pending calendar confirmation and checked with `ots verify`. ChronoSeal does
+not create that proof; the block explains the file the verifier receives from the
+same link. The block is a pointer only: no hash, signature or timestamp is
+changed by it, and the embedded original PDF pages stay byte-exact.
+
+The address cannot be filled in advance, because the code names the upload slot of
+one report. The pipeline therefore builds it once per run - the configured base
+address plus a random 37-digit code in `10-4-4-4-15` groups - hands it to the
+generator and records the same address in the evidence case:
+
+```
+CHRONOSEAL_EVIDENCE_BASE_URL -> config['verification']['base_url']
+                             -> https://pasev.asuscomm.com/static/
+```
+
+```powershell
+python chronoseal_cli.py C:\cases\2026-08
+```
+
+No checkbox and no URL field exist on any surface: the run page, `Report options…`,
+the Report from Files page and the web workspace all show the mandatory label, the
+base address and a one-line read-back. `--qr-url` still exists, but it *overrides*
+the generated link instead of enabling it, for installations that already know
+where the files will be published (`qrcode` is used when installed; if it is
+missing the block still prints the address with a note that the image could not be
+drawn).
+
+The run fails closed twice. `VERIFICATION_QR_INVALID` refuses an unusable base
+address before anything is generated. `VERIFICATION_QR_NOT_APPLIED` rejects a
+report whose evidence case has no `verification-qr.json`, or one that names a
+different URL, so a report can never look cross-referenced when it is not. The
+manifest records `verification_qr`, `verification_qr_code`, `verification_qr_url`,
+`verification_qr_position`, `verification_qr_record` and
+`verification_qr_rendered`.
 
 ## Requirements
 
@@ -381,7 +440,7 @@ With the GitHub CLI the same reads need no token plumbing:
 
 ```powershell
 gh api repos/PasevSU/HASH_REPORT_ENTERPRICE/contents/js/api.mjs --jq '.sha'
-gh release download chronoseal-v5.7.1 --pattern '*.zip' -D .
+gh release download chronoseal-v5.10.0 --pattern '*.zip' -D .
 ```
 
 ### Running the clone you downloaded
@@ -424,7 +483,7 @@ input (the evidence set must not grow with the program's own output), and
 embedded pages come first or last.
 
 Two version numbers appear in the output, and they move independently.
-`package.json` and `chronoseal/branding.py` carry the product version (5.7.1 in
+`package.json` and `chronoseal/branding.py` carry the product version (5.10.0 in
 this release); `js/cli.mjs` exports `CLONE_VERSION` (1.0.0), the version of the
 JavaScript re-implementation, which `--version` prints and which is stamped into
 the `implementation: chronoseal-js-clone/1.0.0` field of every report the clone
@@ -436,7 +495,7 @@ As a package-manager source it also works - the name is `chronoseal-python-rfc31
 resolve). The example pins the release tag so the build is reproducible:
 
 ```powershell
-npm install github:PasevSU/HASH_REPORT_ENTERPRICE#chronoseal-v5.7.1 --no-audit --no-fund
+npm install github:PasevSU/HASH_REPORT_ENTERPRICE#chronoseal-v5.10.0 --no-audit --no-fund
 ```
 
 ```js

@@ -55,6 +55,8 @@ loader.exec_module(original)
 
 
 class ChronoSealDesktop(original.App):
+    # The page-based shell is English, so the shared option dialogs follow it.
+    embed_language = "en"
     NAV_ITEMS = (
         ("run_tab", "01", "Report & TSA", "Generate, seal and verify"),
         ("report_files_tab", "02", "Report from Files", "One combo report from chosen files"),
@@ -328,8 +330,8 @@ class ChronoSealDesktop(original.App):
             command=lambda: self._select_page("filter_tab"),
         ).pack(side="left", padx=(6, 0))
 
-        # Only the options used on every run stay on the panel; the rest live in
-        # the options dialog so the run page never grows a second column.
+        # Only the options used on every run stay on the panel; each dialog owns
+        # one subject so neither window has to scroll to be understood.
         embed = ttk.LabelFrame(page, text="  2  ·  PDF embedding  ", style="Panel.TLabelframe")
         embed.grid(row=2, column=0, sticky="ew", pady=(12, 0))
         embed.columnconfigure(2, weight=1)
@@ -344,7 +346,7 @@ class ChronoSealDesktop(original.App):
             embed, text="After report", value="after", variable=state["position"]
         ).grid(row=0, column=2, padx=(10, 0), sticky="w")
         ttk.Button(
-            embed, text="More options…", command=self._embed_dialog
+            embed, text="PDF embedding…", command=self._embed_dialog
         ).grid(row=0, column=3, sticky="e")
         ttk.Entry(embed, textvariable=state["path"]).grid(
             row=1, column=0, columnspan=3, sticky="ew", pady=(8, 0)
@@ -352,6 +354,41 @@ class ChronoSealDesktop(original.App):
         ttk.Button(
             embed, text="Choose PDF", command=self._choose_embed_pdf
         ).grid(row=1, column=3, padx=(8, 0), pady=(8, 0))
+        # Read-back of the whole selection: report type, position and PDF name.
+        ttk.Label(
+            embed, textvariable=state["summary"], style="Muted.TLabel"
+        ).grid(row=2, column=0, columnspan=3, sticky="w", pady=(8, 0))
+        ttk.Button(
+            embed, text="Report options…", command=self._report_options_dialog
+        ).grid(row=2, column=3, sticky="e", pady=(8, 0))
+        # The closing QR block belongs to the report, not to the embedded PDF, but
+        # it is set up here because it is another thing printed with the report.
+        qr = self._qr_vars()
+        ttk.Separator(embed, orient="horizontal").grid(
+            row=3, column=0, columnspan=4, sticky="ew", pady=(10, 8)
+        )
+        ttk.Label(
+            embed,
+            text="QR code and text at the end of every report: mandatory, the "
+                 "link is generated per report",
+        ).grid(row=4, column=0, columnspan=4, sticky="w")
+        ttk.Label(
+            embed,
+            text="Link base: " + (self._qr_preview().get("url") or "-"),
+            style="Muted.TLabel",
+        ).grid(row=5, column=0, columnspan=4, sticky="w", pady=(6, 0))
+        ttk.Label(embed, textvariable=qr["summary"], style="Muted.TLabel").grid(
+            row=6, column=0, columnspan=4, sticky="w", pady=(6, 0)
+        )
+        ttk.Label(
+            embed,
+            text="Each report ends with the QR block that leads to the electronic "
+                 "documents for checking the timestamps, the TSA chain and the "
+                 "OpenTimestamps proof (.ots). The link is base address plus a "
+                 "random code and is recorded in the evidence case, so the report "
+                 "and its verification documents download together.",
+            style="Muted.TLabel", wraplength=900, justify="left",
+        ).grid(row=7, column=0, columnspan=4, sticky="w", pady=(6, 0))
 
         output = ttk.LabelFrame(page, text="  3  ·  Output  ", style="Panel.TLabelframe")
         output.grid(row=3, column=0, sticky="ew", pady=(12, 0))
