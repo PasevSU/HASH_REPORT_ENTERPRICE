@@ -18,8 +18,6 @@ if str(HERE) not in sys.path:
 MODULES = (
     'test_central_table_rules_v16',
     'test_combined_layout_v8',
-    'test_explicit_file_selection_source',
-    'test_gui_windows_editing',
     'test_no_hardcoded_style',
     'test_v17_shared_layout',
     'test_v536_openssl_semantics',

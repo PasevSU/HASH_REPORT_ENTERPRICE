@@ -5,12 +5,23 @@ operator selected, builds one combined PDF report, seals it with an RFC 3161
 time-stamp and archives the case in a local SQLite database, so the state of that
 folder can still be proven later, on another machine, without the original data.
 
+> **This is the CLI edition (`release/cli`).** There is no graphical interface in
+> this branch: one word names the report, one argument names the file or folder.
+> The GUI edition, without any verification QR and meant for quick actions and
+> sending by e-mail, lives on `release/gui`; both branches derive from `main`.
+>
+> It is a **package for adaptation**. Every report closes with a verification QR
+> link, and the address it is published under has to redirect that one link to
+> **two** documents - the report and its proof bundle. This code creates neither
+> the redirect nor a `.ots` file, so the last step belongs to your server: see
+> [The verification URL is yours to redirect](#the-verification-url-is-yours-to-redirect).
+
 |  |  |
 |---|---|
-| Version | 5.10.0 |
+| Version | 5.10.0-cli |
 | Platform | Windows 10 / 11 (x64) |
 | Runtime | Python 3.12+ and Node.js 22.12+ |
-| Interface | Tkinter desktop GUI (6 pages) and a headless CLI |
+| Interface | Command line only: report names over `chronoseal_cli.py` |
 | Licence | Proprietary, all rights reserved - see [LICENSE](LICENSE) |
 
 ## What a run produces
@@ -56,22 +67,11 @@ python chronoseal_cli.py C:\cases\2026-08 \
   --embed-position before --recursive
 ```
 
-The GUI offers the same three controls on the run page; everything rarer -
-ERLAEUTERUNG, including subfolders, another output folder - lives in a second
-dialog. The two subjects are split on purpose: `PDF embedding…` holds the switch,
-the position and the file, `Report options…` holds the rest of the run, and each
-window shows a one-line prediction (`COMBO_PDF · before · Anlage.pdf`). One
-dialog holding both subjects needed scrolling at 125% scaling and hid the
-prediction behind the fold.
-
-The Report from Files page carries the same switch and the same before / after
-pair, because a combo report built from an explicit file list is embedded exactly
-like a scanned folder (`COMBO_PDF`). Opening `PDF embedding…` there hands the
-selection over first, so the dialog and the summary describe the run the button
-will start. The web workspace lists all six report types and offers the same
-position choice for the ones ending in `_PDF`. Every surface reads its rules from
-`chronoseal/embed_options.py`, so the prediction an operator sees and the type the
-pipeline publishes cannot drift apart.
+The orchestrator exposes the same three controls without a dialog: the report
+name decides whether anything is embedded (`SINGLE_PDF`, `COMBO_PDF`,
+`COMBO_ALL_PDF`), `--pdf` names the file and `--position` names the side. The
+naming rules live in `chronoseal/embed_options.py`, so the name an operator types
+and the type the pipeline publishes cannot drift apart.
 
 Embedding fails closed, with a code per type:
 
@@ -122,13 +122,13 @@ CHRONOSEAL_EVIDENCE_BASE_URL -> config['verification']['base_url']
 python chronoseal_cli.py C:\cases\2026-08
 ```
 
-No checkbox and no URL field exist on any surface: the run page, `Report options…`,
-the Report from Files page and the web workspace all show the mandatory label, the
-base address and a one-line read-back. `--qr-url` still exists, but it *overrides*
-the generated link instead of enabling it, for installations that already know
-where the files will be published (`qrcode` is used when installed; if it is
-missing the block still prints the address with a note that the image could not be
-drawn).
+There is no checkbox and no URL field: `--url` (see
+[below](#the-verification-url-is-yours-to-redirect)) sets the host for the run, and
+the run prints the resulting base address and a one-line read-back before anything
+is generated. `--qr-url` still exists, but it *overrides* the generated link
+instead of enabling it, for installations that already know where the files will be
+published (`qrcode` is used when installed; if it is missing the block still prints
+the address with a note that the image could not be drawn).
 
 The run fails closed twice. `VERIFICATION_QR_INVALID` refuses an unusable base
 address before anything is generated. `VERIFICATION_QR_NOT_APPLIED` rejects a
@@ -138,11 +138,45 @@ manifest records `verification_qr`, `verification_qr_code`, `verification_qr_url
 `verification_qr_position`, `verification_qr_record` and
 `verification_qr_rendered`.
 
+## The verification URL is yours to redirect
+
+The base address is an input to this package, not a promise it can keep alone:
+
+```powershell
+python chronoseal_report.py COMBO_ALL D:\cases\2026-08 --url https://example.net/static/
+```
+
+`--url` wins over `CHRONOSEAL_EVIDENCE_BASE_URL` and over
+`config['verification']['base_url']`, and a trailing slash is added when it is
+missing. The run appends one generated code per report, so the address written into
+that report is unique to it:
+
+```
+https://example.net/static/1a2b3c4d5e-1234-5678-9abc-def012345678901
+```
+
+For that link to be worth printing, the host behind it must redirect it to **two**
+documents: the sealed report this run published, and the proof bundle that belongs
+to it - RFC 3161 responses, TSA certificates with their chains, CRL/OCSP status and
+the OTS proof, either as one archive or as the two files. Everything needed to build
+that mapping is recorded in the evidence case next to the report:
+`verification-qr.json` holds the code and the exact address, the manifest repeats it
+in `verification_qr_code` and `verification_qr_url`, and `report.pdf` / `rfc3161/`
+plus the OTS file are the payload the redirect has to reach.
+
+Two consequences, stated plainly:
+
+* this code creates **no `.ots`** file and uploads nothing - the OpenTimestamps
+  proof anchors the SHA-256 of a report that does not exist yet, so it has to be
+  made after the seal, outside this package;
+* a QR that points at an address where nothing redirects is a dead link, so the
+  redirect is part of the deployment, not an optional extra.
+
 ## Requirements
 
 | Component | Minimum | Used for |
 |---|---|---|
-| Python | 3.12 | pipeline, GUI, report generation |
+| Python | 3.12 | pipeline, report generation |
 | Node.js | 22.12 | PDF rule engine and the RFC 3161 bridge |
 | OpenSSL | 1.1.1 / 3.x | independent time-stamp verification |
 
@@ -153,76 +187,75 @@ launches the application.
 ## Install and launch
 
 ```
-Install_Windows.bat      # first run on a new machine: verify, install, launch
-Start_ChronoSeal.bat     # later runs: launch the GUI
+Install_Windows.bat      # first run on a new machine: verify, install, prepare
+Run_Report.bat           # report-name orchestrator (wraps chronoseal_report.py)
 Run_Diagnostics.bat      # full diagnostic sweep, safe to run any time
 js\HashReport.bat        # menu launcher for the pure JavaScript clone
 ```
 
-`Start_ChronoSeal.bat` starts `ChronoSeal_GUI.pyw` with `pythonw.exe`.
-`Install_Windows.bat` is the only step that installs anything: it verifies
-Python, Node.js and OpenSSL, installs `requirements-integration.txt`, locks and
-verifies the Node dependency and runs `chronoseal.selfheal`.
-`Run_Diagnostics.bat` reports the state of every required component at any time.
-No browser, WebView or HTTP channel is used for the interface.
+`Install_Windows.bat` is the only step that installs anything: it verifies Python,
+Node.js and OpenSSL, installs `requirements-integration.txt`, locks and verifies the
+Node dependency, runs `chronoseal.selfheal` and prints the report names. It launches
+nothing, because there is no window to open: after a successful install the next
+command is a report. `Run_Diagnostics.bat` reports the state of every required
+component at any time. No browser, WebView or HTTP channel is used anywhere.
 `js\HashReport.bat` is the launcher of the pure JavaScript clone: it collects the folder, recursion, filter patterns, per-file mode, archive, layout gate, report type, the embedded source PDF, the PDF to include and where that PDF goes (`before` / `after`) in a menu and then calls `node js/cli.mjs`, so it needs Node.js only. See `docu/JS_CLONE_BG.md`.
 
-## The six pages
+## Report names
 
-| Page | Name | Purpose |
+One word names the report; the input decides the mode and the name decides the
+assembly. `chronoseal_report.py list` prints the same table as a reminder.
+
+| Report | Input | What it publishes |
 |---|---|---|
-| 01 | Report & TSA | Generate, seal and verify a report |
-| 02 | Report from Files | One combo report from individually chosen files |
-| 03 | Automation | Plan recurring reports |
-| 04 | Settings & Trust | Tool paths and time-stamp profiles |
-| 05 | Diagnostics | Preflight checks and evidence logs |
-| 06 | Selection | Pick a folder and filter evidence by file type |
+| `SINGLE` | one file | sealed report for that file |
+| `SINGLE_PDF` | one PDF | sealed report with the input embedded byte-exact |
+| `COMBO` | one folder or an explicit file set | sealed report for that evidence set |
+| `COMBO_PDF` | one folder plus `--pdf` | the same, with that PDF embedded before or after the report |
+| `COMBO_ALL` | one folder | sealed report for the folder and every subfolder |
+| `COMBO_ALL_PDF` | one folder plus `--pdf` | the recursive report with that PDF embedded |
 
-Pages are reachable with `Ctrl+1` .. `Ctrl+6` and with the left navigation rail.
-Navigation labels, Treeview headings and status lines follow the selected
-language (Bulgarian, English, German).
+```powershell
+python chronoseal_report.py SINGLE  C:\cases\letter.pdf
+python chronoseal_report.py COMBO   C:\cases\2026-08 --output-dir D:\evidence
+python chronoseal_report.py COMBO_ALL_PDF C:\cases\2026-08 `
+  --pdf C:\cases\Anlage.pdf --position before --url https://example.net/static/
+```
 
-## Report from Files (page 02)
+A report name that does not match the input is refused before anything is hashed:
+`COMBO` on a file, `SINGLE` on a folder, `_PDF` without `--pdf`, `--pdf` on a report
+that embeds nothing. The orchestrator only validates and translates; the run itself
+is the same `chronoseal_cli.py` path, so logs, exit codes and evidence are identical.
 
-Page 02 builds one combo report from files chosen one by one, instead of from a
-folder scope:
+## Choosing the evidence
 
-* files can be added from any folder and any number of them can be combined,
-* a review window lists every selected file with its relative name, type, size,
-  modification time and SHA-256 before anything is sealed,
-* the run publishes a single `..._HASHREPORT_TYP_COMBO.pdf` with one evidence
-  set, and each chosen file carries its relative name in the manifest.
+* **A folder** is scanned as it is, or with `--recursive` (`COMBO_ALL`).
+* **File-type filters** chain: `--filter '*.eml' --filter '*.pdf'` keeps files that
+  match any of them, and the next filter field is simply another `--filter`. A chain
+  that matches nothing stops the run with exit code `3`
+  (`FILTER_MATCHED_NO_FILES`): nothing is hashed, no report number is consumed and
+  no report is published.
+* **An explicit file set** names the evidence one path at a time:
+  `--file a.pdf --file sub\b.pdf`. The target folder becomes optional - the deepest
+  folder that contains every chosen file is used as the evidence root - and the
+  selection cannot be combined with `--filter` or with a recursive report.
 
 A file that cannot be read blocks the run before publication, exactly as in the
-folder-scoped path: a combo report is never published with missing evidence.
-The selection travels to the generator as `CHRONOSEAL_EXPLICIT_FILES` and is
-recorded in the manifest as `selection_files`, `selection_paths` and
-`selection_root`. File-type filters do not apply here; the equivalent scoped
-path is page 06.
+folder-scoped path: a combo report is never published with missing evidence. The
+applied chain and the chosen files are stored in the report and in the evidence
+manifest (`selection_filters`, `selection_files`, `selection_paths`,
+`selection_root`), so a reader can see how the evidence set was built. Filtering
+lives in `hash_report_generator/file_filters.py` and the selection in
+`hash_report_generator/file_selection.py`, both tested without any interface.
 
-## Selection panel (page 06)
+## Command line
 
-Page 06 is the scoped entry point for one evidence set:
-
-* pick a folder, optionally including all subfolders,
-* chain file-type filters: a filter is typed as a glob (`*.eml`, `*.pdf`,
-  `*eml.pdf`) and, as soon as the field is filled, the next filter field appears
-  below it - any number of filters can be chained,
-* filters are OR-ed inside one chain and combined with the folder scope, so the
-  report covers exactly the files the operator saw in the preview.
-
-When the filters match nothing the run stops with exit code `3`
-(`FILTER_MATCHED_NO_FILES`), which is different from a real failure: nothing was
-hashed, no report number is consumed, and no report is published. The applied
-filter chain is stored in the report and in the evidence manifest, so a reader
-can see how the evidence set was built.
-
-Filtering itself lives in `hash_report_generator/file_filters.py` and is tested
-without the UI, so the matching rules cannot drift from what the panel shows.
-
-## Headless CLI
+`chronoseal_report.py` is the front door (see [Report names](#report-names));
+`chronoseal_cli.py` is the same run without the naming layer:
 
 ```
+python chronoseal_report.py list              # report names and the URL contract
+python chronoseal_report.py --information     # what this edition expects
 python chronoseal_cli.py <file-or-dir> --recursive --log-dir logs
 python chronoseal_cli.py --preflight          # checks only, no sealing
 python chronoseal_cli.py --bootstrap-trust    # refresh TSA trust material only
@@ -289,7 +322,7 @@ input may finish while a hung child is still killed.
 `tests/test_hardening.py` locks in the defects found by the expert audit so none
 of them returns silently. The list includes child-process hygiene (explicit
 `stdin=subprocess.DEVNULL`, `CREATE_NO_WINDOW`), one probe per external tool, one
-repair policy shared by the GUI and the pipeline, archive atomicity (a published
+repair policy shared by every entry point and the pipeline, archive atomicity (a published
 report folder is removed when the SQLite transaction does not commit), style
 loading that survives a denied `realpath`, a watchdog termination fallback, and
 a release gate that really runs every test module.
@@ -319,11 +352,10 @@ npm run verify  # release gate: syntax, vendor integrity, self-check, doctor, te
 Current state on a real SMB tree:
 
 ```
-326 tests OK   unittest discover -s tests                       (63.45 s)
-133 tests OK   unittest discover -s hash_report_generator/tests  (51.66 s)
- 35 passed     UI acceptance, every step driven through Tk widgets only
- 21 passed     JS rule loader and style cache contract
- 19 passed     brand tokens, glyph geometry, no colour literals in the GUI
+pytest tests -q                     the whole Python edition
+python -m unittest discover -s hash_report_generator/tests
+node --test tools/pdfnorm/test/ tools/jsx/test/
+node --test js/test/
 ```
 
 The JavaScript clone has its own suite, `node --test js/test/` (50 tests: 7 core,
@@ -340,9 +372,10 @@ failures that have nothing to do with this project. The same fallback breaks
 `npm run doctor` and `npm run verify:vendor`. Run the gate from a local drive, or
 call the two `python -m unittest` commands directly.
 
-The UI acceptance suite drives the real widgets for all five pages and is the
-only path used to validate the interface; `docu/V89_UI_TEST_REPORT_BG.md`
-records every iteration, including the failures that were fixed.
+`tests/test_report_orchestrator.py` covers the report names, the name/input
+match, `--file`/`--filter` and `--url` with its precedence over the configuration
+and the environment. The acceptance suites that drove Tk widgets live on
+`release/gui`; this branch has no widgets to drive.
 
 ## Brand identity
 
@@ -352,27 +385,27 @@ and white surfaces, with Inter for the interface and Source Sans 3 for documents
 (both fall back to Segoe UI / the system mono face when they are not installed).
 
 Every colour, font stack, icon and product string lives in one module,
-`chronoseal/branding.py`, read by the desktop workspace, the legacy base theme,
-the automation panel, the Selection panel and the static preview in `ui/`. A test
-fails if a GUI file reintroduces a local colour literal, so a future surface
-cannot drift from the palette.
+`chronoseal/branding.py`. The CLI edition keeps the palette for the surfaces it
+still renders (console headings, the report footer lockup) and the product strings
+that name the release; the graphical surfaces that read the same module live on
+`release/gui`.
 
 The **PDF report palette is deliberately untouched**. The report is a forensic
 document: its style bundle feeds the golden payload hash, so rebranding it would
 invalidate the verification path for reports already issued. Branding stops at
-the window frame - see [docu/BRANDING_V551_BG.md](docu/BRANDING_V551_BG.md).
+the command line - see [docu/BRANDING_V551_BG.md](docu/BRANDING_V551_BG.md).
 
 ## Repository layout
 
 ```
-ChronoSeal_GUI.pyw            GUI entry point (Tkinter)
-chronoseal_cli.py             headless entry point
-chronoseal/                   pipeline, settings, self-heal, Tk bootstrap, i18n,
+Run_Report.bat                launcher for the report-name orchestrator
+chronoseal_report.py          report-name orchestrator (SINGLE, COMBO, *_PDF, *_ALL)
+chronoseal_cli.py             headless runner: flags, logs, exit codes
+chronoseal/                   pipeline, settings, self-heal, QR rules, i18n,
                               branding (palette, fonts, icons, product strings)
-hash_report_generator/        generator, JS rule loader, file filters, tests
-automation/                   automation window and the Selection panel
-tests/                        integration, hardening, UI acceptance suites
-ui/                           static preview of the Selection panel
+hash_report_generator/        generator, JS rule loader, file filters, selection, tests
+automation/                   sealed wrappers for the diagnostic runtime (no window)
+tests/                        integration and hardening suites
 js/                           pure JavaScript clone: CLI, programmatic API, PDF
                               layer, six per-type report modules, its own tests
 trust/                        public CA / TSA material and the EU trusted list
@@ -388,7 +421,10 @@ config/config.json            runtime configuration
 | `docu/V89_UPGRADE_PLAN_BG.md` | every planned addition, test and its status |
 | `docu/V89_UI_TEST_REPORT_BG.md` | iteration log, full-suite evidence, known limits |
 | `docu/V90_JS_CAPABILITY_ANALYSIS_BG.md` | what can move to JS, with measurements |
-| `docu/BRANDING_V551_BG.md` | interface brand identity: palette, fonts, icons, tests |
+| `docu/V92_CURRENT_STATE_BG.md` | how the CLI edition works today |
+| `docu/V94_VERIFICATION_QR_BG.md` | the mandatory closing QR block and its address |
+| `docu/V95_CLI_EDITION_BG.md` | CLI edition: report names, `--url`, the redirect contract |
+| `docu/BRANDING_V551_BG.md` | brand identity: palette, fonts, icons |
 | `docu/JS_CLONE_BG.md` | JavaScript clone: stages, CLI, API, six report types, three-pass hashing, tests |
 | `docu/PDFNORM_JS_BG.md` | the `tools/pdfnorm` PDF/A-2b normaliser used by the clone |
 
@@ -440,7 +476,7 @@ With the GitHub CLI the same reads need no token plumbing:
 
 ```powershell
 gh api repos/PasevSU/HASH_REPORT_ENTERPRICE/contents/js/api.mjs --jq '.sha'
-gh release download chronoseal-v5.10.0 --pattern '*.zip' -D .
+gh release download chronoseal-v5.10.0-cli --pattern '*.zip' -D .
 ```
 
 ### Running the clone you downloaded
@@ -483,7 +519,7 @@ input (the evidence set must not grow with the program's own output), and
 embedded pages come first or last.
 
 Two version numbers appear in the output, and they move independently.
-`package.json` and `chronoseal/branding.py` carry the product version (5.10.0 in
+`package.json` and `chronoseal/branding.py` carry the product version (5.10.0-cli in
 this release); `js/cli.mjs` exports `CLONE_VERSION` (1.0.0), the version of the
 JavaScript re-implementation, which `--version` prints and which is stamped into
 the `implementation: chronoseal-js-clone/1.0.0` field of every report the clone
@@ -495,7 +531,7 @@ As a package-manager source it also works - the name is `chronoseal-python-rfc31
 resolve). The example pins the release tag so the build is reproducible:
 
 ```powershell
-npm install github:PasevSU/HASH_REPORT_ENTERPRICE#chronoseal-v5.10.0 --no-audit --no-fund
+npm install github:PasevSU/HASH_REPORT_ENTERPRICE#chronoseal-v5.10.0-cli --no-audit --no-fund
 ```
 
 ```js
@@ -524,7 +560,7 @@ git sparse-checkout set js tools config hash_report_generator
 * **Sign, seal or time-stamp.** The clone has no TSA client. Its signature rows read
   `NOT APPLIED`, `NOT VERIFIED`, `NOT SEALED` by design; trust material lives in
   `trust/` for verification only.
-* **Serve the GUI.** `js\HashReport.bat` is a Windows launcher for a local menu; the
+* **Serve a menu.** `js\HashReport.bat` is a Windows launcher for a local menu; the
   CLI and the API are cross-platform.
 
 ### Limits worth knowing

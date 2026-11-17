@@ -6,14 +6,14 @@ be driven by Task Scheduler or a shell without a display.
 
 Exit codes: 0 PASS, 2 BLOCKED (preflight/pipeline), 130 CANCELLED.
 """
-import argparse, copy, json, signal, sys, threading, traceback
+import argparse, copy, json, os, signal, sys, threading, traceback
 from pathlib import Path
 
 from chronoseal.logging_bundle import SessionLogger
 from chronoseal.pipeline import Pipeline, PipelineError, Cancelled
 from chronoseal.provider_bootstrap import bootstrap_providers, BootstrapError
 from chronoseal.settings import executable, load, save
-from chronoseal import selfheal
+from chronoseal import selfheal, verification_qr
 
 BASE = Path(__file__).resolve().parent
 CFG_PATH = BASE / 'config' / 'config.json'
@@ -38,6 +38,20 @@ def parse(argv):
                    help='override the generated closing-QR link with this http(s) address; '
                         'the block itself is always printed and the link is otherwise '
                         'generated from the configured base address plus a random code')
+    p.add_argument('--filter', action='append', metavar='GLOB', default=None,
+                   help='file-type filter for a folder report, e.g. "*.eml"; repeat to chain '
+                        '(the chain is OR-ed). A chain that matches no file ends the run with '
+                        'exit code 3 and publishes nothing')
+    p.add_argument('--file', action='append', metavar='PATH', default=None, dest='files',
+                   help='name one evidence file explicitly; repeat for a chosen set. Replaces '
+                        'folder discovery, always produces a combined report and cannot be '
+                        'combined with --filter')
+    p.add_argument('--url', default='',
+                   help='host that publishes the verification link, e.g. '
+                        'https://example.net/static/ (the run appends a generated code to it); '
+                        'the address you publish there must redirect to two documents: the '
+                        'report and its proof bundle. Overrides the config and the '
+                        'CHRONOSEAL_EVIDENCE_BASE_URL environment variable')
     p.add_argument('--output-dir')
     p.add_argument('--preflight', action='store_true', help='run checks only, then exit')
     p.add_argument('--self-check', action='store_true', help='verify and repair dependencies only, then exit')
@@ -46,6 +60,24 @@ def parse(argv):
     p.add_argument('--json', action='store_true', help='emit one JSON result on stdout (logs go to stderr)')
     p.add_argument('--quiet', action='store_true')
     return p.parse_args(argv)
+
+
+def apply_url(cfg, raw, environ=None):
+    """Point this run at the evidence host given by ``--url``.
+
+    The flag outranks both the configuration file and the environment variable, so
+    an operator who names a host gets that host and nothing else.
+    """
+    if not raw:
+        return ''
+    base = verification_qr.normalise_url(raw, required=True)
+    base = base if base.endswith('/') else base + '/'
+    section = cfg.get('verification')
+    if not isinstance(section, dict):
+        section = cfg['verification'] = {}
+    section['base_url'] = base
+    (os.environ if environ is None else environ)[verification_qr.BASE_URL_ENV] = base
+    return base
 
 
 def make_emitter(quiet, json_mode):
@@ -82,6 +114,12 @@ def main(argv=None):
 
     try:
         cfg = load(cfg_path)
+        if args.url:
+            base = apply_url(cfg, args.url)
+            result['verification_base'] = base
+            emit('[URL] evidence host: ' + base)
+            emit('[URL] each report appends a generated code to this address; the published '
+                 'link must redirect to two documents - the report and its proof bundle')
         if args.repair_network:
             cfg.setdefault('repair', {})['allow_network'] = True
         pipeline = Pipeline(args.root, cfg, emit, session, cancel_event=cancel)
@@ -137,6 +175,7 @@ def main(argv=None):
             session.write('[TRUST] automatic bootstrap PASS')
         summary = pipeline.run(Path(args.target).expanduser(), args.mode or 'combined', args.recursive,
                                args.explanation, args.source_pdf, args.output_dir,
+                               filters=args.filter, files=args.files,
                                embed_pdf=Path(args.embed_pdf).expanduser() if args.embed_pdf else None,
                                embed_position=args.embed_position,
                                qr_url=args.qr_url)
@@ -145,6 +184,8 @@ def main(argv=None):
         code = EXIT_PASS
     except Cancelled as exc:
         failure = exc; result.update(status='CANCELLED', error=str(exc)); code = EXIT_CANCELLED
+    except verification_qr.QrOptionError as exc:
+        failure = exc; result.update(status='BLOCKED', error=str(exc)); code = EXIT_BLOCKED
     except (PipelineError, BootstrapError, OSError, ValueError) as exc:
         failure = exc; result.update(status='BLOCKED', error=f'{type(exc).__name__}: {exc}'); code = EXIT_BLOCKED
     except KeyboardInterrupt as exc:

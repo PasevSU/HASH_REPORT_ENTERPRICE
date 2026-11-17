@@ -1,21 +1,21 @@
 # ChronoSeal — документация
 
-Всички проектни Markdown документи са събрани тук. Оригиналните им относителни пътища са запазени в имената чрез `__`. Документацията на външните npm зависимости остава в `node_modules`, за да не се изменят пакетите им.
+Всички проектни Markdown документи са събрани тук. Това е **CLI изданието**
+(`release/cli`); документите за графичния интерфейс остават в клона
+`release/gui` и описват повърхности, които тук не съществуват. Оригиналните им относителни пътища са запазени в имената чрез `__`. Документацията на външните npm зависимости остава в `node_modules`, за да не се изменят пакетите им.
 
 - README.md
 - MODULAR_REPORTS.md
 - ENTERPRISE_ARCHITECTURE_STATUS.md
 - FUNCTIONAL_MODULES_STATUS.md
-- UNIFIED_GUI_START_HERE_BG.md
 - BRANDING_V551_BG.md
 - PDFNORM_JS_BG.md
 - JSX_PORT_BG.md
-- V91_REPORT_FROM_FILES_BG.md
 - V92_CURRENT_STATE_BG.md
 - V92_UPGRADE_PLAN_BG.md
 - V92_TEST_REPORT_BG.md
-- V93_EMBED_DIALOGS_BG.md
 - V94_VERIFICATION_QR_BG.md
+- V95_CLI_EDITION_BG.md
 - JS_CLONE_BG.md
 - HAPI_REPORT_BUTTONS_BG.md
 - docs/history/CONTINUATION_AUDIT.md

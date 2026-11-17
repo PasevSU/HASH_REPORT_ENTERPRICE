@@ -46,9 +46,9 @@ class FakePipeline:
 
     def run(self, target, mode='combined', recursive=False, explain=False, source_pdf=False, output_dir=None,
 
-            embed_pdf=None, embed_position='after', qr_url=''):
+            filters=None, files=None, embed_pdf=None, embed_position='after', qr_url=''):
         self.ran = (target, mode, recursive, explain, source_pdf, output_dir, embed_pdf, embed_position)
-
+        self.selection = (filters, files)
         self.qr_url = qr_url
         return {'final_pdf': str(Path(target) / 'REPORT_HASHREPORT_TYP_COMBO_PDF.pdf')}
 

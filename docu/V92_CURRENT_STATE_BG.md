@@ -1,14 +1,18 @@
 # V92 — Актуално състояние и работа на ChronoSeal Enterprise
 
-Документът описва **какво прави програмата днес** (версия на Python пакета `5.10.0`
-плюс надграждането за вграждане на PDF в COMBO отчети). Той е изходната точка за
-надграждането, описано в `V92_UPGRADE_PLAN_BG.md`.
+Документът описва **какво прави програмата днес** в това издание: версия
+`5.10.0-cli`, без графичен интерфейс, с оркестратор на отчетите по име и с `--url`,
+който задава хоста на проверката. Подробно за изданието — `V95_CLI_EDITION_BG.md`.
+
+Двете издания произлизат от `main` (`5.10.0`): `release/gui` е графичното издание
+без QR код (за бързи действия и изпращане по имейл), а `release/cli` е това —
+само команден ред, със задължителен QR блок във всеки отчет.
 
 ## 1. Два независими номера на версия
 
 | Номер | Къде живее | Какво означава |
 |---|---|---|
-| `5.10.0` | `chronoseal/branding.py` (`VERSION`), `package.json`, таблицата в `README.md` | Версия на Python пакета и на GUI заобикалящата среда |
+| `5.10.0-cli` | `chronoseal/branding.py` (`VERSION`), `package.json`, таблицата в `README.md` | Версия на Python пакета в CLI изданието |
 | `CLONE_VERSION` | `js/cli.mjs` (`CLONE_VERSION = '1.0.0'`), вгражда се в `manifest.implementation` | Версия на независимия JavaScript клонинг |
 
 Двете версии се движат отделно: JS клонингът се разпространява като отделен продукт
@@ -18,17 +22,19 @@
 
 | Вход | Файл | Предназначение |
 |---|---|---|
-| Един бутон (Windows) | `Start_ChronoSeal.bat` → `ChronoSeal_OneButton.py` | Стартира обединения GUI без конзола |
-| Обединен GUI | `ChronoSeal_GUI.pyw` (`ChronoSealDesktop`) | Страници: Run, Selection/Filters, Settings, Diagnostics |
-| Класически GUI | `ChronoSeal_Original_Legacy.py` (`App`) | Изходният едноекранен интерфейс; обединеният GUI наследява неговите помощни методи |
-| Команден ред (Python) | `chronoseal_cli.py` | `--profile`, `--source`, `--output`, `--embed-pdf`, `--embed-position`, `--source-pdf`, `--explanation`, `--qr-url` |
+| Оркестратор по име на отчет | `chronoseal_report.py` (`Run_Report.bat`) | `SINGLE`, `SINGLE_PDF`, `COMBO`, `COMBO_PDF`, `COMBO_ALL`, `COMBO_ALL_PDF`; `list`, `--information`, `--version` |
+| Команден ред (Python) | `chronoseal_cli.py` | `--profile`, `--source`, `--output`, `--embed-pdf`, `--embed-position`, `--source-pdf`, `--explanation`, `--qr-url`, `--url`, `--filter`, `--file`, `--json`, `--preflight`, `--self-check`, `--bootstrap-trust` |
 | Неподпечатан диагностичен runtime | `chronoseal_process_cli.py` + `automation/*.bat` | Само UNSEALED JSON доказателства; изисква `--allow-unsealed-diagnostics` |
 | Обвивки за вграждане | `automation/COMBO_PDF.bat`, `automation/COMBO_ALL_PDF.bat` | Подпечатан път (`chronoseal_cli.py`); приемат `INPUT OUTPUT EMBED_PDF [before|after]` |
 | Обвивки без вграждане | `automation/SINGLE.bat`, `SINGLE_PDF.bat`, `COMBO.bat`, `COMBO_ALL.bat` | Само неподпечатан диагностичен runtime (`chronoseal_process_cli.py`) |
-| Панел „отчет от файлове“ | `automation/Report_From_Files_Panel.py` | Избор на папка/файлове и ръчно предаване към генератора |
-| Панел за филтри | `automation/File_Filter_Panel.py` | Каскадни филтри (`*eml.pdf`), всяко въведено поле отваря следващо |
 | JS клонинг (CLI) | `js/cli.mjs` (`node js/cli.mjs`) | Пълен отчет без Python и без RFC3161 |
-| JS клонинг (GUI) | `js/HashReport.bat` | Стартира същия клонинг с графичен избор |
+| JS клонинг (меню) | `js/HashReport.bat` | Стартира същия клонинг с меню за избор |
+
+Графичните входове (`ChronoSeal_GUI.pyw`, `ChronoSeal_Original_Legacy.py`,
+`ChronoSeal_OneButton.py`, `Start_ChronoSeal.bat`, `automation/Start_Automation.py`,
+`automation/Unified_ChronoSeal.py`, `automation/*_Panel.py`, `ui/`) **не съществуват**
+в този клон — те са в `release/gui`. `Install_Windows.bat` не стартира нищо, а
+отпечатва имената на отчетите и пример за употреба.
 
 ## 3. Типове отчети
 
@@ -154,32 +160,54 @@ Manifest-ът получава `verification_qr`, `verification_qr_code`,
 `verification_qr_url`, `verification_qr_position`, `verification_qr_record`,
 `verification_qr_rendered`.
 
-## 7. Графичен интерфейс
+### Договор за редирект (пакет за доработване)
 
-Страница **Run** на обединения GUI е разделена на четири панела:
+Кодът тук **не създава `.ots`**, не качва нищо и не поддържа редиректи. Той
+отпечатва връзката и я записва в case папката, а сървърът на внедряващия трябва да
+пренасочи тази една връзка към **два** документа: самия отчет и пакета с
+доказателствата (RFC 3161 отговори, TSA сертификати с вериги, CRL/OCSP статус и
+OTS доказателството). Затова `--url` задава хост, а не „включва QR“; адресът се
+проверява предварително (`VERIFICATION_QR_INVALID` при невалиден базов адрес).
 
-1. **Selection** — цел, режим, подпапки, индикатор за филтри.
-2. **PDF embedding** — отметка, позиция `Before report` / `After report`, поле за път
-   до PDF, бутон `Choose PDF`, бутон `More options…`.
-3. **Output** — „Запази в друга папка“.
-4. **Run and monitor** — генериране, прогрес, лог.
+## 7. Команден ред
 
-Редът за QR кода стои под резюмето за вграждането и е само информационен:
-надпис „QR код: задължителен за всеки отчет“, базовият адрес и едноредово
-резюме — няма отметка и няма поле. Същата информация показват диалогът
-`Опции на отчета… / Report options…` и панелът Report from Files, а уеб
-работното пространство показва прочетените от manifest
-`manifest.verificationQrCode` и `manifest.verificationQrUrl`.
+Входната точка е `chronoseal_report.py` (обвивка `Run_Report.bat`): една дума избира
+вида отчет, входът решава режима.
 
-Опциите, които не се използват при всяко пускане (ERLAEUTERUNG, подпапки, изходна
-папка, позиция, избор на PDF), живеят и в отделен диалог `Още опции… / More options…`
-(`_embed_dialog`), който при отказ връща панела в предишното състояние. Панелът
-остава кратко резюме, диалогът носи пълния набор — така един ред не се превръща в
-шест контроли, които се застъпват при 125% мащаб.
+| Отчет | Вход | Какво публикува |
+|---|---|---|
+| `SINGLE` | един файл | подпечатан отчет за файла |
+| `SINGLE_PDF` | един PDF | същият, с вграден входен файл байт-за-байт |
+| `COMBO` | папка **или** изричен набор файлове | отчет за набора |
+| `COMBO_PDF` | папка + `--pdf` | отчет с вграден PDF преди или след отчета |
+| `COMBO_ALL` | папка | отчет за папката и всички подпапки |
+| `COMBO_ALL_PDF` | папка + `--pdf` | рекурсивният отчет с вграден PDF |
 
-Панелът **Selection/Filters** държи каскадните филтри: всяко въведено поле
-(`*eml.pdf`) отваря следващо поле; филтрите се прилагат в реда на въвеждане и се
-записват в `manifest.selection_filters`.
+```powershell
+python chronoseal_report.py list                    # имената и договорът за URL
+python chronoseal_report.py --information           # какво очаква това издание
+python chronoseal_report.py SINGLE  C:\cases\letter.pdf
+python chronoseal_report.py COMBO_ALL_PDF C:\cases\2026-08 `
+  --pdf C:\cases\Anlage.pdf --position before --url https://example.net/static/
+```
+
+Несъответствие име↔вход се отказва преди хеширане: `COMBO` върху файл, `SINGLE`
+върху папка, `_PDF` без `--pdf`, `--pdf` при отчет без вграждане. Оркестраторът само
+проверява и превежда към `chronoseal_cli.py`, затова логовете, кодовете за изход и
+доказателствата са идентични с директното извикване.
+
+Изборът на доказателствения набор:
+
+* `--recursive` (или `COMBO_ALL`) — папката с подпапките;
+* `--filter '*.eml' --filter '*.pdf'` — верижни филтри; верига без съвпадение спира с
+  код `3` (`FILTER_MATCHED_NO_FILES`) и не изразходва номер на отчет;
+* `--file a.pdf --file sub\b.pdf` — изричен набор; папката-цел става незадължителна
+  (използва се най-дълбоката обща папка), не се комбинира с `--filter` и с рекурсия.
+
+`--url` има приоритет пред `CHRONOSEAL_EVIDENCE_BASE_URL` и пред
+`config['verification']['base_url']`; добавя се `/` в края при нужда. Пускането
+отпечатва базовия адрес, генерирания код и едноредово резюме преди генериране.
+Кодове за изход: `0` PASS, `2` BLOCKED, `3` филтър без съвпадение, `130` прекъсване.
 
 ## 8. JavaScript клонинг
 
@@ -204,7 +232,7 @@ Manifest-ът получава `verification_qr`, `verification_qr_code`,
 | Команда | Обхват |
 |---|---|
 | `python tests/<име>.py` | Изпълнимите тестове на Python изданието (без `tests/__init__.py`) |
-| `python -m pytest tests/test_ui_selection_filters.py -q` | Приемният GUI тест (само pytest) |
+| `python -m pytest tests/test_report_orchestrator.py -q` | Имената, съответствието име↔вход, `--file`/`--filter`, `--url` |
 | `npm run test:clone` | `node --test js/test/` |
 | `npm run test:js` | Тестове на нормализатора и JSX моста |
 | `npm run test` | `unittest discover` за `tests/` и `hash_report_generator/tests` |

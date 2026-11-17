@@ -70,5 +70,10 @@ if errorlevel 1 (
  pause
  exit /b 9
 )
-echo Dependencies ready. Launching ChronoSeal...
-call Start_ChronoSeal.bat
+echo Dependencies ready. This edition has no window to open.
+echo.
+echo   Run_Report.bat list                      report names and the URL contract
+echo   Run_Report.bat --information             what this edition expects
+echo   Run_Report.bat COMBO_ALL ^<folder^> --url ^<base^>
+echo.
+echo Install complete.
