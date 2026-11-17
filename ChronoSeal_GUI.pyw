@@ -361,35 +361,6 @@ class ChronoSealDesktop(original.App):
         ttk.Button(
             embed, text="Report options…", command=self._report_options_dialog
         ).grid(row=2, column=3, sticky="e", pady=(8, 0))
-        # The closing QR block belongs to the report, not to the embedded PDF, but
-        # it is set up here because it is another thing printed with the report.
-        qr = self._qr_vars()
-        ttk.Separator(embed, orient="horizontal").grid(
-            row=3, column=0, columnspan=4, sticky="ew", pady=(10, 8)
-        )
-        ttk.Label(
-            embed,
-            text="QR code and text at the end of every report: mandatory, the "
-                 "link is generated per report",
-        ).grid(row=4, column=0, columnspan=4, sticky="w")
-        ttk.Label(
-            embed,
-            text="Link base: " + (self._qr_preview().get("url") or "-"),
-            style="Muted.TLabel",
-        ).grid(row=5, column=0, columnspan=4, sticky="w", pady=(6, 0))
-        ttk.Label(embed, textvariable=qr["summary"], style="Muted.TLabel").grid(
-            row=6, column=0, columnspan=4, sticky="w", pady=(6, 0)
-        )
-        ttk.Label(
-            embed,
-            text="Each report ends with the QR block that leads to the electronic "
-                 "documents for checking the timestamps, the TSA chain and the "
-                 "OpenTimestamps proof (.ots). The link is base address plus a "
-                 "random code and is recorded in the evidence case, so the report "
-                 "and its verification documents download together.",
-            style="Muted.TLabel", wraplength=900, justify="left",
-        ).grid(row=7, column=0, columnspan=4, sticky="w", pady=(6, 0))
-
         output = ttk.LabelFrame(page, text="  3  ·  Output  ", style="Panel.TLabelframe")
         output.grid(row=3, column=0, sticky="ew", pady=(12, 0))
         output.columnconfigure(1, weight=1)

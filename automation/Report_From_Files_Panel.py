@@ -29,9 +29,6 @@ for _path in (str(HERE), str(BASE)):
 
 from chronoseal import i18n
 from chronoseal.embed_options import EmbedOptionError, resolve_embed_options, summary_text
-from chronoseal.verification_qr import QrOptionError
-from chronoseal.verification_qr import base_url as qr_base_url
-from chronoseal.verification_qr import summary_text as qr_summary_text
 
 i18n.install()
 
@@ -106,9 +103,6 @@ class App:
         self.embed_summary = tk.StringVar(value="")
         self.embed_supported = False
         self._embed_state = None
-        self.qr_summary = tk.StringVar(value="")
-        self.qr_supported = False
-        self._qr_state = None
         self.selected_files = []
         self.problems = []
         self.warnings = []
@@ -126,7 +120,6 @@ class App:
         self._hashes = {}
         self._hash_thread = None
         self._bind_embed_state()
-        self._bind_qr_state()
         self._build()
         self.evidence_root.trace_add("write", lambda *_a: self._refresh_root_hint())
         self._refresh()
@@ -239,32 +232,6 @@ class App:
         ttk.Label(
             embed, textvariable=self.embed_summary, style="Muted.TLabel"
         ).grid(row=1, column=0, columnspan=5, sticky="w", pady=(8, 0))
-        ttk.Separator(embed, orient="horizontal").grid(
-            row=2, column=0, columnspan=5, sticky="ew", pady=(10, 8)
-        )
-        ttk.Label(
-            embed,
-            text="QR code at the end of the report: mandatory, the link is "
-                 "generated per report",
-        ).grid(row=3, column=0, columnspan=5, sticky="w")
-        ttk.Label(
-            embed,
-            text="Link base: " + (self.qr_base or "-"),
-            style="Muted.TLabel",
-        ).grid(row=4, column=0, columnspan=5, sticky="w", pady=(6, 0))
-        ttk.Label(embed, textvariable=self.qr_summary, style="Muted.TLabel").grid(
-            row=5, column=0, columnspan=5, sticky="w", pady=(6, 0)
-        )
-        ttk.Label(
-            embed,
-            text="Each report ends with the QR block that leads to the electronic "
-                 "documents for checking the timestamps, the TSA chain and the "
-                 "OpenTimestamps proof (.ots). The link is base address plus a "
-                 "random code and is recorded in the evidence case, so the report "
-                 "and its verification documents download together.",
-            style="Muted.TLabel", wraplength=900, justify="left",
-        ).grid(row=6, column=0, columnspan=5, sticky="w", pady=(6, 0))
-
         handover = ttk.Frame(page)
         handover.grid(row=6, column=0, sticky="ew", pady=(12, 0))
         handover.columnconfigure(2, weight=1)
@@ -336,48 +303,6 @@ class App:
         except EmbedOptionError as exc:
             text = str(exc)
         self.embed_summary.set(text)
-        return text
-
-    # -------------------------------------------------------------------- QR
-    def _bind_qr_state(self):
-        """The closing QR block is never optional, so this page only reads it back."""
-        self.qr_base = ""
-        getter = getattr(self.root, "_qr_vars", None)
-        state = None
-        if callable(getter):
-            try:
-                state = getter()
-            except tk.TclError:
-                state = None
-        self.qr_supported = isinstance(state, dict) and "summary" in state
-        self._qr_state = state if self.qr_supported else {"summary": self.qr_summary}
-        shell = self._qr_state.get("summary")
-        if shell is not None and shell is not self.qr_summary:
-            try:
-                shell.trace_add("write", lambda *_a: self._refresh_qr_summary())
-            except tk.TclError:
-                pass
-        self._refresh_qr_summary()
-
-    def _refresh_qr_summary(self):
-        """Read back where the closing QR block of the combo report will point."""
-        try:
-            self.qr_base = qr_base_url(getattr(self.root, "cfg", None))
-        except QrOptionError as exc:
-            # A base address that cannot resolve is reported here: the page shows
-            # why no link can be printed instead of failing later during the run.
-            self.qr_base = ""
-            text = str(exc)
-        else:
-            text = ""
-            shell = (self._qr_state or {}).get("summary")
-            if shell is not None and shell is not self.qr_summary:
-                try:
-                    text = str(shell.get())
-                except tk.TclError:
-                    text = ""
-            text = text or qr_summary_text({"url": self.qr_base}, "en")
-        self.qr_summary.set(text)
         return text
 
     def open_embed_dialog(self):
@@ -621,7 +546,6 @@ class App:
         self._refresh_root_hint()
         self._sync_buttons()
         self._refresh_embed_summary()
-        self._refresh_qr_summary()
         return records
 
     def _refresh_root_hint(self):

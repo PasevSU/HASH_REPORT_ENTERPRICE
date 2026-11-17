@@ -46,10 +46,9 @@ class FakePipeline:
 
     def run(self, target, mode='combined', recursive=False, explain=False, source_pdf=False, output_dir=None,
 
-            embed_pdf=None, embed_position='after', qr_url=''):
+            embed_pdf=None, embed_position='after'):
         self.ran = (target, mode, recursive, explain, source_pdf, output_dir, embed_pdf, embed_position)
 
-        self.qr_url = qr_url
         return {'final_pdf': str(Path(target) / 'REPORT_HASHREPORT_TYP_COMBO_PDF.pdf')}
 
 
@@ -203,35 +202,6 @@ class CliTests(unittest.TestCase):
             self.assertEqual(holder['pipeline'].embedding[1], 'after')
 
 
-
-    def test_qr_url_reaches_the_pipeline_verbatim(self):
-        with tempfile.TemporaryDirectory() as td:
-            holder = {}
-
-            class Recorder(FakePipeline):
-                def __init__(self, *a, **k):
-                    super().__init__(*a, **k)
-                    holder['pipeline'] = self
-
-            code, _, err = self.run_cli([td, '--qr-url', 'https://evidence.example.org/case-42/',
-                                         '--quiet', '--log-dir', str(Path(td) / 'logs')], Recorder)
-            self.assertEqual(code, cli.EXIT_PASS, err)
-            self.assertEqual(holder['pipeline'].qr_url, 'https://evidence.example.org/case-42/')
-
-    def test_the_closing_qr_block_needs_no_flag(self):
-        # The block is mandatory, so the pipeline is asked to generate the link: the
-        # CLI passes no override and never asks for the block to be left out.
-        with tempfile.TemporaryDirectory() as td:
-            holder = {}
-
-            class Recorder(FakePipeline):
-                def __init__(self, *a, **k):
-                    super().__init__(*a, **k)
-                    holder['pipeline'] = self
-
-            code, _, err = self.run_cli([td, '--quiet', '--log-dir', str(Path(td) / 'logs')], Recorder)
-            self.assertEqual(code, cli.EXIT_PASS, err)
-            self.assertEqual(holder['pipeline'].qr_url, '')
 
     def test_preflight_reports_both_embedding_routes(self):
 

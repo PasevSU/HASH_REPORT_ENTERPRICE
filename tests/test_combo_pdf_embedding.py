@@ -236,16 +236,11 @@ class _StubbedPipeline(Pipeline):
         return {'target': str(target), 'input_kind': _info['input_kind'], 'generator': 'stub'}, [], []
 
     def generate(self, target, mode='combined', recursive=False, include_explanation=False,
-                 filters=None, files=None, qr_url=''):
+                 filters=None, files=None):
         # The generator always names a combined report COMBO; only the published
         # name gains the _ALL and _PDF suffixes.
         path = self.root / 'RPT-20261116-00009-ABCD_HASHREPORT_TYP_COMBO.pdf'
         _report(path)
-        # The closing QR block is mandatory: the real generator records it here and
-        # the run refuses to publish a report it cannot confirm.
-        if self._case_dir and qr_url:
-            (self._case_dir / 'verification-qr.json').write_text(
-                json.dumps({'url': qr_url, 'qr_rendered': True}), encoding='utf-8')
         return path
 
     def _compose(self, report, target, case, include_explanation=False, include_source_pdf=False,

@@ -657,9 +657,6 @@ class CombinedReportGenerator(HashGeneratorCore):
             # after the STOP timestamp section.
             self._add_legal_declaration(story, styles, now, timezone_str, is_combined=True)
             self._add_footer(story, styles, now, timezone_str, is_combined=True)
-            # Optional closing block: QR code plus the pointer to the electronic
-            # timestamp evidence. Off unless a target URL was provided.
-            self._add_verification_qr_section(story, is_combined=True)
 
             # v2.34: no visible Base64 block. Original START/END TimeStampResp
             # standalone generator artifacts may be attached after ReportLab build; ChronoSeal report-only mode delegates final DSS embedding.

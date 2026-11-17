@@ -6,7 +6,6 @@ from .util import sha256, atomic_json, json_safe
 from .settings import executable, node_version, evidence_policy
 from .storage_identity import inspect_storage, inspect_workspaces, low_space_warning
 from . import selfheal
-from . import verification_qr
 
 def _load_file_filters():
     """Load the generator's filter grammar without requiring package context."""
@@ -457,7 +456,7 @@ class Pipeline:
             starts=[ident(p) for p in pol.get('start',[])]; stops=[ident(p) for p in pol.get('stop',[])]
             if starts and stops and not any(all(s[0]!=x[0] and (not s[1] or s[1]!=x[1]) for s in starts) for x in stops):issues.append('STOP has no provider distinct from START (name or endpoint)')
         return info,issues,warnings
-    def generate(self,target,mode='combined',recursive=False,include_explanation=False,filters=None,files=None,qr_url=''):
+    def generate(self,target,mode='combined',recursive=False,include_explanation=False,filters=None,files=None):
         mode=self._input_mode(target); recursive=bool(recursive and Path(target).is_dir())
         # v5.5.2: an explicit selection replaces folder discovery entirely. Type
         # filters describe a folder, so they cannot compete with chosen files; both
@@ -497,13 +496,6 @@ class Pipeline:
             + resolved_certificates('trusted_list_service_certificate_file')
         )
         gcfg=self.cfg.get('generator',{})
-        # A direct generate() call (no pipeline run) still gets a block: the link is
-        # resolved here rather than left to the caller, so the report can never be
-        # printed without the pointer to its evidence.
-        if not qr_url:
-            try:qr_url=verification_qr.resolve(self.cfg)['url']
-            except verification_qr.QrOptionError as exc:
-                raise PipelineError('VERIFICATION_QR_INVALID: '+str(exc)) from exc
         # Discovery policy reached the generator through its environment so the
         # generator stays a stand-alone script with no ChronoSeal imports.
         gen_env['CHRONOSEAL_ALLOW_UNREADABLE_FILES']='1' if gcfg.get('allow_unreadable_files',False) else '0'
@@ -517,12 +509,6 @@ class Pipeline:
         heartbeat=float(gcfg.get('heartbeat_seconds',30) or 0)
         gen_env['CHRONOSEAL_HEARTBEAT_SECONDS']=str(heartbeat)
         if self._case_dir:gen_env['CHRONOSEAL_EVIDENCE_DIR']=str(self._case_dir)
-        # The closing verification-QR block is written by the generator, so the
-        # generated target travels in the same environment channel. The block is
-        # mandatory, so the switch is always on: only a direct generator run can
-        # arrive without a target, and that run is not a ChronoSeal report.
-        gen_env['CHRONOSEAL_VERIFICATION_QR']='1'
-        gen_env['CHRONOSEAL_VERIFICATION_QR_URL']=qr_url
         timeout=float(gcfg.get('timeout_seconds',0) or 0) or None
         idle_timeout=float(gcfg.get('idle_timeout_seconds',900) or 0) or None
         self.log('Budget: '+('no absolute cap' if timeout is None else f'absolute cap {timeout:.0f}s')
@@ -792,18 +778,11 @@ class Pipeline:
                 'named ChronoSeal_Evidence block evidence capture, so choose a writable output directory.') from exc
         return case
 
-    def run(self,target,mode='combined',recursive=False,include_explanation=False,include_source_pdf=False,output_dir=None,filters=None,files=None,embed_pdf=None,embed_position='after',qr_url=''):
+    def run(self,target,mode='combined',recursive=False,include_explanation=False,include_source_pdf=False,output_dir=None,filters=None,files=None,embed_pdf=None,embed_position='after'):
         started=time.time(); target=Path(target).expanduser().resolve(); mode=self._input_mode(target); recursive=bool(recursive and target.is_dir()); self.progress(0,'Preflight')
         embed_position=str(embed_position or 'after').strip().lower()
         if embed_position not in ('before','after'):
             raise PipelineError('EMBED_POSITION_INVALID: expected before or after, got '+repr(embed_position))
-        # The closing QR block is mandatory, not an option: one generated link per
-        # report, printed into the PDF and recorded in the evidence case. A malformed
-        # base address is refused before anything is generated.
-        try:
-            qr=verification_qr.resolve(self.cfg, override=qr_url)
-        except verification_qr.QrOptionError as exc:
-            raise PipelineError('VERIFICATION_QR_INVALID: '+str(exc)) from exc
         # A combo report may carry one chosen PDF. The single-file route embeds the
         # input file itself, so asking for both at once would be ambiguous.
         embedded=None
@@ -867,20 +846,8 @@ class Pipeline:
             (case/'logs').mkdir();
             # logs are copied at completion/failure by GUI
         self.progress(20,'Report'); self._check_cancel()
-        self.log('1/5 Generate report'); report=self.generate(target,mode,recursive,include_explanation,filters=filters,files=selected,qr_url=qr['url'])
+        self.log('1/5 Generate report'); report=self.generate(target,mode,recursive,include_explanation,filters=filters,files=selected)
         original_hash=sha256(report)
-        # The generator records what it actually placed; a missing or different
-        # block would make the report look cross-referenced when it is not.
-        qr_record=case/'verification-qr.json'
-        try:
-            qr_applied=json.loads(qr_record.read_text(encoding='utf-8'))
-        except (OSError,ValueError) as exc:
-            raise PipelineError('VERIFICATION_QR_NOT_APPLIED: '
-                                +verification_qr.MESSAGES['not_applied']['en']
-                                +' ('+str(exc)+')') from exc
-        if str(qr_applied.get('url','')).strip()!=qr['url']:
-            raise PipelineError('VERIFICATION_QR_NOT_APPLIED: the generated block points to '
-                                +repr(qr_applied.get('url'))+' instead of '+repr(qr['url']))
         # Transactional sealing: a generated report is not published under its final RPT name
         # until both START and STOP DocTimeStamp revisions, DSS/Certs and reopen verification PASS.
         # Never overwrite the selected source PDF or publish an internal UNSEALED file.
@@ -945,12 +912,6 @@ class Pipeline:
             'selection_files':[str(item) for item in selected] or None,
             'selection_root':str(file_selection.root(selected)) if selected else None,
             'selection_paths':file_selection.relative(selected) if selected else None,'output_directory':str(destination),'include_explanation':include_explanation,'include_source_pdf':include_source_pdf,'page_identity':str(case/'page-identity.json'),'storage_identity':str(case/'storage-identity.json'),'generator':info.get('generator'),'generated_report':str(working),'report_sha256':original_hash,'final_pdf':str(final),'final_sha256':final_hash,'rfc3161_audit':str(audit),'embed_pdf':str(embedded) if embedded is not None else None,            'embed_position':embed_position if (embedded is not None or include_source_pdf) else None,
-            'verification_qr':True,
-            'verification_qr_code':qr['code'],
-            'verification_qr_url':qr['url'],
-            'verification_qr_position':qr['position'],
-            'verification_qr_record':str(qr_record),
-            'verification_qr_rendered':bool(qr_applied.get('qr_rendered')),
             'elapsed_seconds':round(time.time()-started,3),'status':'PASS'}
         # Never hide an evidence exclusion: when the operator allowed unreadable
         # files, the generator's audit becomes part of the published manifest.
