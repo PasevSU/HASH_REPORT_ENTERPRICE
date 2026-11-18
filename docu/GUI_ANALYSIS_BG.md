@@ -601,7 +601,7 @@ GUI-то **не се нуждае от пренаписване** — нужда
 | Брой табове | ✅ **6** = `len(NAV_ITEMS)` |
 | Навигация по страници | ✅ индекси 0..5, всички се избират |
 | `Ctrl+1..6` | ✅ 6/6 |
-| Реален прозорец през `pythonw.exe ChronoSeal_OneButton.pyw` | ✅ pid 7308, жив след 12 s, коректно BG заглавие, чисто затваряне |
+| Реален прозорец през `pythonw.exe ChronoSeal_GUI.pyw` | ✅ pid 7308, жив след 12 s, коректно BG заглавие, чисто затваряне |
 
 ### 10.2 Инвентаризация на джаджите (реално преброени: **225**)
 
@@ -678,7 +678,7 @@ sha префикс `2c85ce52` — **непроменен**. GUI тестовет
 | Файл | mtime | Съвпадение с манифест |
 |---|---|---|
 | `ChronoSeal_GUI.pyw` | 2026-11-17 14:42:04 | ❌ няма вариант |
-| `ChronoSeal_OneButton.py` | 2026-11-17 14:42:04 | ❌ няма вариант |
+| ~~`ChronoSeal_OneButton.py`~~ | 2026-11-17 14:42:04 | ❌ няма вариант; файлът е изтрит по-късно (§12.7) |
 | `Start_ChronoSeal.bat` | 2026-11-17 14:42:05 | ✅ само при CRLF→LF |
 | `ChronoSeal_Original_Legacy.py` | 2026-11-17 14:42:05 | ❌ няма вариант |
 | `config/config.json` | 2026-11-18 13:58:04 | ❌ няма вариант |
@@ -697,9 +697,9 @@ sha префикс `2c85ce52` — **непроменен**. GUI тестовет
 
 - **Единствен постоянен артефакт от одита:** `ChronoSeal_OneButton.pyw` — нов файл, тих старт
   през `pythonw.exe` без конзола (реализира вече документираното име от
-  `docu/UNIFIED_GUI_START_HERE_BG.md:3`)
+  `docu/UNIFIED_GUI_START_HERE_BG.md:3`). **Този артефакт е премахнат по-късно — вж. §12.7.**
 - **Нула промени** по време на самия одит: `ChronoSeal_GUI.pyw`, `ChronoSeal_Original_Legacy.py`,
-  `ChronoSeal_OneButton.py`, `Start_ChronoSeal.bat`, `chronoseal/**`, `automation/**`,
+  `Start_ChronoSeal.bat`, `chronoseal/**`, `automation/**`,
   `hash_report_generator/**`, `config/**`
 - Всички сонди/логове/`__pycache__` бяха временни и са изтрити; коренът е проверен за чистота
 
@@ -948,13 +948,19 @@ EXIT OK
 
 ### 12.7 Изтрити файлове
 
-Три файла бяха премахнати с `git rm` (обратимо, не с изтриване от файловата система):
+Четири файла бяха премахнати с `git rm` (обратимо, не с изтриване от файловата система):
 
 | Файл | Размер | Причина |
 |---|---|---|
 | `ChronoSeal_OneButton.py` | 601 B | Конзолен близнак на `ChronoSeal_OneButton.pyw`; дублиращ вход |
 | `automation/Unified_ChronoSeal.py` | 974 B | Трети GUI път, дублиращ таба „Автоматични отчети“; последната кодова зависимост от `ChronoSeal_OneButton.py` |
 | `Start_ChronoSeal_SMB.ps1` | 796 B | Нищо не го реферираше |
+| `ChronoSeal_OneButton.pyw` | 3 253 B | Обвивка-стартер около `ChronoSeal_GUI.pyw`; създаваше **втори** GUI вход. Единствената му препратка беше собствената му редица в `migration_kit/V96_CHANGED_SHA256.json` |
+
+След четвъртото изтриване в проекта остава **точно един `.pyw` файл** — `ChronoSeal_GUI.pyw`.
+В 160 сканирани файла (13 директории, 13 разширения) `ChronoSeal_OneButton.pyw` имаше
+**една** препратка — в манифеста; тя е премахната и манифестът е преизчислен
+(37 → **36** записа, `missing 0`, `stale 0`).
 
 `Start_ChronoSeal.bat` е **запазен** — рефериран е от `Install_Windows.bat`, `README.md` и
 15 файла в `docu/`.
@@ -967,9 +973,10 @@ EXIT OK
   `ui`, `js`, `bridge` (разширения `.py/.pyw/.bat/.ps1/.mjs/.js/.json/.md/.ini/.txt`):
   **0 реда**. `docu/` и `migration_kit/` са умишлено изключени — там историческите
   споменавания остават по предназначение.
-- `ChronoSeal_OneButton.pyw` беше преработен, за да не назовава изтрит файл (3 286 → 3 253 B).
+- `ChronoSeal_OneButton.pyw` беше преработен, за да не назовава изтрит файл (3 286 → 3 253 B),
+  а след това премахнат напълно — вж. реда в таблицата по-горе.
 - Целеви пробег върху 6 файла: **`83 passed in 76.98s (0:01:16)`**.
-- Жива сонда на двата оцелели входа:
+- Жива сонда на оцелелия вход:
 
 ```
 --- direct .pyw entry ---
@@ -979,11 +986,6 @@ titles=['Отчет и TSA', 'Отчет от файлове', 'Автомати
 has report_files_panel=True automation_panel=True filter_panel=True
 has _gate=True
 direct OK
---- launcher .pyw module (no mainloop) ---
-has main=True
-SOURCE=...\ChronoSeal_GUI.pyw exists=True
-launcher loads=chronoseal_unified_gui class=ChronoSealDesktop
-ALL OK
 ```
 
 ### 12.8 Уроци

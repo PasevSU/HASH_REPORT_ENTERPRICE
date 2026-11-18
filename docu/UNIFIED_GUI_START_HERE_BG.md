@@ -1,8 +1,8 @@
 # ChronoSeal — единен графичен интерфейс
 
-Стартирайте **Start_ChronoSeal.bat** или **ChronoSeal_OneButton.pyw**. И двете отварят **един и същ** `ChronoSealDesktop` с четири раздела: Report & TSA, Automatic Reports, Settings & Trust, Diagnostics & Logs.
+Стартирайте **Start_ChronoSeal.bat** или директно **ChronoSeal_GUI.pyw**. Това е **единственият** вход — отваря `ChronoSealDesktop` с шест раздела: Report & TSA, Report from Files, Automation, Settings & Trust, Diagnostics & Logs, Selection & Filters.
 
-Старият код е запазен без промяна като `ChronoSeal_Original_Legacy.pyw` и се използва вътрешно. `ChronoSeal_GUI.pyw` е реалният единен интерфейс.
+Старият код е запазен без промяна като `ChronoSeal_Original_Legacy.py` и се използва вътрешно като базов клас. `ChronoSeal_GUI.pyw` е реалният единен интерфейс.
 
 В Automatic Reports първо се избира видът на отчета (комбиниран, индивидуален, комбиниран и индивидуален), после съответната автоматизация. Смяната на вида обновява зависимите контроли.
 

@@ -18,8 +18,8 @@
 
 | Вход | Файл | Предназначение |
 |---|---|---|
-| Един бутон (Windows) | `Start_ChronoSeal.bat` → `ChronoSeal_OneButton.py` | Стартира обединения GUI без конзола |
-| Обединен GUI | `ChronoSeal_GUI.pyw` (`ChronoSealDesktop`) | Страници: Run, Selection/Filters, Settings, Diagnostics |
+| Един бутон (Windows) | `Start_ChronoSeal.bat` → `ChronoSeal_GUI.pyw` | Стартира обединения GUI без конзола |
+| Обединен GUI | `ChronoSeal_GUI.pyw` (`ChronoSealDesktop`) | Страници: Report & TSA, Report from Files, Automation, Settings & Trust, Diagnostics, Selection |
 | Класически GUI | `ChronoSeal_Original_Legacy.py` (`App`) | Изходният едноекранен интерфейс; обединеният GUI наследява неговите помощни методи |
 | Команден ред (Python) | `chronoseal_cli.py` | `--profile`, `--source`, `--output`, `--embed-pdf`, `--embed-position`, `--source-pdf`, `--explanation`, `--qr-url` |
 | Неподпечатан диагностичен runtime | `chronoseal_process_cli.py` + `automation/*.bat` | Само UNSEALED JSON доказателства; изисква `--allow-unsealed-diagnostics` |
