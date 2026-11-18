@@ -4,7 +4,7 @@ from unittest.mock import patch
 from chronoseal import i18n
 ROOT=Path(__file__).resolve().parents[1]
 def load_gui():
- loader=importlib.machinery.SourceFileLoader('chronoseal_gui',str(ROOT/'ChronoSeal_OneButton.py')); spec=importlib.util.spec_from_loader(loader.name,loader); mod=importlib.util.module_from_spec(spec); loader.exec_module(mod); return mod
+ loader=importlib.machinery.SourceFileLoader('chronoseal_gui',str(ROOT/'ChronoSeal_GUI.pyw')); spec=importlib.util.spec_from_loader(loader.name,loader); mod=importlib.util.module_from_spec(spec); loader.exec_module(mod); return mod
 class GuiTests(unittest.TestCase):
  @classmethod
  def setUpClass(cls):
@@ -15,7 +15,7 @@ class GuiTests(unittest.TestCase):
  @classmethod
  def tearDownClass(cls): i18n.set_language(cls._language,persist=False)
  def make(self):
-  a=self.m.App(auto_bootstrap=False); a.withdraw(); a.update_idletasks(); return a
+  a=self.m.ChronoSealDesktop(auto_bootstrap=False); a.withdraw(); a.update_idletasks(); return a
  def test_constructs_real_tk_and_defaults(self):
   a=self.make()
   try:

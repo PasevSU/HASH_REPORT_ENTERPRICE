@@ -1,9 +1,10 @@
 # Задълбочен анализ на GUI — ChronoSeal™ Enterprise v5.11.0-gui
 
-**Статус: АНАЛИЗ + ЕМПИРИЧНА ПРОВЕРКА + ИЗПРАТЕНО УКРЕПВАНЕ (виж §10 и §11).**
+**Статус: АНАЛИЗ + ЕМПИРИЧНА ПРОВЕРКА + ИЗПРАТЕНО УКРЕПВАНЕ + ИНТЕРАКТИВНО ШЛЮЗОВАНЕ (§10, §11, §12).**
 Първоначалният одит беше само четене; впоследствие GUI-то беше реално стартирано и тествано
 (§10), след което ограничен набор поправки беше приложен и валидиран (§11) — те са
-основата на версия 5.11.0-gui. Всичко останало по производствената логика остава непроменено.
+основата на версия 5.11.0-gui. §12 описва шлюзоването на опциите зад чекбоксовете и
+изтриването на трите дублиращи входа. Всичко по производствената логика остава непроменено.
 Засегнати са следните файлове за четене:
 `ChronoSeal_GUI.pyw`, `ChronoSeal_Original_Legacy.py`, `automation/File_Filter_Panel.py`,
 `automation/Report_From_Files_Panel.py`, `automation/Start_Automation.py`,
@@ -777,3 +778,223 @@ sha префикс `2c85ce52` — **непроменен**. GUI тестовет
   до 0.5 s (общо 6 s); същото важи и за латентния близнак `test_t29`. `test_t28` умишлено
   запазва 0.9 s, за да се докаже, че watchdog-ът все още хапе. Продуктовият код не е отслабван.
 - Пълният запис с точните числа е в `migration_kit/V96_TEST_LOG.txt`.
+
+---
+
+## 12. Интерактивно шлюзоване
+
+### 12.1 Проблемът, формулиран точно
+
+Първоначалната заявка беше за интерактивна среда с чекбоксове, при която опциите се
+прилагат „лесно и бързо“. Резултатът беше **обратен на очакваното**: управляващите
+елементи бяха налични, но **независими от своите превключватели**. Полетата за папка за
+съхранение и за PDF път приемаха въвеждане дори когато чекбоксът над тях беше изключен,
+тоест интерфейсът обещаваше поведение, което логиката не изпълнява.
+
+Това не е козметичен дефект. Логиката вече съдържаше проверката:
+
+```
+ChronoSeal_Original_Legacy.py L295
+if self.custom_output.get() and not Path(self.output_folder.get()).expanduser().is_dir():
+    return messagebox.showerror('ChronoSeal','Select an existing output folder.')
+```
+
+Тоест папката се използва **само** когато `custom_output` е истина. Потребител, който
+въведе път при изключен чекбокс, получава тихо игнориране на въведеното. Шлюзът в
+интерфейса трябваше да отрази точно това правило.
+
+### 12.2 Помощната функция `_gate`
+
+Единствената добавена абстракция. Не променя логика, не пипа pipeline-а, не пипа
+отчитането — само състоянието на джаджи:
+
+```python
+def _gate(self, variable, widgets):
+    """Enable *widgets* only while *variable* is true.
+
+    The options behind a checkbox are inert until the checkbox is on, so they
+    must not accept input either. The first call also fixes the initial
+    state, which is why every caller invokes it right after building.
+    """
+    def apply(*_args):
+        state = "normal" if bool(variable.get()) else "disabled"
+        for widget in widgets:
+            try:
+                widget.configure(state=state)
+            except tk.TclError:
+                pass
+
+    variable.trace_add("write", apply)
+    apply()
+```
+
+Три решения, всяко от които е задължително:
+
+1. **`apply()` се извиква веднага след регистрацията.** `trace_add` само реагира на
+   бъдещи промени; без началното извикване джаджите изглеждат активни до първото
+   щракване по чекбокса.
+2. **Стойността се чете през `variable.get()` вътре в `apply`, не се улавя в closure.**
+   Улавянето на стойността би замразило началното състояние завинаги.
+3. **`tk.TclError` се поглъща.** `_gate` се вика и от базовия клас, където джаджа може да
+   е вече унищожена при затваряне на диалог — изключение там би счупило `destroy`.
+
+Функцията съществува в **две копия**, защото панелите не наследяват обвивката:
+
+| Място | Ред | Забележка |
+|---|---|---|
+| `ChronoSeal_GUI.pyw` | **L176** | `ChronoSealDesktop(original.App)`; 2 извиквания (L395, L410) |
+| `automation/Report_From_Files_Panel.py` | **L127** | `class App` (не наследява обвивката); 1 извикване (L146) |
+
+Базовият клас `ChronoSeal_Original_Legacy.py` **не дефинира** `_gate`, а извиква
+`if hasattr(self,'_gate'):self._gate(...)`. Причината е, че `App` може теоретично да се
+пусне самостоятелно; пазачът пази базовия клас самостоятелен, без да губи шлюза под
+`ChronoSealDesktop`.
+
+### 12.3 Къде е приложен — пет повърхности
+
+| # | Повърхност | Файл / ред | Шлюзовано | Управляващ чекбокс |
+|---|---|---|---|---|
+| 1 | Страница „Отчет и TSA“ → PDF embedding | `ChronoSeal_GUI.pyw` L395 | две радиокнопки за позиция, поле за PDF път, бутон „Choose PDF“ | `Embed a PDF in the report` |
+| 2 | Страница „Отчет и TSA“ → Output | `ChronoSeal_GUI.pyw` L410 | поле за папка, бутон „Browse“ | `Save report and evidence in a different folder` |
+| 3 | Диалог „PDF embedding…“ | `ChronoSeal_Original_Legacy.py` L206 | радиокнопки, поле за път, бутон за избор | `st['enabled']` в самия диалог |
+| 4 | Диалог „Report options…“ | `ChronoSeal_Original_Legacy.py` L224 | поле за папка, бутон „Browse“ | `self.custom_output` |
+| 5 | Панел „Отчет от файлове“ | `automation/Report_From_Files_Panel.py` L146 | две радиокнопки за позиция | `state["enabled"]` (споделено състояние) |
+
+Повърхности 1, 3 и 5 управляват **един и същ** речник `_embed_state` (създаден в
+`ChronoSeal_Original_Legacy.py` L153–161 и кеширан в `self._embed_state`). Затова
+щракване в панела променя страницата „Отчет и TSA“ и обратното — измерено, не
+предположено.
+
+### 12.4 Какво съзнателно НЕ е шлюзовано
+
+| Елемент | Защо остава активен |
+|---|---|
+| Чекбоксовете `Embed a PDF…`, `Save report…` | Те **са** превключвателят; шлюзоването им би направило функцията недостъпна |
+| Бутон „PDF embedding…“ | Това е входът към диалога, който включва опцията |
+| Бутон „Report options…“ | Същото — изборът на тип отчет |
+| `ok` / `cancel` в двата диалога | Шлюзоване би заключило потребителя в прозореца |
+| Чекбокс „Recursive“ в `File_Filter_Panel.py` | Не управлява нито една зависима джаджа — само задейства повторно сканиране през `_schedule_scan` (L124). Няма какво да се шлюзова. |
+| Всички `state=` в `Start_Automation.py` | Легитимни: `self.stop` (L87) стартира изключен, `self.log` (L97/193) е конзола само за четене, `self.start`/`self.stop` (L244) са преходи на работно състояние. Нищо не е „опция зад превключвател“. |
+
+### 12.5 Измерено състояние след поправката
+
+Страница „Отчет и TSA“, заснета на живо чрез `widget.cget('state')`:
+
+```
+initial            entries=['normal', 'disabled', 'disabled']   radios=['disabled','disabled']
+custom_output=ON   entries=['normal', 'disabled', 'normal']
+custom_output=OFF  entries=['normal', 'disabled', 'disabled']
+embed=ON           entries=['normal', 'normal', 'disabled']     radios=['normal','normal']
+embed=OFF          entries=['normal', 'disabled', 'disabled']   radios=['disabled','disabled']
+both ON  -> entries ['normal','normal','normal'] radios ['normal','normal']
+both OFF -> entries ['normal','disabled','disabled'] radios ['disabled','disabled']
+start() still reads folder only when checkbox on -> True
+```
+
+`entries[0]` е полето за цел (винаги активно), `entries[1]` е PDF пътят, `entries[2]` е
+папката за изход. Последният ред доказва, че шлюзът съвпада с логиката, а не я замества.
+
+Диалозите:
+
+```
+EMBED dialog, enabled=False:  radios ['disabled','disabled']  entries ['disabled']
+EMBED dialog, enabled=True :  radios ['normal','normal']      entries ['normal']
+REPORT OPTIONS, folder=False: entries ['disabled'] buttons ['disabled','normal','normal']
+REPORT OPTIONS, folder=True : entries ['normal']   buttons ['normal','normal','normal']
+```
+
+Във втория случай `buttons` са `[Browse, ok, cancel]` — `ok` и `cancel` остават живи
+нарочно.
+
+Панелът и споделеното състояние:
+
+```
+embed_supported: True
+panel radios initial     : ['disabled', 'disabled']  btn_embed=normal
+panel radios enabled=ON  : ['normal', 'normal']      btn_embed=normal
+panel radios enabled=OFF : ['disabled', 'disabled']  btn_embed=normal
+run page radios shared   : ['disabled', 'disabled']
+run page radios after ON : ['normal', 'normal']
+EXIT OK
+```
+
+Последните два реда са доказателството за единственост на състоянието: включването в
+панела активира радиокнопките на страницата „Отчет и TSA“.
+
+### 12.6 Одит за пропуски — 8 измерения, 0 реални пропуски
+
+Преди всяко изтриване беше проведен одит, за да се изключи възможността „излишен“ файл
+всъщност да е жив:
+
+| Измерение | Резултат |
+|---|---|
+| A. Наследяване и отменяне | legacy 49 метода / обвивка 20; отменени точно 5 (`__init__`, `_configure_enterprise_theme`, `_ui`, `_sync_input_mode`, `prog`) |
+| B. Недефинирани `self.*` | 71 метода / 60 атрибута / 127 употреби; 2 „недефинирани“ = `embed_language`, `NAV_ITEMS` → класови атрибути, **фалшиви положителни** |
+| C. Мъртви методи | 69 файла; **0** неизвиквани legacy метода, **0** мъртви shell метода |
+| D. Атрибути, записани и никога четирани | само 5, всички полезни (`_font_book`, трите панела, `file_filters`) |
+| E. Договор на панелите | `filter_panel` 48 / `report_files_panel` 57 / `automation_panel` 48; **0** липсващи |
+| F. `clear_filters` | **присъства** (23 метода), вика се през локален псевдоним в `ChronoSeal_GUI.pyw` L554 — невидим за регекс `self\.filter_panel\.` |
+| G. `NAV_ITEMS` ↔ Notebook | 6/6 атрибута (L225–230), един `nb.add` (L239); legacy `nb.add` ×3 (L139) е **мъртъв код**; жива сонда `pages=6` |
+| H. Блокери за изтриване | `tests/test_gui.py` (поправен), `automation/Unified_ChronoSeal.py` (изтрит), `migration_kit/*manifest*.json` (само история) |
+
+Две уточнения, които одитът изчисти:
+
+- **`_close` не е дефект.** Метод с това име не съществува и никъде не се реферира.
+  Затварянето минава през отменен `destroy` (legacy L108–109). Опит да се „поправи“
+  `_close` би добавил код към път, който не се изпълнява.
+- **Legacy `_ui()` L139 създава свой Notebook с 3 таба — и никога не се изпълнява.**
+  Обвивката отменя `_ui`, така че в runtime съществува само нейният Notebook. Точно
+  затова броят страници се проверява на живо, а не по код.
+
+### 12.7 Изтрити файлове
+
+Три файла бяха премахнати с `git rm` (обратимо, не с изтриване от файловата система):
+
+| Файл | Размер | Причина |
+|---|---|---|
+| `ChronoSeal_OneButton.py` | 601 B | Конзолен близнак на `ChronoSeal_OneButton.pyw`; дублиращ вход |
+| `automation/Unified_ChronoSeal.py` | 974 B | Трети GUI път, дублиращ таба „Автоматични отчети“; последната кодова зависимост от `ChronoSeal_OneButton.py` |
+| `Start_ChronoSeal_SMB.ps1` | 796 B | Нищо не го реферираше |
+
+`Start_ChronoSeal.bat` е **запазен** — рефериран е от `Install_Windows.bat`, `README.md` и
+15 файла в `docu/`.
+
+Доказателство, че изтриването не чупи нищо:
+
+- `git ls-files --error-unmatch` върна `rc=0` за трите → премахването е обърнато с една команда.
+- `py_compile` 6/6 OK: `31376`, `3253`, `35780`, `37310`, `20378`, `17252` байта.
+- Сканиране за остатъчни референции в `""`, `automation`, `tests`, `tools`, `chronoseal`,
+  `ui`, `js`, `bridge` (разширения `.py/.pyw/.bat/.ps1/.mjs/.js/.json/.md/.ini/.txt`):
+  **0 реда**. `docu/` и `migration_kit/` са умишлено изключени — там историческите
+  споменавания остават по предназначение.
+- `ChronoSeal_OneButton.pyw` беше преработен, за да не назовава изтрит файл (3 286 → 3 253 B).
+- Целеви пробег върху 6 файла: **`83 passed in 76.98s (0:01:16)`**.
+- Жива сонда на двата оцелели входа:
+
+```
+--- direct .pyw entry ---
+pages=6
+titles=['Отчет и TSA', 'Отчет от файлове', 'Автоматични отчети',
+        'Настройки и доверие', 'Диагностика и дневници', 'Избор и филтри']
+has report_files_panel=True automation_panel=True filter_panel=True
+has _gate=True
+direct OK
+--- launcher .pyw module (no mainloop) ---
+has main=True
+SOURCE=...\ChronoSeal_GUI.pyw exists=True
+launcher loads=chronoseal_unified_gui class=ChronoSealDesktop
+ALL OK
+```
+
+### 12.8 Уроци
+
+- **Извикване през локален псевдоним е невидимо за регекс `self.<x>.`** — винаги се
+  проследяват локалните променливи, иначе одитът рапортува фалшива липса.
+- **`ast` е единственият надежден метод за анализ на този UNC дял.** `grep_search` дава
+  и таймаути, и фалшиво празни резултати.
+- **Джаджа, създадена inline в `.grid(...)`/`.pack(...)` верига, не може да се шлюзова** —
+  първо локална променлива, после шлюз.
+- **Панелите виждат обвивката като `self.root`**, не като `self.parent` (това е табът).
+- **Трите панелни файла кръщават класа си `App`**; `ReportFilesPanel`/`FilterPanel`/
+  `AutomationPanel` са само псевдоними при импорт.
+- **`rglob` върху корена на дела винаги изтича** — сканира се по едно ниво с явен списък.

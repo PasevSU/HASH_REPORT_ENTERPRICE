@@ -173,6 +173,24 @@ class ChronoSealDesktop(original.App):
             self._font_book = book
         return book
 
+    def _gate(self, variable, widgets):
+        """Enable *widgets* only while *variable* is true.
+
+        The options behind a checkbox are inert until the checkbox is on, so they
+        must not accept input either. The first call also fixes the initial
+        state, which is why every caller invokes it right after building.
+        """
+        def apply(*_args):
+            state = "normal" if bool(variable.get()) else "disabled"
+            for widget in widgets:
+                try:
+                    widget.configure(state=state)
+                except tk.TclError:
+                    pass
+
+        variable.trace_add("write", apply)
+        apply()
+
     def _ui(self):
         header = ttk.Frame(self, style="Header.TFrame", padding=(22, 14))
         header.pack(fill="x")
@@ -350,21 +368,21 @@ class ChronoSealDesktop(original.App):
         ttk.Checkbutton(
             embed, text="Embed a PDF in the report", variable=state["enabled"]
         ).grid(row=0, column=0, sticky="w")
-        ttk.Radiobutton(
+        before_radio = ttk.Radiobutton(
             embed, text="Before report", value="before", variable=state["position"]
-        ).grid(row=0, column=1, padx=(14, 0), sticky="w")
-        ttk.Radiobutton(
+        )
+        before_radio.grid(row=0, column=1, padx=(14, 0), sticky="w")
+        after_radio = ttk.Radiobutton(
             embed, text="After report", value="after", variable=state["position"]
-        ).grid(row=0, column=2, padx=(10, 0), sticky="w")
+        )
+        after_radio.grid(row=0, column=2, padx=(10, 0), sticky="w")
         ttk.Button(
             embed, text="PDF embedding…", command=self._embed_dialog
         ).grid(row=0, column=3, sticky="e")
-        ttk.Entry(embed, textvariable=state["path"]).grid(
-            row=1, column=0, columnspan=3, sticky="ew", pady=(8, 0)
-        )
-        ttk.Button(
-            embed, text="Choose PDF", command=self._choose_embed_pdf
-        ).grid(row=1, column=3, padx=(8, 0), pady=(8, 0))
+        path_entry = ttk.Entry(embed, textvariable=state["path"])
+        path_entry.grid(row=1, column=0, columnspan=3, sticky="ew", pady=(8, 0))
+        choose_pdf = ttk.Button(embed, text="Choose PDF", command=self._choose_embed_pdf)
+        choose_pdf.grid(row=1, column=3, padx=(8, 0), pady=(8, 0))
         # Read-back of the whole selection: report type, position and PDF name.
         ttk.Label(
             embed, textvariable=state["summary"], style="Muted.TLabel"
@@ -372,6 +390,9 @@ class ChronoSealDesktop(original.App):
         ttk.Button(
             embed, text="Report options…", command=self._report_options_dialog
         ).grid(row=2, column=3, sticky="e", pady=(8, 0))
+        # A control that cannot do anything yet must not look usable: position,
+        # PDF path and the file picker only mean something once embedding is on.
+        self._gate(state["enabled"], (before_radio, after_radio, path_entry, choose_pdf))
         output = ttk.LabelFrame(page, text="  3  ·  Output  ", style="Panel.TLabelframe")
         output.grid(row=3, column=0, sticky="ew", pady=(12, 0))
         output.columnconfigure(1, weight=1)
@@ -379,12 +400,14 @@ class ChronoSealDesktop(original.App):
             output, text="Save report and evidence in a different folder",
             variable=self.custom_output
         ).grid(row=0, column=0, sticky="w")
-        ttk.Entry(output, textvariable=self.output_folder).grid(
-            row=0, column=1, sticky="ew", padx=(12, 8)
-        )
-        ttk.Button(
+        folder_entry = ttk.Entry(output, textvariable=self.output_folder)
+        folder_entry.grid(row=0, column=1, sticky="ew", padx=(12, 8))
+        browse = ttk.Button(
             output, text="Browse", command=lambda: self._dir(self.output_folder)
-        ).grid(row=0, column=2)
+        )
+        browse.grid(row=0, column=2)
+        # Choosing a folder is only meaningful once the checkbox is on.
+        self._gate(self.custom_output, (folder_entry, browse))
 
         workspace = ttk.LabelFrame(
             page, text="  4  ·  Run and monitor  ", style="Panel.TLabelframe"

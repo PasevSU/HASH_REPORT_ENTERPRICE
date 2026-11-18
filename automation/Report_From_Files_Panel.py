@@ -124,6 +124,25 @@ class App:
         self._refresh()
 
     # ------------------------------------------------------------------ build
+    def _gate(self, variable, widgets):
+        """Enable *widgets* only while *variable* is true.
+
+        Same rule as the run page: an option that belongs to a switch must not
+        accept input while the switch is off. The first call also fixes the
+        initial state, so every caller invokes it right after building.
+        """
+
+        def apply(*_args):
+            state = "normal" if bool(variable.get()) else "disabled"
+            for widget in widgets:
+                try:
+                    widget.configure(state=state)
+                except tk.TclError:
+                    pass
+
+        variable.trace_add("write", apply)
+        apply()
+
     def _build(self):
         page = self.frame
         page.columnconfigure(0, weight=1)
@@ -218,12 +237,14 @@ class App:
         ttk.Checkbutton(
             embed, text="Embed a PDF in this combo report", variable=state["enabled"]
         ).grid(row=0, column=0, sticky="w")
-        ttk.Radiobutton(
+        before_radio = ttk.Radiobutton(
             embed, text="Before report", value="before", variable=state["position"]
-        ).grid(row=0, column=1, padx=(14, 0), sticky="w")
-        ttk.Radiobutton(
+        )
+        before_radio.grid(row=0, column=1, padx=(14, 0), sticky="w")
+        after_radio = ttk.Radiobutton(
             embed, text="After report", value="after", variable=state["position"]
-        ).grid(row=0, column=2, padx=(10, 0), sticky="w")
+        )
+        after_radio.grid(row=0, column=2, padx=(10, 0), sticky="w")
         self.btn_embed = ttk.Button(
             embed, text="PDF embedding…", command=self.open_embed_dialog
         )
@@ -231,6 +252,13 @@ class App:
         ttk.Label(
             embed, textvariable=self.embed_summary, style="Muted.TLabel"
         ).grid(row=1, column=0, columnspan=5, sticky="w", pady=(8, 0))
+        # The position has no meaning until the switch above it is on; the
+        # "PDF embedding…" button stays live because it is what turns it on.
+        if self.embed_supported:
+            self._gate(state["enabled"], (before_radio, after_radio))
+        else:
+            for widget in (before_radio, after_radio):
+                widget.configure(state="disabled")
         handover = ttk.Frame(page)
         handover.grid(row=6, column=0, sticky="ew", pady=(12, 0))
         handover.columnconfigure(2, weight=1)

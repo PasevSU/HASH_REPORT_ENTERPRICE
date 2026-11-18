@@ -198,9 +198,12 @@ class App(tk.Tk):
   ttk.Label(b,text=T['embed_heading'],font=_brand_font(self,11,'bold')).grid(row=row,column=0,columnspan=3,sticky='w',pady=(0,12)); row+=1
   ttk.Checkbutton(b,text=T['embed_check'],variable=st['enabled']).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
   ttk.Label(b,text=T['position']).grid(row=row,column=0,sticky='w',pady=6)
-  pos=ttk.Frame(b); pos.grid(row=row,column=1,columnspan=2,sticky='w'); ttk.Radiobutton(pos,text=T['before'],value='before',variable=st['position']).pack(side='left'); ttk.Radiobutton(pos,text=T['after'],value='after',variable=st['position']).pack(side='left',padx=14); row+=1
+  pos=ttk.Frame(b); pos.grid(row=row,column=1,columnspan=2,sticky='w'); before_radio=ttk.Radiobutton(pos,text=T['before'],value='before',variable=st['position']); before_radio.pack(side='left'); after_radio=ttk.Radiobutton(pos,text=T['after'],value='after',variable=st['position']); after_radio.pack(side='left',padx=14); row+=1
   ttk.Label(b,text=T['pdf_label']).grid(row=row,column=0,sticky='w')
-  ttk.Entry(b,textvariable=st['path']).grid(row=row,column=1,sticky='ew',padx=8); ttk.Button(b,text=T['pdf_choose'],command=self._choose_embed_pdf).grid(row=row,column=2); row+=1
+  path_entry=ttk.Entry(b,textvariable=st['path']); path_entry.grid(row=row,column=1,sticky='ew',padx=8); path_choose=ttk.Button(b,text=T['pdf_choose'],command=self._choose_embed_pdf); path_choose.grid(row=row,column=2); row+=1
+  # Same rule as the run page: before the PDF is enabled these three controls
+  # have nothing to act on, so they are shown but not offered.
+  if hasattr(self,'_gate'):self._gate(st['enabled'],(before_radio,after_radio,path_entry,path_choose))
   ttk.Label(b,text=T['single_hint'],wraplength=700).grid(row=row,column=0,columnspan=3,sticky='w',pady=(4,10)); row+=1
   ttk.Separator(b).grid(row=row,column=0,columnspan=3,sticky='ew',pady=8); row+=1
   ttk.Label(b,text=T['preview'],font=_brand_font(self,10,'bold')).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
@@ -221,7 +224,10 @@ class App(tk.Tk):
   ttk.Checkbutton(b,text=T['explanation'],variable=st['explanation']).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
   ttk.Checkbutton(b,text=T['recursive'],variable=self.rec).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
   ttk.Checkbutton(b,text=T['folder'],variable=self.custom_output).grid(row=row,column=0,columnspan=3,sticky='w'); row+=1
-  ttk.Entry(b,textvariable=self.output_folder).grid(row=row,column=0,columnspan=2,sticky='ew',pady=(4,0)); ttk.Button(b,text=T['browse'],command=lambda:self._dir(self.output_folder)).grid(row=row,column=2); row+=1
+  folder_entry=ttk.Entry(b,textvariable=self.output_folder); folder_entry.grid(row=row,column=0,columnspan=2,sticky='ew',pady=(4,0)); folder_browse=ttk.Button(b,text=T['browse'],command=lambda:self._dir(self.output_folder)); folder_browse.grid(row=row,column=2); row+=1
+  # The dialog previews the choice, so the folder is only editable when the
+  # checkbox above it says the run will use it.
+  if hasattr(self,'_gate'):self._gate(self.custom_output,(folder_entry,folder_browse))
   act=ttk.Frame(b); act.grid(row=row,column=0,columnspan=3,sticky='e',pady=(16,0)); ttk.Button(act,text=T['ok'],command=d.destroy).pack(side='right'); ttk.Button(act,text=T['cancel'],command=cancel).pack(side='right',padx=8)
   d.bind('<Escape>',lambda e:cancel()); d.grab_set(); return d
  def _sync_input_mode(self):

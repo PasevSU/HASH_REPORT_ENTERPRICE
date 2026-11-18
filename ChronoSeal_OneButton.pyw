@@ -1,9 +1,9 @@
 """ChronoSeal quick start (.pyw): open the single unified workspace, no console.
 
 This is a *launcher only*. It adds no logic to the application and changes no
-existing file: it loads ``ChronoSeal_GUI.pyw`` exactly the way
-``ChronoSeal_OneButton.py`` and ``Start_ChronoSeal.bat`` already do, then opens
-the same ``ChronoSealDesktop`` window.
+existing file: it loads ``ChronoSeal_GUI.pyw`` the same way
+``Start_ChronoSeal.bat`` already does, then opens the same
+``ChronoSealDesktop`` window.
 
 Why a ``.pyw`` file:
 
