@@ -705,7 +705,7 @@ class Pipeline:
         with composed.open('wb') as f:writer.write(f)
         match=re.search(r'(RPT-\d{8}-\d+-[A-Fa-f0-9]+)',report.name)
         report_id=match.group(1) if match else report.stem
-        version='ChronoSeal Modern Integration DEV v7'
+        version='ChronoSeal Enterprise v5.11.0-gui'
         ready=case/'report-before-rfc3161.UNSEALED.pdf'
         page_manifest=apply_footer(composed,ready,report_id,version,
                                    preserve_pages=preserve_source_indexes,

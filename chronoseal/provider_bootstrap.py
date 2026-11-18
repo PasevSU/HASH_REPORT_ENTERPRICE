@@ -1,5 +1,5 @@
 from pathlib import Path
-import json, subprocess, tempfile, urllib.request, ssl, re, os
+import subprocess, tempfile, urllib.request, ssl, re, os
 
 NO_WINDOW = getattr(subprocess, 'CREATE_NO_WINDOW', 0) if os.name == 'nt' else 0
 

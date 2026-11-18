@@ -13,7 +13,6 @@ Nothing is hashed here. "Create combo report" hands the selection to the normal
 pipeline, which still generates, dual-stamps, re-verifies, archives and publishes.
 """
 import hashlib
-import os
 import sys
 import threading
 from datetime import datetime

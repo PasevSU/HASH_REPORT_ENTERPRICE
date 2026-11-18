@@ -548,16 +548,26 @@ def test_t26b_pipeline_rejects_filters_for_a_single_file(tmp_path):
 
 
 # ------------------------------------------------------------------ T27 .. T30
+# v5.11.0 - de-flake: the idle budget below is measured from the moment Popen
+# returns, so Python's cold start on a network share counts against it. A 0.9 s
+# budget against a 0.2 s heartbeat fired the watchdog before the child had
+# printed a single line ("The child produced no output at all before stalling.").
+# The heartbeat interval (0.5 s) and the total runtime (12 x 0.5 s = 6 s) are
+# unchanged in meaning: a silent child is still killed long before it finishes,
+# which is what this test exists to prove. Only the budget grew.
+HEARTBEAT_IDLE_TIMEOUT = 2.5
+
+
 def test_t27_heartbeat_output_keeps_a_slow_child_alive(tmp_path):
     script = (
         "import time\n"
         "for _ in range(12):\n"
         "    print('[heartbeat] phase=verify done=1/12 pct=8.3', flush=True)\n"
-        "    time.sleep(0.2)\n"
+        "    time.sleep(0.5)\n"
     )
     process = Pipeline(tmp_path, {})._run(
         [sys.executable, "-u", "-c", script],
-        cwd=tmp_path, idle_timeout=0.9, encoding="utf-8",
+        cwd=tmp_path, idle_timeout=HEARTBEAT_IDLE_TIMEOUT, encoding="utf-8",
     )
     assert process.returncode == 0
 
@@ -583,7 +593,7 @@ def test_t29_stall_message_reports_the_last_phase(tmp_path):
     with pytest.raises(PipelineError) as excinfo:
         Pipeline(tmp_path, {})._run(
             [sys.executable, "-u", "-c", script],
-            cwd=tmp_path, idle_timeout=0.9, encoding="utf-8",
+            cwd=tmp_path, idle_timeout=HEARTBEAT_IDLE_TIMEOUT, encoding="utf-8",
         )
     message = str(excinfo.value)
     assert "Last reported progress" in message

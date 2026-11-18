@@ -147,6 +147,17 @@ class ChronoSealDesktop(original.App):
                   foreground=[("readonly", body)])
         style.configure("TCheckbutton", background=panel, foreground=body)
         style.map("TCheckbutton", background=[("active", panel)])
+        # v5.11.0: ttk.Radiobutton is used by the embed-position control but was
+        # never configured, so it kept clam's default grey inside white panels.
+        # Mirror TCheckbutton so every toggle row shares one surface colour.
+        style.configure("TRadiobutton", background=panel, foreground=body)
+        style.map("TRadiobutton", background=[("active", panel)],
+                  foreground=[("active", body), ("disabled", palette["disabled"])])
+        # v5.11.0: state the tree surface explicitly instead of inheriting clam.
+        style.configure("Treeview", background=panel, fieldbackground=panel,
+                        foreground=body)
+        style.map("Treeview", background=[("selected", accent)],
+                  foreground=[("selected", palette["on_accent"])])
         style.configure("Status.TLabel", background=palette["status_bg"],
                         foreground=palette["status_fg"], padding=(10, 7),
                         font=fonts.font(branding.FONT_SIZES["small"]))

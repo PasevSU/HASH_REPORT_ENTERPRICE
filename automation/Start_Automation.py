@@ -6,7 +6,7 @@ from tkinter import ttk,filedialog,messagebox
 HERE=Path(__file__).resolve().parent
 BASE=HERE.parent
 sys.path.insert(0,str(HERE));sys.path.insert(0,str(BASE))
-from automation_core import plan,execute,MODES
+from automation_core import plan, execute
 from chronoseal import branding, i18n
 i18n.install()
 

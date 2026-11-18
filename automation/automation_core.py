@@ -1,6 +1,5 @@
 """Independent job planner; imports the original pipeline only at execution."""
 from pathlib import Path
-import threading
 import tempfile
 import shutil
 import hashlib

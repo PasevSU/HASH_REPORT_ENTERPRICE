@@ -512,8 +512,7 @@ class HelperEnabledMixin:
     # helper: combined evidence table
     # ------------------------------------------------------------------
     def _add_bridge_combined_table(self, story, styles, files_info):
-        from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
-        from reportlab.lib import colors
+        from reportlab.platypus import Paragraph, Spacer, Table
         from reportlab.lib.styles import ParagraphStyle
         from reportlab.lib.enums import TA_LEFT, TA_CENTER
         from hash_report_core import ReportConstants

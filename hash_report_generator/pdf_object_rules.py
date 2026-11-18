@@ -20,7 +20,6 @@ if _cs_root not in _cs_sys.path:
     _cs_sys.path.insert(0, _cs_root)
 
 from hash_report_generator.style_runtime import visual as _central_visual
-from dataclasses import dataclass
 try:
     from .style_loader import load_styles as _load_styles
 except ImportError:

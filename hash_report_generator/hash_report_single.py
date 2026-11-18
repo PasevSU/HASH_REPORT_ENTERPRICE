@@ -21,7 +21,6 @@ SHA-256 HASH REPORT GENERATOR v2.34 - SINGLE REPORT
 
 import sys
 from pathlib import Path
-from datetime import datetime
 import logging
 import traceback
 import time
@@ -45,9 +44,8 @@ from hash_report_core import (
 )
 
 # Допълнителни импорти за PDF
-from reportlab.platypus import Table, TableStyle, Paragraph, Spacer, Image
+from reportlab.platypus import Table, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib import colors
 from hash_report_generator.a4_document import A4DocTemplate
 from hash_report_generator.pdf_object_rules import display_hash
 

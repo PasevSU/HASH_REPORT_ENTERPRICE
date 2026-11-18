@@ -1,5 +1,4 @@
 """Non-mutating signature inspection before PDF composition and timestamping."""
-from pathlib import Path
 
 def inspect_pdf(path):
     from pypdf import PdfReader

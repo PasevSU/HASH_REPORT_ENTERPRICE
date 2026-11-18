@@ -4,9 +4,7 @@ import os
 import sys
 from pathlib import Path
 from xml.sax.saxutils import escape
-from reportlab.lib import colors
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.platypus import Paragraph, Spacer
+from reportlab.platypus import Paragraph
 
 # Support package imports and direct execution from an unrelated working directory.
 _REPORT_DIR = Path(__file__).resolve().parent
@@ -16,10 +14,15 @@ for _IMPORT_ROOT in (_REPORT_DIR.parent, _REPORT_DIR):
 
 try:
     from .style_loader import load_styles
-    from .pdf_object_rules import volume_block_table_style, block_heading, block_data_style
+    # volume_block_table_style is re-exported on purpose: pdf_object_rules owns
+    # it, but callers (and tests/test_volume_import_modes.py) resolve it through
+    # this module. Dropping it here breaks that public surface.
+    from .pdf_object_rules import (block_heading, block_data_style,
+                                   volume_block_table_style)
 except ImportError:
     from style_loader import load_styles
-    from pdf_object_rules import volume_block_table_style, block_heading, block_data_style
+    from pdf_object_rules import (block_heading, block_data_style,
+                                  volume_block_table_style)
 
 def _fallback_volume(path):
     """Probe the storage of the working folder when the pipeline did not provide it."""

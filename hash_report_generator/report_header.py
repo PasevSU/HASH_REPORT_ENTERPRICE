@@ -84,7 +84,7 @@ def build_report_header(doc_width, styles, spacers):
 def section_heading(text):
     """Uniform section heading with a hairline rule; text is a plain label (colon optional)."""
     from reportlab.lib.styles import ParagraphStyle
-    from reportlab.platypus import HRFlowable, KeepTogether
+    from reportlab.platypus import HRFlowable
     rule = _STYLE["SECTION_HEADING"]
     style = ParagraphStyle(
         "CentralSectionHeading", fontName=font_name("bold"), fontSize=rule["font_size_pt"],

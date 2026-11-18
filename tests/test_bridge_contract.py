@@ -11,6 +11,31 @@ from chronoseal.settings import executable
 NODE = executable('node')
 OPENSSL = executable('openssl')
 
+# v5.11.0 - de-flake: an RSA-2048 keypair per provider was generated for every
+# single test case, i.e. 16 key generations per run. On a network share that is
+# slow enough that the Node child process could hit the 20 s wall clock and the
+# suite reported a false failure. The roots are now created once per process and
+# copied into each fixture, and the Node timeout is contention-tolerant.
+_NODE_TIMEOUT = 120
+_ROOT_CACHE = {}
+
+def _cached_root(name):
+    """Return (key_bytes, pem_bytes) for Root <NAME>, generating at most once."""
+    if not OPENSSL:
+        return None
+    hit = _ROOT_CACHE.get(name)
+    if hit is None:
+        import tempfile as _tf
+        with _tf.TemporaryDirectory() as td:
+            td = Path(td)
+            subprocess.run([OPENSSL, 'req', '-x509', '-newkey', 'rsa:2048', '-nodes',
+                            '-subj', f'/CN={name.upper()} Test Root',
+                            '-keyout', str(td / 'k.pem'), '-out', str(td / 'c.pem'),
+                            '-days', '2'], check=True, capture_output=True)
+            hit = ((td / 'k.pem').read_bytes(), (td / 'c.pem').read_bytes())
+        _ROOT_CACHE[name] = hit
+    return hit
+
 def fake_openssl(root):
     if os.name=='nt':
         p=root/'fake-openssl.cmd'; p.write_text('@echo Verification: OK\r\n',encoding='utf-8')
@@ -33,7 +58,9 @@ class BridgeContract(unittest.TestCase):
    nm=r/'node_modules'/'pdf-rfc3161'; nm.mkdir(parents=True); (nm/'package.json').write_text('{"name":"pdf-rfc3161","version":"0.2.0","type":"module","exports":"./index.js"}')
    # Use real X.509 DER in the mock DSS so the production physical-certificate gate is exercised.
    for name in ('a','b'):
-    subprocess.run([OPENSSL,'req','-x509','-newkey','rsa:2048','-nodes','-subj',f'/CN={name.upper()} Test Root','-keyout',str(r/f'{name}.key'),'-out',str(r/f'{name}.pem'),'-days','2'],check=True,capture_output=True)
+    key,pem=_cached_root(name)
+    (r/f'{name}.key').write_bytes(key)
+    (r/f'{name}.pem').write_bytes(pem)
    if extractor_mode=='zero': extract="export async function extractTimestamps(){return []}"
    elif extractor_mode=='throw': extract="export async function extractTimestamps(){throw Error('extractor synthetic failure')}"
    else: extract="export async function extractTimestamps(pdf){let s=new TextDecoder('latin1').decode(pdf),n=(s.match(/\\|TS\\|/g)||[]).length;return Array.from({length:n},(_,i)=>({info:{genTime:'T',policy:'1.2.3'},i}))}"
@@ -51,7 +78,7 @@ export async function verifyTimestamp(ts){{return {{...ts,verified:true,info:ts.
    cfg={'tools':{'openssl':op},'rfc3161':{'mode':'DUAL-STAMP','hash_algorithm':'SHA-512','enable_ltv':True,'strict_ess':True,'require_distinct_providers':True,'start':[{'name':'A','url':'https://a.invalid','trust_root_files':['a.pem']}],'stop':[{'name':'B','url':'https://b.invalid','trust_root_files':['b.pem']}]}}
    (r/'config').mkdir(); (r/'config'/'config.json').write_text(json.dumps(cfg)); return r,inp
  def run_case(self,r,inp):
-   out=r/'out.pdf';audit=r/'audit.json';p=subprocess.run([NODE,str(r/'bridge'/'stamp.mjs'),'--input',str(inp),'--output',str(out),'--policy',str(r/'config'/'config.json'),'--audit',str(audit),'--evidence',str(r/'evidence')],cwd=r,capture_output=True,text=True,timeout=20);return p,out,audit
+   out=r/'out.pdf';audit=r/'audit.json';p=subprocess.run([NODE,str(r/'bridge'/'stamp.mjs'),'--input',str(inp),'--output',str(out),'--policy',str(r/'config'/'config.json'),'--audit',str(audit),'--evidence',str(r/'evidence')],cwd=r,capture_output=True,text=True,timeout=_NODE_TIMEOUT);return p,out,audit
  def test_dual_stamp_reopen_reverify_audit(self):
   with tempfile.TemporaryDirectory() as d:
    r,inp=self.setup_case(d);p,out,audit=self.run_case(r,inp);self.assertEqual(p.returncode,0,p.stderr);a=json.loads(audit.read_text());self.assertEqual(a['status'],'PASS');self.assertTrue(a['final_reverification']['verified']);self.assertEqual(a['final_reverification']['count'],2);self.assertEqual(out.read_bytes().count(b'/Type /DocTimeStamp'),2);self.assertEqual(a['verification_paths']['openssl_rfc3161'],'MANDATORY')

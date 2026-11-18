@@ -29,7 +29,6 @@ import json
 import re
 from pathlib import Path
 from typing import List, Dict, Optional
-from datetime import datetime
 import logging
 import traceback
 import time
@@ -66,10 +65,8 @@ import file_filters
 import file_selection
 
 # Допълнителни импорти за PDF
-from reportlab.platypus import Table, TableStyle, Paragraph, Spacer, Image
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_LEFT, TA_CENTER
-from reportlab.lib import colors
+from reportlab.platypus import Table, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
 from hash_report_generator.a4_document import A4DocTemplate
 from hash_report_generator.pdf_object_rules import _STYLE
 
@@ -80,17 +77,17 @@ class CombinedReportGenerator(HashGeneratorCore):
     Поддържа откриване на всички артефакти от evidence package.
     Наследява общата функционалност от HashGeneratorCore.
     """
-    
+
     def __init__(self, logger, include_ots=True):
         """
         Инициализира генератора за комбинирани отчети.
-        
+
         Args:
             logger: Logger инстанция
             include_ots: Дали да включва OTS информация
         """
         super().__init__(logger, include_ots)
-    
+
     # ========================================================================
     # КЛАСИФИКАЦИЯ НА АРТЕФАКТИ
     # ========================================================================
@@ -140,7 +137,7 @@ class CombinedReportGenerator(HashGeneratorCore):
             "OTHER": 99,
         }
         return priorities.get(file_type, 99)
-    
+
     def _classify_artifact_file(self, filename: str, base_name: str) -> str:
         """
         ENTERPRISE класификация на артефактни файлове.
@@ -148,23 +145,23 @@ class CombinedReportGenerator(HashGeneratorCore):
         Поддържа 40+ типа файлове.
         """
         name_lower = filename.lower()
-        
+
         # ═══════════════════════════════════════════════════════════════════
         # ОСНОВНИ ТИПОВЕ ФАЙЛОВЕ
         # ═══════════════════════════════════════════════════════════════════
-        
+
         # Оригинален EML (ако не е част от ParsedEML артефактите)
         if filename.endswith('.eml') and not name_lower.startswith(f"{base_name}.eml.de"):
             return "ORIGINAL EML"
-        
+
         # Сигнатура
         if filename.endswith('.sig'):
             return "SIGNATURE"
-        
+
         # Хеш файл
         if filename.endswith('.sha256'):
             return "SHA256 HASH"
-        
+
         # ═══════════════════════════════════════════════════════════════════
         # PDF ФАЙЛОВЕ
         # ═══════════════════════════════════════════════════════════════════
@@ -180,7 +177,7 @@ class CombinedReportGenerator(HashGeneratorCore):
                     return "INDIVIDUAL REPORT"
             else:
                 return "PDF PROOF"
-        
+
         # ═══════════════════════════════════════════════════════════════════
         # ТЕКСТОВИ ФАЙЛОВЕ
         # ═══════════════════════════════════════════════════════════════════
@@ -193,13 +190,13 @@ class CombinedReportGenerator(HashGeneratorCore):
                 return "RAW EML TEXT"
             else:
                 return "TEXT"
-        
+
         # ═══════════════════════════════════════════════════════════════════
         # HTML ФАЙЛОВЕ
         # ═══════════════════════════════════════════════════════════════════
         if filename.endswith('.html') and 'analysis' not in name_lower:
             return "HTML EXTRACTED"
-        
+
         # ═══════════════════════════════════════════════════════════════════
         # БИНАРНИ ФАЙЛОВЕ
         # ═══════════════════════════════════════════════════════════════════
@@ -210,13 +207,13 @@ class CombinedReportGenerator(HashGeneratorCore):
                 return "DECODED PART"
             else:
                 return "BINARY"
-        
+
         # ═══════════════════════════════════════════════════════════════════
         # RAW ЧАСТИ (без разширение или с _raw)
         # ═══════════════════════════════════════════════════════════════════
         if '.part_' in name_lower and ('_raw' in name_lower or name_lower.endswith('_raw')):
             return "RAW PART"
-        
+
         # ═══════════════════════════════════════════════════════════════════
         # JSON АРТЕФАКТИ - ПЪЛНА ГАМА ОТ ParsedEML.py
         # ═══════════════════════════════════════════════════════════════════
@@ -248,7 +245,7 @@ class CombinedReportGenerator(HashGeneratorCore):
                 return "TIMESTAMPS"
             elif 'chain-of-custody' in name_lower or 'chain_of_custody' in name_lower:
                 return "CHAIN OF CUSTODY"
-            
+
             # Анализ и детекция
             elif 'anomalies' in name_lower:
                 return "ANOMALIES"
@@ -264,7 +261,7 @@ class CombinedReportGenerator(HashGeneratorCore):
                 return "HTML ANALYSIS"
             else:
                 return "JSON ARTIFACT"
-        
+
         # ═══════════════════════════════════════════════════════════════════
         # ПРИКРЕПЕНИ ФАЙЛОВЕ (от attachments директория)
         # ═══════════════════════════════════════════════════════════════════
@@ -282,9 +279,9 @@ class CombinedReportGenerator(HashGeneratorCore):
                 return "ATTACHMENT (TEXT)"
             else:
                 return "ATTACHMENT"
-        
+
         return "OTHER"
-    
+
     # ========================================================================
     # ОТКРИВАНЕ НА ВСИЧКИ АРТЕФАКТИ
     # ========================================================================
@@ -294,22 +291,22 @@ class CombinedReportGenerator(HashGeneratorCore):
         """
         files_for_report = []
         output_dir = eml_path.parent
-        
+
         eml_stem = eml_path.stem
         if eml_stem.lower().endswith('.eml'):
             eml_stem = eml_stem[:-4]
-        
+
         base_name = self._sanitize_filename_for_display(eml_stem)
         base_name_no_at = base_name.replace('@', '_')
         base_name_with_at = base_name.replace('_', '@')
-        
+
         seen_paths = set()
-        
+
         print(f"\n{FileIcons.SEARCH} {'='*60}")
         print(f"{FileIcons.SEARCH} ENTERPRISE ARTIFACT DISCOVERY")
         print(f"{FileIcons.SEARCH} Base name: {base_name}")
         print(f"{FileIcons.SEARCH} {'='*60}")
-        
+
         # Стратегия 1: {base_name}.*
         for pattern in [f"{base_name}*", f"{base_name_no_at}*", f"{base_name_with_at}*"]:
             for file_path in output_dir.glob(pattern):
@@ -318,16 +315,16 @@ class CombinedReportGenerator(HashGeneratorCore):
                         continue
                     if file_path.name == eml_path.name:
                         continue
-                    
+
                     seen_paths.add(str(file_path))
                     try:
                         with open(file_path, 'rb') as f:
                             file_hash = hashlib.sha256(f.read()).hexdigest()
                         stat = file_path.stat()
                         created, modified = self._times_from_stat(stat)
-                        
+
                         file_type = self._classify_artifact_file(file_path.name, base_name)
-                        
+
                         files_for_report.append({
                             "name": file_path.name,
                             "path": str(file_path),
@@ -341,7 +338,7 @@ class CombinedReportGenerator(HashGeneratorCore):
                         print(f"  {FileIcons.get_icon_by_type(file_type)} {file_path.name[:70]}... -> {file_type}")
                     except Exception as e:
                         self.logger.warning(f"Could not read {file_path.name}: {e}")
-        
+
         # Оригинален EML
         if str(eml_path) not in seen_paths:
             try:
@@ -363,7 +360,7 @@ class CombinedReportGenerator(HashGeneratorCore):
                 print(f"  {FileIcons.EML} {eml_path.name} -> ORIGINAL EML")
             except Exception as e:
                 self.logger.warning(f"Could not read EML file: {e}")
-        
+
         # Attachments директория
         for base_variant in [base_name, base_name_no_at, base_name_with_at]:
             attachments_dir = output_dir / f"{base_variant}.eml.attachments"
@@ -377,7 +374,7 @@ class CombinedReportGenerator(HashGeneratorCore):
                                 file_hash = hashlib.sha256(f.read()).hexdigest()
                             stat = att_file.stat()
                             created, modified = self._times_from_stat(stat)
-                            
+
                             ext = att_file.suffix.lower()
                             if ext in ['.exe', '.dll', '.bat', '.cmd', '.ps1', '.vbs', '.js']:
                                 file_type = "ATTACHMENT (DANGEROUS)"
@@ -391,7 +388,7 @@ class CombinedReportGenerator(HashGeneratorCore):
                                 file_type = "ATTACHMENT (TEXT)"
                             else:
                                 file_type = "ATTACHMENT"
-                            
+
                             files_for_report.append({
                                 "name": f"attachments/{att_file.name}",
                                 "path": str(att_file),
@@ -405,7 +402,7 @@ class CombinedReportGenerator(HashGeneratorCore):
                             print(f"    {FileIcons.FILE} {att_file.name} -> {file_type}")
                         except Exception as e:
                             self.logger.warning(f"Could not read attachment {att_file.name}: {e}")
-        
+
         # Специфични файлове
         specific_files = [
             (f"{base_name}.eml.sig", "SIGNATURE"),
@@ -415,7 +412,7 @@ class CombinedReportGenerator(HashGeneratorCore):
             (f"{base_name}.eml.main.txt", "RAW EML TEXT"),
             (f"{base_name_no_at}.eml.main.txt", "RAW EML TEXT"),
         ]
-        
+
         for filename, file_type in specific_files:
             file_path = output_dir / filename
             if file_path.exists() and str(file_path) not in seen_paths:
@@ -439,7 +436,7 @@ class CombinedReportGenerator(HashGeneratorCore):
                     print(f"  {icon} {filename} -> {file_type}")
                 except Exception as e:
                     self.logger.warning(f"Could not read {filename}: {e}")
-        
+
         # Всички JSON файлове
         for json_file in output_dir.glob("*.json"):
             if str(json_file) not in seen_paths:
@@ -449,7 +446,7 @@ class CombinedReportGenerator(HashGeneratorCore):
                     stat = json_file.stat()
                     created, modified = self._times_from_stat(stat)
                     file_type = self._classify_artifact_file(json_file.name, base_name)
-                    
+
                     files_for_report.append({
                         "name": json_file.name,
                         "path": str(json_file),
@@ -464,29 +461,29 @@ class CombinedReportGenerator(HashGeneratorCore):
                     print(f"  {FileIcons.JSON} {json_file.name} -> {file_type}")
                 except Exception as e:
                     self.logger.warning(f"Could not read {json_file.name}: {e}")
-        
+
         # Сортиране по тип и име
         files_for_report.sort(key=lambda x: (self._get_type_priority(x['type']), x['name']))
-        
+
         print(f"\n{FileIcons.SUCCESS} {'='*60}")
         print(f"{FileIcons.SUCCESS} DISCOVERY COMPLETE")
         print(f"{FileIcons.SUCCESS} {'='*60}")
         print(f"  Total files found: {len(files_for_report)}")
-        
+
         type_stats = {}
         for f in files_for_report:
             t = f['type']
             type_stats[t] = type_stats.get(t, 0) + 1
-        
+
         print(f"\n  Files by type:")
         for t, count in sorted(type_stats.items()):
             print(f"    {FileIcons.get_icon_by_type(t)} {t}: {count}")
-        
+
         if self.logger:
             self.logger.info(f"Discovered {len(files_for_report)} files from evidence package")
-        
+
         return files_for_report
-    
+
     # ========================================================================
     # ГЕНЕРИРАНЕ НА КОМБИНИРАН ОТЧЕТ
     # ========================================================================
@@ -496,12 +493,12 @@ class CombinedReportGenerator(HashGeneratorCore):
                  selection_filters: Optional[List[str]] = None) -> bool:
         """
         Генерира комбиниран отчет с START/STOP RFC 3161 timestamps и 7 колони.
-        
+
         Args:
             files_info: Списък с информация за файловете
             output_path: Път за запазване на PDF
             include_explanatory: Дали да включи пояснителен документ
-            
+
         Returns:
             bool: True при успех, False при грешка
         """
@@ -510,9 +507,9 @@ class CombinedReportGenerator(HashGeneratorCore):
             print(f"{FileIcons.REPORT} Generating COMBINED hash report...")
             print(f"{ConsoleColors.CYAN}{'─'*60}{ConsoleColors.RESET}")
             progress_heartbeat.phase('pdf-prepare', note=f'{len(files_info)} file(s)')
-            
+
             doc = A4DocTemplate(output_path)
-            
+
             base_styles = getSampleStyleSheet()
             styles = self._create_base_styles(base_styles)
             from hash_report_generator.report_header import apply_header_palette, build_report_header
@@ -522,29 +519,29 @@ class CombinedReportGenerator(HashGeneratorCore):
                 'title': ReportConstants.SPACER_TITLE,
                 'legal': ReportConstants.SPACER_LEGAL,
             })
-            
+
             identity = report_identity or self._create_report_identity()
             now = identity['now']
             timezone_str = identity['timezone_str']
             report_id = identity['report_id']
-            
+
             # START RFC 3161: existing evidence-set timestamp becomes the opening marker.
             evidence_sha256 = self._generate_checksum(files_info)
             process_start_ns = time.perf_counter_ns()
             rfc3161_timestamp = self._get_rfc3161_timestamp(
                 message_imprint=evidence_sha256, force_new=True, marker_label='START')
-            
+
             # Системна информация
-            self._add_system_info_section(story, styles, now, timezone_str, report_id, 
+            self._add_system_info_section(story, styles, now, timezone_str, report_id,
                                           files_info=files_info, single_file=False,
                                           rfc3161_timestamp=rfc3161_timestamp,
                                           selection_filters=selection_filters)
             story.append(Spacer(1, ReportConstants.SPACER_BEFORE_TABLE))
-            
+
             # Таблица с файлове - 7 колони включително Modified
             story.append(Paragraph("<b>Evidence Package Files Information:</b>", styles['normal_style']))
             story.append(Spacer(1, ReportConstants.SPACER_TABLE))
-            
+
             # Стилове за таблицата с правилен wordWrap
             # Central rules: Unicode (UTF-8 capable) fonts and white header text.
             from reportlab.pdfbase.pdfmetrics import registerFontFamily
@@ -557,7 +554,7 @@ class CombinedReportGenerator(HashGeneratorCore):
                 cell_styles['safe'], cell_styles['hash'], cell_styles['header'])
             safe_style.fontName = hash_style.fontName = regular_font
             header_style.fontName = bold_font
-            
+
             # Заглавия на 7-те колони
             table_data = [[
                 Paragraph("<b>#</b>", header_style),
@@ -568,18 +565,18 @@ class CombinedReportGenerator(HashGeneratorCore):
                 Paragraph("<b>Modified</b>", header_style),  # Нова колона
                 Paragraph("<b>SHA-256 Hash</b>", header_style)
             ]]
-            
+
             idx = 1
             progress_heartbeat.phase('table', total=len(files_info))
             for file_info in sorted(files_info, key=lambda x: (self._get_type_priority(x['type']), x['name'])):
                 progress_heartbeat.tick()
                 display_name = self._sanitize_filename_for_display(file_info['name'])
-                
+
                 size_text = self._format_kb(file_info['size'])
                 created_date = self._format_datetime_plain_ms(file_info['created'])
                 modified_date = self._format_datetime_plain_ms(file_info['modified'])
                 file_type = file_info['type']
-                
+
                 status = _STYLE['STATUS_COLORS']
                 if file_type == "ORIGINAL EML":
                     name_cell = Paragraph(f"<font color='{status['primary']}'><b>{display_name}</b></font>", safe_style)
@@ -590,7 +587,7 @@ class CombinedReportGenerator(HashGeneratorCore):
                 else:
                     name_cell = Paragraph(display_name, safe_style)
                     type_cell = Paragraph(file_type, safe_style)
-                
+
                 table_data.append([
                     index_cell(idx, safe_style),
                     name_cell,
@@ -601,7 +598,7 @@ class CombinedReportGenerator(HashGeneratorCore):
                     digest_cell(file_info['hash'], hash_style)
                 ])
                 idx += 1
-            
+
             # Ширини на 7-те колони
             col_widths = [
                 self.table_width * ReportConstants.COMBINED_TABLE_COL_PROPORTIONS_7['number'],
@@ -612,34 +609,34 @@ class CombinedReportGenerator(HashGeneratorCore):
                 self.table_width * ReportConstants.COMBINED_TABLE_COL_PROPORTIONS_7['modified'],
                 self.table_width * ReportConstants.COMBINED_TABLE_COL_PROPORTIONS_7['hash']
             ]
-            
+
             table = Table(table_data, repeatRows=1, colWidths=col_widths)
             from hash_report_generator.pdf_object_rules import globalize_table
             globalize_table(table, alignments='combined')
 
             story.append(table)
             story.append(Spacer(1, ReportConstants.SPACER_AFTER_TABLE))
-            
+
             # Обобщена статистика
             total_size_bytes = sum(f['size'] for f in files_info)
-            
+
             type_stats = {}
             for file_info in files_info:
                 t = file_info['type']
                 type_stats[t] = type_stats.get(t, 0) + 1
-            
+
             stats_text = f"<b>Evidence Package Summary:</b><br/>"
             stats_text += f"• Total files in package: {len(files_info)}<br/>"
             stats_text += f"• Total package size: {self._format_kb(total_size_bytes)}<br/>"
             stats_text += f"<br/><b>Files by type:</b><br/>"
-            
+
             for t, count in sorted(type_stats.items()):
                 if count > 0:
                     stats_text += f"  • {t}: {count}<br/>"
-            
+
             story.append(Paragraph(stats_text, styles['normal_style']))
             story.append(Spacer(1, ReportConstants.SPACER_SECTION))
-            
+
             # END RFC 3161 immediately closes the actual report.
             # The explanatory document is generated separately and is never placed
             # between START and END.
@@ -695,16 +692,16 @@ class CombinedReportGenerator(HashGeneratorCore):
                 print(f"  SHA-256: {db_result['sha256']}")
             else:
                 print(f"{FileIcons.WARNING} SQLite evidence database could not be updated")
-            
+
             file_size_kb = os.path.getsize(output_path) / 1024
             print(f"{FileIcons.SUCCESS} Combined report created: {os.path.basename(output_path)} ({len(files_info)} files, {file_size_kb:.0f} KB)")
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Error generating combined PDF: {e}")
             traceback.print_exc()
             return False
-    
+
     # ========================================================================
     # ПУБЛИЧЕН МЕТОД ЗА ГЕНЕРИРАНЕ ОТ ПАПКА
     # ========================================================================
@@ -1012,10 +1009,10 @@ class CombinedReportGenerator(HashGeneratorCore):
     def generate_from_eml(self, eml_path: Path) -> Optional[Path]:
         """
         Публичен метод за генериране на комбиниран отчет от EML файл.
-        
+
         Args:
             eml_path: Път до EML файла
-            
+
         Returns:
             Optional[Path]: Път до генерирания PDF или None при грешка
         """
@@ -1024,13 +1021,13 @@ class CombinedReportGenerator(HashGeneratorCore):
         target_path = output_dir / f"{identity['report_id']}_HASHREPORT_TYP_COMBO.pdf"
 
         files_info = self._discover_all_files_from_eml_folder(eml_path)
-        
+
         if len(files_info) <= 1:
             print(f"{FileIcons.WARNING} Only EML file found, no artifacts for combined report")
             return None
-        
+
         success = self.generate(files_info, str(target_path), True, report_identity=identity)
-        
+
         if success and target_path.exists():
             file_size_kb = target_path.stat().st_size / 1024
             print(f"\n{FileIcons.SUCCESS} Combined report created: {target_path.name}")
@@ -1051,33 +1048,33 @@ if __name__ == "__main__":
     print(f"{ConsoleColors.CYAN}{'='*60}{ConsoleColors.RESET}")
     print(f"{ConsoleColors.BOLD}  COMBINED REPORT MODE - Enterprise Package Support{ConsoleColors.RESET}")
     print(f"{ConsoleColors.CYAN}{'='*60}{ConsoleColors.RESET}\n")
-    
+
     # Проверка за Unicode шрифтове
     if UNICODE_FONT_AVAILABLE:
         print(f"{ConsoleColors.GREEN}✓ Unicode font support enabled{ConsoleColors.RESET}")
     else:
         print(f"{ConsoleColors.YELLOW}⚠ Unicode font not available - some symbols may not display correctly{ConsoleColors.RESET}")
-    
+
     print(f"{ConsoleColors.CYAN}✓ wordWrap='WORD' configured for European languages (German, English, Bulgarian){ConsoleColors.RESET}")
     print(f"{ConsoleColors.CYAN}✓ 7-column table with 'Modified' column{ConsoleColors.RESET}")
     print(f"{ConsoleColors.CYAN}✓ Full timestamp fields (no truncation){ConsoleColors.RESET}")
     print(f"{ConsoleColors.CYAN}✓ Dual RFC 3161 START/END + 3 TSA alternatives + millisecond timing{ConsoleColors.RESET}")
     print(f"{ConsoleColors.CYAN}✓ 40+ artifact types supported{ConsoleColors.RESET}\n")
-    
+
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger("CombinedReportGenerator")
-    
+
     generator = CombinedReportGenerator(logger, include_ots=False)
-    
+
     if len(sys.argv) > 1:
         input_path = Path(sys.argv[1])
     else:
         input_path = Path(input("Enter evidence package folder or EML file path: ").strip())
-    
+
     if not input_path.exists():
         print(f"{FileIcons.ERROR} Path not found: {input_path}")
         sys.exit(1)
-    
+
     # Folder mode is non-recursive by default. Recursion is explicit only.
     recursive = '--recursive' in sys.argv[2:]
     try:
@@ -1093,7 +1090,7 @@ if __name__ == "__main__":
         print(f"{FileIcons.ERROR} No combined report generated (insufficient artifacts)")
         sys.exit(1)
     print(f"{FileIcons.SUCCESS} Combined report: {combined.name}")
-    
+
     print(f"\n{ConsoleColors.CYAN}{'='*60}{ConsoleColors.RESET}")
     print(f"{ConsoleColors.GREEN}✅ Processing complete!{ConsoleColors.RESET}")
     print(f"{ConsoleColors.CYAN}{'='*60}{ConsoleColors.RESET}")

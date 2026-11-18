@@ -1,0 +1,83 @@
+==============================================================================
+ChronoSeal v96 (5.11.0-gui) - TEST LOG
+==============================================================================
+Environment : Windows, Python 3.12.9, Node >= 22.12.0
+Workspace   : UNC/SMB share (network share - timings are share-bound)
+Command     : python -m pytest -q --no-header
+Env         : CHRONOSEAL_JS_RULE_TIMEOUT=180, PYTHONIOENCODING=utf-8
+Note        : runs were strictly SERIAL - parallel pytest on this share starves
+              subprocess timeouts and produces false collection ERRORs.
+
+------------------------------------------------------------------------------
+1. FULL RUN (before the fixes at the end of this file)
+------------------------------------------------------------------------------
+FAILED tests/test_branding.py::test_web_workspace_reads_the_same_tokens
+FAILED tests/test_ui_selection_filters.py::test_t27_heartbeat_output_keeps_a_slow_child_alive
+
+2 failed, 579 passed, 5 skipped, 58 subtests passed in 712.27s (0:11:52)
+
+------------------------------------------------------------------------------
+2. WHAT THE TWO FAILURES WERE
+------------------------------------------------------------------------------
+2.1 test_web_workspace_reads_the_same_tokens - REAL REGRESSION
+    The v5.11.0 version bump updated chronoseal/branding.py but ui/index.html
+    still carried "v5.10.0-gui" in two places. The suite correctly proved that
+    the web workspace and the desktop app disagreed on the version.
+    A follow-up sweep then found a third missed spot: the header comment of
+    ui/style.css. Total corrected strings: ui/index.html x2, ui/style.css x1.
+    Verified: "v5.11.0-gui" in html = True, residual "5.10" in ui/ = 0
+    (3 files scanned).
+
+2.2 test_t27_heartbeat_output_keeps_a_slow_child_alive - ENVIRONMENTAL FLAKE
+    idle_timeout was 0.9 s against a 0.2 s heartbeat. Pipeline._run starts its
+    idle clock when Popen returns, so Python's cold start on the SMB share was
+    charged against the budget and the watchdog fired before the child had
+    printed a single line ("The child produced no output at all before
+    stalling."). Product behaviour was correct; only the test budget was wrong
+    for this share. The product code was deliberately NOT weakened.
+    Fix: HEARTBEAT_IDLE_TIMEOUT = 2.5 with a 0.5 s heartbeat (12 iterations =
+    6 s total). A silent child is still killed long before it finishes, which
+    is exactly what the test exists to prove. Applied to t27 and to its latent
+    twin t29.
+    test_t28 keeps idle_timeout=0.9 on purpose - it must die fast.
+
+------------------------------------------------------------------------------
+3. TARGETED RE-RUN AFTER THE FIXES
+------------------------------------------------------------------------------
+Node IDs:
+  tests/test_branding.py::test_web_workspace_reads_the_same_tokens
+  tests/test_ui_selection_filters.py::test_t27_heartbeat_output_keeps_a_slow_child_alive
+  tests/test_ui_selection_filters.py::test_t28_silent_child_is_killed_with_a_clear_message
+  tests/test_ui_selection_filters.py::test_t29_stall_message_reports_the_last_phase
+
+....                                                                     [100%]
+4 passed in 296.08s (0:04:56)
+
+t28 was included deliberately: it proves the watchdog still bites with the
+larger budget.
+
+------------------------------------------------------------------------------
+4. EARLIER PRE-FIX BASELINES (for reference)
+------------------------------------------------------------------------------
+tests/                      : 1 failed, 449 passed, 3 skipped, 22 subtests passed in 378.92s
+hash_report_generator/tests/ : 2 failed, 129 passed, 2 skipped, 36 subtests passed in 285.22s
+Collection (pytest --collect-only) : 586 tests collected in 32.63s
+
+The three failures in those baselines were fixed during this version
+(dead-code re-export, WinError 1314 symlink privilege, bridge flake).
+
+------------------------------------------------------------------------------
+5. DEPLOYMENT CHECK
+------------------------------------------------------------------------------
+python migration_kit/test_apply.py -> rc 0, stderr empty
+stdout ends with: DEPLOYMENT_METHODS 3/3 PASS
+(atomic, overlay and patch modes all proven)
+
+------------------------------------------------------------------------------
+6. NOT PROVEN
+------------------------------------------------------------------------------
+- A single fully green run of both suites AFTER the fixes. The three fixes are
+  proven by the targeted 4-test re-run above, not by a repeated 12-minute
+  full sweep.
+- GUI behaviour under any theme other than "clam".
+- That apply.py handles an overlay onto a share without symlink privileges.

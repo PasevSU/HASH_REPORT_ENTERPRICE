@@ -1,8 +1,7 @@
 import io
 import unittest
 from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate
 from hash_report_generator.safe_table import PolicyTable
 
 class PolicyTableTests(unittest.TestCase):

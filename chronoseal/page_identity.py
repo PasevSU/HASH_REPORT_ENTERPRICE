@@ -250,9 +250,9 @@ def apply_footer(src, dst, report_id, version, *, margin=None, preserve_pages=()
         c.drawString(left,rules['appendix_intro_ys_pt'][2],rules['document_appendix_framing'])
         c.drawString(left,rules['appendix_intro_ys_pt'][3],rules['document_appendix_page_count'].format(page_count=len(reader.pages)))
     # All presentation values come from the shared table JS rule.
-    from reportlab.platypus import Table, TableStyle, Paragraph
+    from reportlab.platypus import Paragraph
     from reportlab.lib.styles import ParagraphStyle
-    from hash_report_generator.pdf_object_rules import GlobalReportTable, table_relief_commands
+    from hash_report_generator.pdf_object_rules import GlobalReportTable
     from hash_report_generator.style_loader import load_styles
     from xml.sax.saxutils import escape
     all_table_rules = load_styles()

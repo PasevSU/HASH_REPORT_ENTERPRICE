@@ -37,7 +37,6 @@ import re
 from pathlib import Path
 from typing import List, Dict, Union, Optional, Tuple
 from datetime import datetime
-import threading
 import platform
 import socket
 import getpass
@@ -45,11 +44,7 @@ import uuid
 import base64
 import subprocess
 import sys
-import logging
-import traceback
-import struct
 import time
-import hmac
 import tempfile
 import shutil
 import zlib
@@ -199,7 +194,7 @@ def register_unicode_fonts():
     """
     UNICODE_FONT = 'Helvetica'
     FONT_REGISTERED = False
-    
+
     font_paths = [
         # Windows
         'C:/Windows/Fonts/DejaVuSans.ttf',
@@ -218,7 +213,7 @@ def register_unicode_fonts():
         '/System/Library/Fonts/Helvetica.ttc',
         '/System/Library/Fonts/Supplemental/Helvetica.ttf',
     ]
-    
+
     for font_path in font_paths:
         if os.path.exists(font_path):
             try:
@@ -229,10 +224,10 @@ def register_unicode_fonts():
                 break
             except Exception as e:
                 continue
-    
+
     if not FONT_REGISTERED:
         print("⚠️ No Unicode font found - using Helvetica (some symbols may not display correctly)")
-    
+
     return UNICODE_FONT, FONT_REGISTERED
 
 # Регистрираме Unicode шрифтове при стартиране
@@ -283,7 +278,7 @@ class FileIcons:
     ANOMALY = f"{ConsoleColors.RED}⚠️{ConsoleColors.RESET}"
     EVIDENCE = f"{ConsoleColors.WHITE}🆔{ConsoleColors.RESET}"
     FILE = f"{ConsoleColors.DIM}📄{ConsoleColors.RESET}"
-    
+
     @classmethod
     def get_icon_by_type(cls, file_type: str) -> str:
         """Връща икона според типа файл"""
@@ -386,7 +381,7 @@ _PAGE_GEOMETRY = _page_geometry()
 
 class ReportConstants:
     """Константи за дизайн на PDF отчетите"""
-    
+
     # --- РАЗМЕРИ НА ШРИФТОВЕ ---
     FONT_SIZE_TITLE = 16
     FONT_SIZE_HEADING = 12
@@ -402,7 +397,7 @@ class ReportConstants:
     FONT_SIZE_OTS_HEADER = 7
     FONT_SIZE_OTS_DETAIL = 7
     FONT_SIZE_PAGE_NUMBER = 8
-    
+
     # --- МЕЖДУРЕДИЯ (LEADING) ---
     LEADING_HEADING = 16
     LEADING_SUBHEADING = 14
@@ -415,16 +410,16 @@ class ReportConstants:
     LEADING_LEGAL = 9
     LEADING_LEGAL_DECLARATION = 10
     LEADING_OTS_DETAIL = 9
-    
+
     # --- ОТСТЪПИ (PADDING) ЗА ТАБЛИЦИ ---
     TABLE_PADDING = 4
     TABLE_HEADER_BOTTOM_PADDING = 6
     EXPLANATORY_TABLE_PADDING = 3
     OTS_TABLE_PADDING = 3
-    
+
     # --- РАЗМЕРИ НА ТАБЛИЦИ (185mm) ---
     TABLE_WIDTH_MM = 170.0
-    
+
     # --- ПРОПОРЦИИ НА КОЛОНИТЕ ЗА КОМБИНИРАН ОТЧЕТ (7 КОЛОНИ) ---
     COMBINED_TABLE_COL_PROPORTIONS_7 = {
         'number': 0.055,  # Reserve enough space for multi-digit row indices
@@ -439,19 +434,19 @@ class ReportConstants:
     INFO_TABLE_COL_PROPORTIONS = {
         'property': 0.30, 'value': 0.70
     }
-    
+
     LEGAL_TABLE_COL_PROPORTIONS = {
         'law': 0.32, 'meaning': 0.68
     }
-    
+
     TECH_TABLE_COL_PROPORTIONS = {
         'element': 0.28, 'meaning': 0.72
     }
-    
+
     SUMMARY_TABLE_COL_PROPORTIONS = {
         'proof': 0.30, 'check': 0.35, 'legal': 0.35
     }
-    
+
     CERT_TABLE_COL_PROPORTIONS = {
         'property': 0.30, 'value': 0.70
     }
@@ -460,17 +455,17 @@ class ReportConstants:
     TIMESTAMP_TABLE_COL_PROPORTIONS = {
         'label': 0.31, 'value': 0.69
     }
-    
+
     OTS_TABLE_COL_PROPORTIONS = {
         'file': 0.26, 'size': 0.08, 'type': 0.10, 'modified': 0.22, 'details': 0.34
     }
-    
+
     # --- МАРЖИНИ НА СТРАНИЦИ ---
     PAGE_MARGIN_LEFT = _PAGE_GEOMETRY['left_margin_pt']
     PAGE_MARGIN_RIGHT = _PAGE_GEOMETRY['right_margin_pt']
     PAGE_MARGIN_TOP = _PAGE_GEOMETRY['top_margin_pt']
     PAGE_MARGIN_BOTTOM = _PAGE_GEOMETRY['bottom_margin_pt']
-    
+
     # --- РАЗСТОЯНИЯ (SPACERS) ---
     SPACER_TITLE = 10
     SPACER_LEGAL = 10
@@ -487,7 +482,7 @@ class ReportConstants:
     SPACER_OTS_SECTION = 10
     SPACER_INFO = 15
     SPACER_BEFORE_TABLE = 20
-    
+
     # --- ТАБЛИЦИТЕ СЕ СТИЛИЗИРАТ САМО ОТ style/30_tables.js ---
 
 
@@ -627,11 +622,11 @@ class HashGeneratorCore:
     Споделено ядро за генериране на SHA-256 хеш отчети.
     Съдържа общи методи за криптография, системна информация и PDF строителни блокове.
     """
-    
+
     def __init__(self, logger, include_ots=True):
         """
         Инициализира споделеното ядро.
-        
+
         Args:
             logger: Logger инстанция
             include_ots: Дали да включва OTS информация
@@ -655,7 +650,7 @@ class HashGeneratorCore:
         self._tsa_attempts_by_marker = {}  # START/END complete attempt history for SQLite persistence
         self._last_tsa_endpoint = None     # selected successful endpoint, if any
         self._tsa_last_request_perf = {}   # provider-specific request throttling
-    
+
     # ========================================================================
     # СИСТЕМНА ИНФОРМАЦИЯ
     # ========================================================================
@@ -670,14 +665,14 @@ class HashGeneratorCore:
             }
         except:
             return {"computer_name": "Unknown", "os": "Unknown", "hardware_id": "Unknown"}
-    
+
     def _get_user_info(self) -> Dict:
         """Взема потребителска информация"""
         try:
             return {"username": getpass.getuser()}
         except:
             return {"username": "Unknown"}
-    
+
     def _get_current_time(self):
         """Взема текущо време в CET/CEST"""
         if PYTZ_AVAILABLE:
@@ -755,7 +750,7 @@ class HashGeneratorCore:
         else:
             created_ts = stat.st_ctime
         return datetime.fromtimestamp(created_ts), datetime.fromtimestamp(stat.st_mtime)
-    
+
     # ========================================================================
     # КРИПТОГРАФСКИ ФУНКЦИИ
     # ========================================================================
@@ -998,7 +993,7 @@ class HashGeneratorCore:
             "SHA512": hashlib.sha512(data).hexdigest(),
             "SHA3-256": hashlib.sha3_256(data).hexdigest(),
         }
-    
+
     @staticmethod
     def _der_length(length: int) -> bytes:
         if length < 0x80:
@@ -1851,7 +1846,7 @@ class HashGeneratorCore:
                 return False
         _hb_note(f'verify PASS {len(files_info)} file(s)')
         return True
-    
+
     # ========================================================================
     # ТРАНСЛИТЕРАЦИЯ
     # ========================================================================
@@ -1873,19 +1868,19 @@ class HashGeneratorCore:
             '7': '7', '8': '8', '9': '9'
         }
         return ''.join(cyrillic_map.get(c, c) for c in text)
-    
+
     def _sanitize_filename_for_display(self, filename: str) -> str:
         """Почиства име на файл за показване в PDF"""
         transliterated = self._cyrillic_to_latin(filename)
         return re.sub(r'\s+', ' ', transliterated)
-    
+
     # ========================================================================
     # МЕТОДИ ЗА PDF СТИЛОВЕ И ТАБЛИЦИ
     # ========================================================================
     def _calculate_column_widths(self, proportions: Dict[str, float]) -> List[float]:
         """Изчислява ширините на колоните на база пропорции"""
         return [self.table_width * prop for prop in proportions.values()]
-    
+
     def _apply_table_style(self, table, table_type='standard'):
         """Прилага глобалния стил на таблица (всички правила идват от style/*.js)."""
         # ReportLab TableStyle TEXTCOLOR does not override a Paragraph's own
@@ -1905,7 +1900,7 @@ class HashGeneratorCore:
         # Стил за timestamp с Unicode шрифт, ако е наличен
         timestamp_font = _unicode_font('Helvetica')
         _unicode_stylesheet(base_styles)
-        
+
         return {
             'title_style': ParagraphStyle('CustomTitle', parent=base_styles['Heading1'],
                 **_factory_layout('title_style', rules)),
@@ -1929,7 +1924,7 @@ class HashGeneratorCore:
             'timestamp_style': ParagraphStyle('TimestampStyle', parent=base_styles['Normal'],
                 **{**_factory_layout('timestamp_style', rules), 'fontName': timestamp_font})
         }
-    
+
     def _create_explanatory_styles(self, base_styles):
         """Създава стилове за пояснителния документ"""
         rules = _core_style_snapshot()
@@ -1947,11 +1942,11 @@ class HashGeneratorCore:
             'table_cell_style': ParagraphStyle('ExplanatoryTableCell', parent=base_styles['Normal'],
                 **_factory_layout('explanatory_table_cell_style', rules))
         }
-    
+
     # ========================================================================
     # СЕКЦИИ ЗА PDF ДОКУМЕНТИ
     # ========================================================================
-    def _add_system_info_section(self, story, styles, now, timezone_str, report_id, 
+    def _add_system_info_section(self, story, styles, now, timezone_str, report_id,
                                   files_info=None, single_file=False,
                                   rfc3161_timestamp=None, selection_filters=None):
         """Добавя секция със системна информация и timestamp"""
@@ -1959,16 +1954,16 @@ class HashGeneratorCore:
         small_style = styles['small_style']
         warning_style = styles['warning_style']
         timestamp_style = styles['timestamp_style']
-        
+
         # Винаги генерираме нов уникален timestamp за този отчет
         if rfc3161_timestamp is None:
             rfc3161_timestamp = self._get_rfc3161_timestamp(force_new=True)
-        
+
         data_style = block_data_style(normal_style)
         story.append(block_heading("System Information (Beweissicherung)"))
         story.append(Paragraph(f"<b>Generated:</b> {self._format_datetime_ms(now)}", data_style))
         story.append(Paragraph(f"<b>Report ID:</b> {report_id}", data_style))
-        
+
         if single_file:
             story.append(Paragraph(f"<b>Report Type:</b> Individual File Hash Report", data_style))
             if files_info and len(files_info) > 0:
@@ -2001,7 +1996,7 @@ class HashGeneratorCore:
                 story.append(Spacer(1, ReportConstants.SPACER_TABLE))
                 self._add_aligned_key_value_table(
                     story, list(total_checksums.items()), styles, label_ratio=0.18, compact=True)
-        
+
         from chronoseal_volume_report import append_volume_section
         _work_dir = Path(files_info[0]['path']).parent if files_info and files_info[0].get('path') else None
         append_volume_section(story, normal_style, _work_dir)
@@ -2010,7 +2005,7 @@ class HashGeneratorCore:
         story.append(Paragraph(f"<b>Computer Name:</b> {self.system_info.get('computer_name', 'Unknown')}", data_style))
         story.append(Paragraph(f"<b>Operating System:</b> {self.system_info.get('os', 'Unknown')} {self.system_info.get('os_version', '')}", data_style))
         story.append(Paragraph(f"<b>Hardware ID:</b> {self.system_info.get('hardware_id', 'Unknown')}", data_style))
-        
+
         # v2.34: protocol-wide information is shown once. START/STOP contain
         # only the data and validation result of their respective TSA signature.
         self._add_timestamp_general_section(story, styles, single_file=single_file)
@@ -2022,7 +2017,7 @@ class HashGeneratorCore:
                 display_marker='START', signature_only=True, show_internal_heading=False)
         else:
             story.append(Paragraph("<i>No timestamp available</i>", warning_style))
-    
+
     def _add_rfc3161_base64_at_document_end(self, story, styles):
         """Backward-compatible wrapper for v2.23 callers."""
         self._add_rfc3161_tokens_at_document_end(story, styles)
@@ -2072,7 +2067,7 @@ class HashGeneratorCore:
         story.append(Paragraph("Report engine: PasevSU Hash Report Generator v2.34 (technical component); CRYPTO REPORT ENTERPRICE v5.5.3-RC (report presentation). No court certification implied.", small_style))
         story.append(Paragraph("SHA-256 is used here as a cryptographic digest; legal evaluation remains case-specific.", small_style))
         story.append(Paragraph("Created and licensed by Home Assistant Projects · PasevSU DEV · part of the NO TRUST Cybersecurity volunteer campaign.", small_style))
-    
+
     def _generate_explanatory_pdf(self, output_path: Union[str, Path]) -> Path:
         """Generate the explanatory/legal reading guide as a separate PDF.
 
@@ -2093,7 +2088,7 @@ class HashGeneratorCore:
         """Add the explanatory document. v2.34 normally writes it to a separate PDF."""
         if start_on_new_page:
             story.append(PageBreak())
-        
+
         expl_styles = self._create_explanatory_styles(base_styles)
         normal_style = expl_styles['normal_style']
         small_style = expl_styles['small_style']
@@ -2101,15 +2096,15 @@ class HashGeneratorCore:
         subheading_style = expl_styles['subheading_style']
         table_header_style = expl_styles['table_header_style']
         table_cell_style = expl_styles['table_cell_style']
-        
+
         story.append(Paragraph("ERLÄUTERNDES DOKUMENT ZUM „SHA-256 HASH REPORT – KRYPTOGRAPHISCHER EXISTENZNACHWEIS“", heading_style))
         story.append(Spacer(1, ReportConstants.SPACER_HEADING))
         story.append(Paragraph("Technische Prüfanleitung und rechtliche Einordnung - separates Begleitdokument", subheading_style))
         story.append(Spacer(1, ReportConstants.SPACER_SUBHEADING))
-        
+
         story.append(Paragraph("<b>RECHTLICHE GRUNDLAGEN FÜR DEUTSCHE GERICHTE</b>", normal_style))
         story.append(Spacer(1, ReportConstants.SPACER_SECTION))
-        
+
         legal_table_data = [[
             Paragraph("<b>Gesetz / Entscheidung</b>", table_header_style),
             Paragraph("<b>Bedeutung für den Hash Report</b>", table_header_style)
@@ -2126,7 +2121,7 @@ class HashGeneratorCore:
         self._apply_table_style(legal_table, table_type='explanatory')
         story.append(legal_table)
         story.append(Spacer(1, ReportConstants.SPACER_SUBHEADING))
-        
+
         story.append(Paragraph("<b>1. AUTHENTIZITÄT DES REPORTS (SHA-256-HASH)</b>", normal_style))
         story.append(Spacer(1, ReportConstants.SPACER_TABLE))
         story.append(Paragraph("Der Report enthält den SHA-256-Hash-Wert der geprüften Datei. SHA-256 ist eine kollisionsresistente kryptographische Prüfsumme. Ein übereinstimmender Hash:", small_style))
@@ -2134,7 +2129,7 @@ class HashGeneratorCore:
         story.append(Paragraph("• mit einem Befehl überprüft werden kann: <i>sha256sum [Datei]</i>;", small_style))
         story.append(Paragraph("<b>Rechtliche Grundlage:</b> Stimmt der neu berechnete Hash mit dem im Report überein, ist die geprüfte Bytefolge mit der referenzierten Bytefolge kryptographisch konsistent. Die rechtliche Würdigung erfolgt im Einzelfall.", small_style))
         story.append(Spacer(1, ReportConstants.SPACER_PARAGRAPH))
-        
+
         story.append(Paragraph("<b>2. AUTOMATISCHE GENERIERUNG (TECHNISCHE UNABHÄNGIGKEIT)</b>", normal_style))
         story.append(Spacer(1, ReportConstants.SPACER_TABLE))
         tech_table_data = [[Paragraph("<b>Element</b>", table_header_style), Paragraph("<b>Was es beweist</b>", table_header_style)]]
@@ -2151,7 +2146,7 @@ class HashGeneratorCore:
         story.append(Spacer(1, ReportConstants.SPACER_SECTION))
         story.append(Paragraph("<b>Technische Bedeutung:</b> Ein erfolgreich verifizierter RFC-3161-Token bindet den im Token enthaltenen Message Imprint an die von der TSA angegebene Zeit. Lokale Systemzeit und Hardwaredaten sind ergänzende Metadaten und kein unabhängiger Zeitnachweis.", small_style))
         story.append(Spacer(1, ReportConstants.SPACER_PARAGRAPH))
-        
+
         if self.include_ots:
             story.append(Paragraph("<b>3. OPENTIMESTAMPS (OTS) – FALLS ENTHALTEN</b>", normal_style))
             story.append(Spacer(1, ReportConstants.SPACER_TABLE))
@@ -2161,7 +2156,7 @@ class HashGeneratorCore:
             story.append(Paragraph("• dass die vollständige Integrität der geprüften Datei nachgewiesen wird.", small_style))
             story.append(Paragraph("<b>Rechtliche Grundlage:</b> Blockchain-Aufzeichnungen werden gemäß der Rechtsprechung deutscher Gerichte (einschließlich BGH) als unwiderlegbarer Beweis für den Zeitpunkt der Existenz anerkannt.", small_style))
             story.append(Spacer(1, ReportConstants.SPACER_PARAGRAPH))
-        
+
         story.append(Paragraph("<b>WIE KANN DAS GERICHT ODER DIE STAATSANWALTSCHAFT PRÜFEN?</b>", normal_style))
         story.append(Spacer(1, ReportConstants.SPACER_TABLE))
         steps = [
@@ -2174,7 +2169,7 @@ class HashGeneratorCore:
             story.append(Paragraph(f"{step_title} {step_desc}", small_style))
             story.append(Spacer(1, ReportConstants.SPACER_MICRO))
         story.append(Spacer(1, ReportConstants.SPACER_PARAGRAPH))
-        
+
         summary_table_data = [[
             Paragraph("<b>Was beweist der Report?</b>", table_header_style),
             Paragraph("<b>Wie wird es geprüft?</b>", table_header_style),
@@ -2200,7 +2195,7 @@ class HashGeneratorCore:
         )
         story.extend(_kept if isinstance(_kept, list) else [_kept])
         story.append(Spacer(1, ReportConstants.SPACER_PARAGRAPH))
-        
+
         try:
             from .pagination_policy import keep_heading_with_first_paragraph
         except ImportError:
@@ -2225,7 +2220,7 @@ class HashGeneratorCore:
         story.append(Paragraph("   • Die Grundsätze des § 286 ZPO zur freien Beweiswürdigung anwenden.", small_style))
         story.append(Paragraph("<i>Hinweis: Dieses Begleitdokument ist keine gerichtliche Bewertung und keine Vorgabe für die Beweiswürdigung.</i>", small_style))
         story.append(Spacer(1, ReportConstants.SPACER_PARAGRAPH))
-        
+
         story.append(Paragraph("<b>ABSCHLIEßENDE ERKLÄRUNG</b>", normal_style))
         story.append(Spacer(1, ReportConstants.SPACER_TABLE))
         story.append(Paragraph("Dieses Dokument dient dazu, das Gericht und die Staatsanwaltschaft bei der korrekten rechtlichen und technischen Bewertung des beigefügten SHA-256-Hash-Reports zu unterstützen. Es enthält die erforderlichen rechtlichen Grundlagen und technischen Anweisungen, damit die enthaltenen kryptographischen Angaben unabhängig nachvollzogen und im jeweiligen Verfahren sachgerecht gewürdigt werden können.", small_style))

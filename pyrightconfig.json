@@ -1,0 +1,68 @@
+// ChronoSeal Enterprise - static analysis gate (v5.11.0).
+//
+// Purpose: make Pyright/Pylance resolve this project's flat-module imports so
+// that real diagnostics are not drowned out by path-resolution noise.
+//
+// This file must NEVER be used to silence a genuinely missing module. The
+// reportMissingImports check is deliberately left at its default severity so
+// that deleting a real source file keeps producing an error.
+//
+// extraPaths mirrors the runtime sys.path.insert() calls already made by
+// chronoseal/unified_theme.py and hash_report_generator/bridge/verify.py.
+// Without these entries those imports look broken to static analysis only;
+// at runtime they resolve and the full test suite passes.
+{
+  "include": [
+    "chronoseal",
+    "hash_report_generator",
+    "automation",
+    "bridge",
+    "tests",
+    "qualification",
+    "migration_kit",
+    "tools"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    "**/node_modules",
+    "vendor",
+    "ChronoSeal_Archive",
+    "hash_report_generator/style",
+    ".git"
+  ],
+  "extraPaths": [
+    ".",
+    "hash_report_generator",
+    "hash_report_generator/bridge",
+    "hash_report_generator/loader",
+    "automation"
+  ],
+  // typeCheckingMode is deliberately "off".
+  //
+  // Measured on this codebase (v5.11.0):
+  //   basic    -> 332 severity-1 diagnostics
+  //   standard -> 488 severity-1 diagnostics
+  // The vast majority are Tk callback unions (reportPossiblyUnboundVariable),
+  // optional-member access and ModuleSpec | None from the additive-loading
+  // idiom - none of them are defects, and the type-system migration they imply
+  // is out of scope for this release.
+  //
+  // Instead of drowning the signal, this gate turns on exactly the rules that
+  // find real problems: unresolvable imports and dead code. Together they yield
+  // a short, actionable list (~80 items) that is safe to work through.
+  "typeCheckingMode": "off",
+  // A module that no longer exists MUST stay an error. This is the whole point
+  // of the gate and it must never be silenced.
+  "reportMissingImports": "error",
+  // Dead-code detection - the cleanup backlog, kept as warnings.
+  "reportUnusedImport": "warning",
+  "reportUnusedVariable": "warning",
+  "reportUnusedFunction": "warning",
+  "reportDeprecated": "warning",
+  "pythonVersion": "3.12",
+  "pythonPlatform": "Windows",
+  "useLibraryCodeForTypes": true,
+  "autoSearchPaths": false,
+  "reportMissingTypeStubs": false,
+  "reportMissingModuleSource": "warning"
+}

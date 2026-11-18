@@ -1,7 +1,7 @@
-import sys, unittest, re
+import sys, unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from pdf_object_rules import combined_column_widths, COLUMNS, validate
+from pdf_object_rules import combined_column_widths, validate
 from combined_table_layout import timestamp_cell, digest_cell_for_width, safe_text_cell
 from reportlab.lib.styles import ParagraphStyle
 class LayoutV37(unittest.TestCase):

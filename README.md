@@ -12,7 +12,7 @@ folder can still be proven later, on another machine, without the original data.
 
 |  |  |
 |---|---|
-| Version | 5.10.0-gui |
+| Version | 5.11.0-gui |
 | Platform | Windows 10 / 11 (x64) |
 | Runtime | Python 3.12+ and Node.js 22.12+ |
 | Interface | Tkinter desktop GUI (6 pages); the CLI stays available for scripting |
@@ -406,7 +406,7 @@ With the GitHub CLI the same reads need no token plumbing:
 
 ```powershell
 gh api repos/PasevSU/HASH_REPORT_ENTERPRICE/contents/js/api.mjs --jq '.sha'
-gh release download chronoseal-v5.10.0-gui --pattern '*.zip' -D .
+gh release download chronoseal-v5.11.0-gui --pattern '*.zip' -D .
 ```
 
 ### Running the clone you downloaded
@@ -449,7 +449,7 @@ input (the evidence set must not grow with the program's own output), and
 embedded pages come first or last.
 
 Two version numbers appear in the output, and they move independently.
-`package.json` and `chronoseal/branding.py` carry the product version (5.10.0-gui in
+`package.json` and `chronoseal/branding.py` carry the product version (5.11.0-gui in
 this release); `js/cli.mjs` exports `CLONE_VERSION` (1.0.0), the version of the
 JavaScript re-implementation, which `--version` prints and which is stamped into
 the `implementation: chronoseal-js-clone/1.0.0` field of every report the clone
@@ -461,7 +461,7 @@ As a package-manager source it also works - the name is `chronoseal-python-rfc31
 resolve). The example pins the release tag so the build is reproducible:
 
 ```powershell
-npm install github:PasevSU/HASH_REPORT_ENTERPRICE#chronoseal-v5.10.0-gui --no-audit --no-fund
+npm install github:PasevSU/HASH_REPORT_ENTERPRICE#chronoseal-v5.11.0-gui --no-audit --no-fund
 ```
 
 ```js

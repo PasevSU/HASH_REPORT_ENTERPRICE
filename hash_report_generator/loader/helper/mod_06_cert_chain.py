@@ -24,7 +24,7 @@ from typing import Callable, Optional
 
 try:
     from cryptography import x509
-    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives import hashes
     from cryptography.x509.oid import (
         AuthorityInformationAccessOID,
         ExtensionOID,

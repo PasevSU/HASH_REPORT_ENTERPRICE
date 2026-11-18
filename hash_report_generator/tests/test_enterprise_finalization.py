@@ -63,7 +63,19 @@ class HardenedGateTests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as td:
    p=Path(td)/'x.pdf';p.write_bytes(b'%PDF-1.7')
    out=Path(td)/'out';out.mkdir()
-   (out/'verification.json').symlink_to(p)
+   alias=out/'verification.json'
+   # v5.11.0: creating a symlink on Windows requires SeCreateSymbolicLinkPrivilege,
+   # which an ordinary account does not hold, so this guard used to fail with
+   # OSError WinError 1314 instead of testing the gate. The gate rejects both
+   # symlink aliases and hard links (resolve() == pdf or samefile(pdf)), so a hard
+   # link proves the same property without needing a privilege.
+   try:
+    alias.symlink_to(p)
+   except (OSError, NotImplementedError):
+    try:
+     alias.hardlink_to(p)
+    except (OSError, NotImplementedError):
+     self.skipTest('symlink and hard link creation both unavailable in this environment')
    with self.assertRaises(ValueError):m.finalize('single',p,[],out)
  def test_boolean_count_rejected(self):
   with tempfile.TemporaryDirectory() as td:

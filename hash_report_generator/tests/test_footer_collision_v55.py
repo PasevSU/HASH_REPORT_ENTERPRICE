@@ -1,12 +1,12 @@
-import io, logging, os, tempfile, unittest
+import logging, os, tempfile, unittest
 from pathlib import Path
 from unittest.mock import patch
 from reportlab.lib.units import mm
-from reportlab.platypus import Paragraph, Spacer
+from reportlab.platypus import Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from hash_report_generator.a4_document import A4DocTemplate
 from hash_report_generator.hash_report_core import ReportConstants
-from hash_report_generator.pdf_object_rules import PAGE, page_geometry
+from hash_report_generator.pdf_object_rules import PAGE
 from hash_report_generator.hash_report_single import SingleReportGenerator
 from chronoseal.page_identity import apply_footer
 

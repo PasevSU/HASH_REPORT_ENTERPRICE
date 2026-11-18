@@ -21,8 +21,6 @@ from __future__ import annotations
 
 from io import BytesIO
 
-from reportlab.lib import colors
-from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, Image
